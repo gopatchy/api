@@ -15,4 +15,4 @@ test:
 	{{go}} tool cover -html=cover.out -o=cover.html
 
 todo:
-	-git grep -e TODO --and --not -e ignoretodo | grep -v ^api/swaggerui
+	-git grep -e TODO --and --not -e ignoretodo | grep -v ^api/swaggerui | grep -v map:
