@@ -2,12 +2,8 @@ package patchy_test
 
 import (
 	"context"
-	"errors"
-	"fmt"
 	"os"
-	"os/exec"
 	"path/filepath"
-	"strings"
 	"testing"
 
 	"github.com/gopatchy/patchy"
@@ -56,37 +52,4 @@ func TestTemplateGoClient(t *testing.T) {
 	runNoError(ctx, t, dir, nil, "go", "mod", "tidy")
 	runNoError(ctx, t, dir, nil, "go", "vet", ".")
 	runNoError(ctx, t, dir, nil, "go", "build", ".")
-}
-
-func runNoError(ctx1 context.Context, t *testing.T, dir string, env map[string]string, name string, arg ...string) {
-	ctx2, cancel := context.WithCancel(ctx1)
-	t.Cleanup(cancel)
-
-	cmd := exec.CommandContext(ctx2, name, arg...)
-
-	if dir != "" {
-		cmd.Dir = dir
-	}
-
-	for k, v := range env {
-		cmd.Env = append(cmd.Env, fmt.Sprintf("%s=%s", k, v))
-	}
-
-	out, err := cmd.Output()
-	t.Logf("dir='%s'\ncmd='%s'\nargs=%v\nout='%s'\nerr='%s'", dir, name, arg, string(out), getStderr(err))
-
-	if err != nil && strings.Contains(err.Error(), "signal: killed") {
-		return
-	}
-
-	require.NoError(t, err)
-}
-
-func getStderr(err error) string {
-	ee := &exec.ExitError{}
-	if errors.As(err, &ee) {
-		return string(ee.Stderr)
-	}
-
-	return ""
 }
