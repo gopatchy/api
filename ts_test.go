@@ -33,7 +33,7 @@ func TestTSChrome(t *testing.T) {
 	testTS(t, "browser", testPathBrowser(runChrome))
 }
 
-func testTS(t *testing.T, env string, runner func(*testing.T, string)) {
+func testTS(t *testing.T, env string, runner func(*testing.T, *testAPI, string)) {
 	dir := buildTS(t, env)
 	t.Cleanup(func() {
 		os.RemoveAll(dir)
@@ -49,16 +49,19 @@ func testTS(t *testing.T, env string, runner func(*testing.T, string)) {
 			filepath.Base(path),
 			func(t *testing.T) {
 				t.Parallel()
-				runner(t, path)
+
+				ta := newTestAPIInsecure(t)
+				defer ta.shutdown(t)
+
+				runner(t, ta, path)
+
+				ta.checkTests(t)
 			},
 		)
 	}
 }
 
-func testPathNode(t *testing.T, path string) {
-	ta := newTestAPI(t)
-	defer ta.shutdown(t)
-
+func testPathNode(t *testing.T, ta *testAPI, path string) {
 	env := map[string]string{
 		"NODE_DEBUG":                   os.Getenv("NODE_DEBUG"),
 		"NODE_NO_WARNINGS":             "1",
@@ -69,16 +72,11 @@ func testPathNode(t *testing.T, path string) {
 	ctx := context.Background()
 
 	runNoError(ctx, t, filepath.Dir(path), env, "node", "--enable-source-maps", filepath.Base(path))
-
-	ta.checkTests(t)
 }
 
-func testPathBrowser(runCmd func(context.Context, *testing.T, string, string)) func(t *testing.T, path string) {
-	return func(t *testing.T, path string) {
+func testPathBrowser(runCmd func(context.Context, *testing.T, string, string)) func(*testing.T, *testAPI, string) {
+	return func(t *testing.T, ta *testAPI, path string) {
 		ctx, cancel := context.WithCancel(context.Background())
-
-		ta := newTestAPIInsecure(t)
-		defer ta.shutdown(t)
 
 		ss, ssBase := newStaticServer(t, filepath.Dir(path), ta.baseURL)
 		defer func() {
@@ -100,8 +98,6 @@ func testPathBrowser(runCmd func(context.Context, *testing.T, string, string)) f
 		t.Logf("URL: %s", url)
 
 		runCmd(ctx, t, profileDir, url)
-
-		ta.checkTests(t)
 	}
 }
 
