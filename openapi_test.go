@@ -1,4 +1,4 @@
-package api_test
+package patchy_test
 
 import (
 	"context"

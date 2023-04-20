@@ -1,10 +1,10 @@
-package api_test
+package patchy_test
 
 import (
 	"context"
 	"testing"
 
-	"github.com/gopatchy/api"
+	"github.com/gopatchy/patchy"
 	"github.com/gopatchy/patchyc"
 	"github.com/stretchr/testify/require"
 )
@@ -486,8 +486,8 @@ func TestListHook(t *testing.T) {
 	ta := newTestAPI(t)
 	defer ta.shutdown(t)
 
-	api.SetListHook[testType](ta.api, func(_ context.Context, opts *api.ListOpts, _ *api.API) error {
-		opts.Filters = append(opts.Filters, &api.Filter{
+	patchy.SetListHook[testType](ta.api, func(_ context.Context, opts *patchy.ListOpts, _ *patchy.API) error {
+		opts.Filters = append(opts.Filters, &patchy.Filter{
 			Path:  "text",
 			Op:    "gt",
 			Value: "eek",

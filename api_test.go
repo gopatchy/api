@@ -1,4 +1,4 @@
-package api_test
+package patchy_test
 
 import (
 	"context"
@@ -10,14 +10,14 @@ import (
 
 	"github.com/dchest/uniuri"
 	"github.com/go-resty/resty/v2"
-	"github.com/gopatchy/api"
+	"github.com/gopatchy/patchy"
 	"github.com/gopatchy/patchyc"
 	"github.com/stretchr/testify/require"
 )
 
 type testAPI struct {
 	baseURL string
-	api     *api.API
+	api     *patchy.API
 	rst     *resty.Client
 	pyc     *patchyc.Client
 
@@ -28,7 +28,7 @@ type testAPI struct {
 }
 
 type testType struct {
-	api.Metadata
+	patchy.Metadata
 	Text string `json:"text"`
 	Num  int64  `json:"num"`
 }
@@ -39,12 +39,12 @@ type testTypeRequest struct {
 }
 
 type testType2 struct {
-	api.Metadata
+	patchy.Metadata
 	Text string `json:"text"`
 }
 
 type testType3 struct {
-	api.Metadata
+	patchy.Metadata
 	Text string `json:"text"`
 }
 
@@ -55,37 +55,37 @@ type missingMetadata struct {
 func newTestAPI(t *testing.T) *testAPI {
 	dbname := fmt.Sprintf("file:%s?mode=memory&cache=shared", uniuri.New())
 
-	a, err := api.NewAPI(dbname)
+	api, err := patchy.NewAPI(dbname)
 	require.NoError(t, err)
 
-	err = a.ListenSelfCert("[::]:0")
+	err = api.ListenSelfCert("[::]:0")
 	require.NoError(t, err)
 
-	return newTestAPIInt(t, a, "https")
+	return newTestAPIInt(t, api, "https")
 }
 
 func newTestAPIInsecure(t *testing.T) *testAPI {
 	dbname := fmt.Sprintf("file:%s?mode=memory&cache=shared", uniuri.New())
 
-	a, err := api.NewAPI(dbname)
+	api, err := patchy.NewAPI(dbname)
 	require.NoError(t, err)
 
-	err = a.ListenInsecure("[::]:0")
+	err = api.ListenInsecure("[::]:0")
 	require.NoError(t, err)
 
-	return newTestAPIInt(t, a, "http")
+	return newTestAPIInt(t, api, "http")
 }
 
-func newTestAPIInt(t *testing.T, a *api.API, scheme string) *testAPI {
-	api.Register[testType](a)
-	a.SetStripPrefix("/api")
+func newTestAPIInt(t *testing.T, api *patchy.API, scheme string) *testAPI {
+	patchy.Register[testType](api)
+	api.SetStripPrefix("/api")
 
 	ret := &testAPI{
-		api:      a,
+		api:      api,
 		testDone: make(chan string, 100),
 	}
 
-	a.HandlerFunc("GET", "/_logEvent", func(w http.ResponseWriter, r *http.Request) {
+	api.HandlerFunc("GET", "/_logEvent", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Access-Control-Allow-Origin", "*")
 
 		err := r.ParseForm()
@@ -114,10 +114,10 @@ func newTestAPIInt(t *testing.T, a *api.API, scheme string) *testAPI {
 	})
 
 	go func() {
-		_ = a.Serve()
+		_ = api.Serve()
 	}()
 
-	ret.baseURL = fmt.Sprintf("%s://[::1]:%d/api/", scheme, a.Addr().Port)
+	ret.baseURL = fmt.Sprintf("%s://[::1]:%d/api/", scheme, api.Addr().Port)
 
 	ret.rst = resty.New().
 		SetTLSClientConfig(&tls.Config{InsecureSkipVerify: true}). //nolint:gosec
@@ -152,19 +152,19 @@ func (ta *testAPI) shutdown(t *testing.T) {
 	ta.api.Close()
 }
 
-func (tt *testType) MayRead(context.Context, *api.API) error {
+func (tt *testType) MayRead(context.Context, *patchy.API) error {
 	return nil
 }
 
-func (tt *testType2) MayWrite(context.Context, *testType2, *api.API) error {
+func (tt *testType2) MayWrite(context.Context, *testType2, *patchy.API) error {
 	return nil
 }
 
-func (tt *testType3) MayRead(context.Context, *api.API) error {
+func (tt *testType3) MayRead(context.Context, *patchy.API) error {
 	return nil
 }
 
-func (tt *testType3) MayWrite(context.Context, *testType3, *api.API) error {
+func (tt *testType3) MayWrite(context.Context, *testType3, *patchy.API) error {
 	return nil
 }
 
@@ -173,13 +173,13 @@ func TestRegisterMissingMetadata(t *testing.T) {
 
 	dbname := fmt.Sprintf("file:%s?mode=memory&cache=shared", uniuri.New())
 
-	a, err := api.NewAPI(dbname)
+	api, err := patchy.NewAPI(dbname)
 	require.NoError(t, err)
 
-	defer a.Close()
+	defer api.Close()
 
 	require.Panics(t, func() {
-		api.Register[missingMetadata](a)
+		patchy.Register[missingMetadata](api)
 	})
 }
 
@@ -188,14 +188,14 @@ func TestIsSafeSuccess(t *testing.T) {
 
 	dbname := fmt.Sprintf("file:%s?mode=memory&cache=shared", uniuri.New())
 
-	a, err := api.NewAPI(dbname)
+	api, err := patchy.NewAPI(dbname)
 	require.NoError(t, err)
 
-	defer a.Close()
+	defer api.Close()
 
-	api.Register[testType3](a)
+	patchy.Register[testType3](api)
 
-	require.NoError(t, a.IsSafe())
+	require.NoError(t, api.IsSafe())
 }
 
 func TestIsSafeWithoutWrite(t *testing.T) {
@@ -203,16 +203,16 @@ func TestIsSafeWithoutWrite(t *testing.T) {
 
 	dbname := fmt.Sprintf("file:%s?mode=memory&cache=shared", uniuri.New())
 
-	a, err := api.NewAPI(dbname)
+	api, err := patchy.NewAPI(dbname)
 	require.NoError(t, err)
 
-	defer a.Close()
+	defer api.Close()
 
-	require.NoError(t, a.IsSafe())
+	require.NoError(t, api.IsSafe())
 
-	api.Register[testType](a)
+	patchy.Register[testType](api)
 
-	require.ErrorIs(t, a.IsSafe(), api.ErrMissingAuthCheck)
+	require.ErrorIs(t, api.IsSafe(), patchy.ErrMissingAuthCheck)
 }
 
 func TestIsSafeWithoutRead(t *testing.T) {
@@ -220,16 +220,16 @@ func TestIsSafeWithoutRead(t *testing.T) {
 
 	dbname := fmt.Sprintf("file:%s?mode=memory&cache=shared", uniuri.New())
 
-	a, err := api.NewAPI(dbname)
+	api, err := patchy.NewAPI(dbname)
 	require.NoError(t, err)
 
-	defer a.Close()
+	defer api.Close()
 
-	require.NoError(t, a.IsSafe())
+	require.NoError(t, api.IsSafe())
 
-	api.Register[testType2](a)
+	patchy.Register[testType2](api)
 
-	require.ErrorIs(t, a.IsSafe(), api.ErrMissingAuthCheck)
+	require.ErrorIs(t, api.IsSafe(), patchy.ErrMissingAuthCheck)
 }
 
 func TestCheckSafeSuccess(t *testing.T) {
@@ -237,14 +237,14 @@ func TestCheckSafeSuccess(t *testing.T) {
 
 	dbname := fmt.Sprintf("file:%s?mode=memory&cache=shared", uniuri.New())
 
-	a, err := api.NewAPI(dbname)
+	api, err := patchy.NewAPI(dbname)
 	require.NoError(t, err)
 
-	defer a.Close()
+	defer api.Close()
 
-	api.Register[testType3](a)
+	patchy.Register[testType3](api)
 
-	require.NotPanics(t, a.CheckSafe)
+	require.NotPanics(t, api.CheckSafe)
 }
 
 func TestCheckSafeWithoutWrite(t *testing.T) {
@@ -252,16 +252,16 @@ func TestCheckSafeWithoutWrite(t *testing.T) {
 
 	dbname := fmt.Sprintf("file:%s?mode=memory&cache=shared", uniuri.New())
 
-	a, err := api.NewAPI(dbname)
+	api, err := patchy.NewAPI(dbname)
 	require.NoError(t, err)
 
-	defer a.Close()
+	defer api.Close()
 
-	require.NotPanics(t, a.CheckSafe)
+	require.NotPanics(t, api.CheckSafe)
 
-	api.Register[testType](a)
+	patchy.Register[testType](api)
 
-	require.Panics(t, a.CheckSafe)
+	require.Panics(t, api.CheckSafe)
 }
 
 func TestCheckSafeWithoutRead(t *testing.T) {
@@ -269,16 +269,16 @@ func TestCheckSafeWithoutRead(t *testing.T) {
 
 	dbname := fmt.Sprintf("file:%s?mode=memory&cache=shared", uniuri.New())
 
-	a, err := api.NewAPI(dbname)
+	api, err := patchy.NewAPI(dbname)
 	require.NoError(t, err)
 
-	defer a.Close()
+	defer api.Close()
 
-	require.NotPanics(t, a.CheckSafe)
+	require.NotPanics(t, api.CheckSafe)
 
-	api.Register[testType2](a)
+	patchy.Register[testType2](api)
 
-	require.Panics(t, a.CheckSafe)
+	require.Panics(t, api.CheckSafe)
 }
 
 func TestAcceptJSON(t *testing.T) {
@@ -389,7 +389,7 @@ func TestRequestHookError(t *testing.T) {
 
 	ctx := context.Background()
 
-	ta.api.SetRequestHook(func(*http.Request, *api.API) (*http.Request, error) {
+	ta.api.SetRequestHook(func(*http.Request, *patchy.API) (*http.Request, error) {
 		return nil, fmt.Errorf("test reject") //nolint:goerr113
 	})
 

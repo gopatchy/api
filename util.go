@@ -1,4 +1,4 @@
-package api
+package patchy
 
 import "github.com/gopatchy/path"
 

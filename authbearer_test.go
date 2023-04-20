@@ -1,17 +1,17 @@
-package api_test
+package patchy_test
 
 import (
 	"context"
 	"net/http"
 	"testing"
 
-	"github.com/gopatchy/api"
+	"github.com/gopatchy/patchy"
 	"github.com/gopatchy/patchyc"
 	"github.com/stretchr/testify/require"
 )
 
 type authBearerType struct {
-	api.Metadata
+	patchy.Metadata
 	Name  string `json:"name"`
 	Token string `json:"token" patchy:"authBearerToken"`
 }
@@ -22,7 +22,7 @@ func TestBearerAuthSuccess(t *testing.T) {
 	ta := newTestAPI(t)
 	defer ta.shutdown(t)
 
-	api.Register[authBearerType](ta.api)
+	patchy.Register[authBearerType](ta.api)
 
 	ctx := context.Background()
 
@@ -34,8 +34,8 @@ func TestBearerAuthSuccess(t *testing.T) {
 
 	validToken := false
 
-	ta.api.SetRequestHook(func(r *http.Request, _ *api.API) (*http.Request, error) {
-		bearer := r.Context().Value(api.ContextAuthBearer)
+	ta.api.SetRequestHook(func(r *http.Request, _ *patchy.API) (*http.Request, error) {
+		bearer := r.Context().Value(patchy.ContextAuthBearer)
 		require.NotNil(t, bearer)
 		require.IsType(t, &authBearerType{}, bearer)
 		require.Equal(t, "foo", bearer.(*authBearerType).Name)
@@ -59,14 +59,14 @@ func TestBearerAuthInvalidToken(t *testing.T) {
 	ta := newTestAPI(t)
 	defer ta.shutdown(t)
 
-	api.Register[authBearerType](ta.api)
+	patchy.Register[authBearerType](ta.api)
 
 	ctx := context.Background()
 
 	_, err := patchyc.Create[authBearerType](ctx, ta.pyc, &authBearerType{Token: "abcd"})
 	require.NoError(t, err)
 
-	ta.api.SetRequestHook(func(r *http.Request, _ *api.API) (*http.Request, error) {
+	ta.api.SetRequestHook(func(r *http.Request, _ *patchy.API) (*http.Request, error) {
 		require.Fail(t, "should not reach request hook")
 		return r, nil
 	})
@@ -84,7 +84,7 @@ func TestBearerAuthOptional(t *testing.T) {
 	ta := newTestAPI(t)
 	defer ta.shutdown(t)
 
-	api.Register[authBearerType](ta.api)
+	patchy.Register[authBearerType](ta.api)
 
 	ctx := context.Background()
 

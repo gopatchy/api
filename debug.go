@@ -1,4 +1,4 @@
-package api
+package patchy
 
 import (
 	"crypto/tls"

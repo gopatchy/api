@@ -1,18 +1,18 @@
-package api_test
+package patchy_test
 
 import (
 	"context"
 	"net/http"
 	"testing"
 
-	"github.com/gopatchy/api"
+	"github.com/gopatchy/patchy"
 	"github.com/gopatchy/patchyc"
 	"github.com/stretchr/testify/require"
 	"golang.org/x/crypto/bcrypt"
 )
 
 type authBasicType struct {
-	api.Metadata
+	patchy.Metadata
 	User string `json:"user" patchy:"authBasicUser"`
 	Pass string `json:"pass" patchy:"authBasicPass"`
 }
@@ -23,7 +23,7 @@ func TestBasicAuthSuccess(t *testing.T) {
 	ta := newTestAPI(t)
 	defer ta.shutdown(t)
 
-	api.Register[authBasicType](ta.api)
+	patchy.Register[authBasicType](ta.api)
 
 	ctx := context.Background()
 
@@ -38,8 +38,8 @@ func TestBasicAuthSuccess(t *testing.T) {
 
 	validUser := false
 
-	ta.api.SetRequestHook(func(r *http.Request, _ *api.API) (*http.Request, error) {
-		basic := r.Context().Value(api.ContextAuthBasic)
+	ta.api.SetRequestHook(func(r *http.Request, _ *patchy.API) (*http.Request, error) {
+		basic := r.Context().Value(patchy.ContextAuthBasic)
 		require.NotNil(t, basic)
 		require.IsType(t, &authBasicType{}, basic)
 		require.Equal(t, "foo", basic.(*authBasicType).User)
@@ -63,7 +63,7 @@ func TestBasicAuthInvalidUser(t *testing.T) {
 	ta := newTestAPI(t)
 	defer ta.shutdown(t)
 
-	api.Register[authBasicType](ta.api)
+	patchy.Register[authBasicType](ta.api)
 
 	ctx := context.Background()
 
@@ -76,7 +76,7 @@ func TestBasicAuthInvalidUser(t *testing.T) {
 	})
 	require.NoError(t, err)
 
-	ta.api.SetRequestHook(func(r *http.Request, api *api.API) (*http.Request, error) {
+	ta.api.SetRequestHook(func(r *http.Request, _ *patchy.API) (*http.Request, error) {
 		require.Fail(t, "should not reach request hook")
 		return r, nil
 	})
@@ -94,7 +94,7 @@ func TestBasicAuthInvalidPassword(t *testing.T) {
 	ta := newTestAPI(t)
 	defer ta.shutdown(t)
 
-	api.Register[authBasicType](ta.api)
+	patchy.Register[authBasicType](ta.api)
 
 	ctx := context.Background()
 
@@ -107,7 +107,7 @@ func TestBasicAuthInvalidPassword(t *testing.T) {
 	})
 	require.NoError(t, err)
 
-	ta.api.SetRequestHook(func(r *http.Request, api *api.API) (*http.Request, error) {
+	ta.api.SetRequestHook(func(r *http.Request, _ *patchy.API) (*http.Request, error) {
 		require.Fail(t, "should not reach request hook")
 		return r, nil
 	})
@@ -125,7 +125,7 @@ func TestBasicAuthOptional(t *testing.T) {
 	ta := newTestAPI(t)
 	defer ta.shutdown(t)
 
-	api.Register[authBasicType](ta.api)
+	patchy.Register[authBasicType](ta.api)
 
 	ctx := context.Background()
 

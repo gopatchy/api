@@ -1,4 +1,4 @@
-module github.com/gopatchy/api
+module github.com/gopatchy/patchy
 
 go 1.19
 

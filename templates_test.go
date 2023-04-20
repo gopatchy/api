@@ -1,4 +1,4 @@
-package api_test
+package patchy_test
 
 import (
 	"context"
@@ -10,12 +10,12 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/gopatchy/api"
+	"github.com/gopatchy/patchy"
 	"github.com/stretchr/testify/require"
 )
 
 type complexTestType struct {
-	api.Metadata
+	patchy.Metadata
 	A string
 	B int
 	C []string
@@ -34,7 +34,7 @@ func TestTemplateGoClient(t *testing.T) {
 	ta := newTestAPI(t)
 	defer ta.shutdown(t)
 
-	api.Register[complexTestType](ta.api)
+	patchy.Register[complexTestType](ta.api)
 
 	ctx := context.Background()
 

@@ -1,4 +1,4 @@
-package api_test
+package patchy_test
 
 import (
 	"context"
@@ -6,7 +6,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/gopatchy/api"
+	"github.com/gopatchy/patchy"
 	"github.com/gopatchy/patchyc"
 	"github.com/stretchr/testify/require"
 )
@@ -561,7 +561,7 @@ func TestStreamListForceDiff(t *testing.T) {
 	ta := newTestAPI(t)
 	defer ta.shutdown(t)
 
-	ta.api.SetRequestHook(func(r *http.Request, _ *api.API) (*http.Request, error) {
+	ta.api.SetRequestHook(func(r *http.Request, _ *patchy.API) (*http.Request, error) {
 		r.Form.Set("_stream", "diff")
 		return r, nil
 	})
