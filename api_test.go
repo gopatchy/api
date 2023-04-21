@@ -8,7 +8,6 @@ import (
 
 	"github.com/dchest/uniuri"
 	"github.com/gopatchy/patchy"
-	"github.com/gopatchy/patchyc"
 	"github.com/stretchr/testify/require"
 )
 
@@ -133,7 +132,7 @@ func TestAcceptJSON(t *testing.T) {
 
 	ctx := context.Background()
 
-	created, err := patchyc.Create[testType](ctx, ta.pyc, &testType{Text: "foo"})
+	created, err := patchy.Create[testType](ctx, ta.api, &testType{Text: "foo"})
 	require.NoError(t, err)
 
 	get := &testType{}
@@ -158,7 +157,7 @@ func TestAcceptEventStream(t *testing.T) {
 
 	ctx := context.Background()
 
-	created, err := patchyc.Create[testType](ctx, ta.pyc, &testType{Text: "foo"})
+	created, err := patchy.Create[testType](ctx, ta.api, &testType{Text: "foo"})
 	require.NoError(t, err)
 
 	resp, err := ta.r().
@@ -180,7 +179,7 @@ func TestAcceptFailure(t *testing.T) {
 
 	ctx := context.Background()
 
-	created, err := patchyc.Create[testType](ctx, ta.pyc, &testType{Text: "foo"})
+	created, err := patchy.Create[testType](ctx, ta.api, &testType{Text: "foo"})
 	require.NoError(t, err)
 
 	resp, err := ta.r().
@@ -200,7 +199,7 @@ func TestAcceptListFailure(t *testing.T) {
 
 	ctx := context.Background()
 
-	_, err := patchyc.Create[testType](ctx, ta.pyc, &testType{Text: "foo"})
+	_, err := patchy.Create[testType](ctx, ta.api, &testType{Text: "foo"})
 	require.NoError(t, err)
 
 	resp, err := ta.r().
@@ -233,11 +232,20 @@ func TestRequestHookError(t *testing.T) {
 
 	ctx := context.Background()
 
+	created, err := patchy.Create[testType](ctx, ta.api, &testType{Text: "foo"})
+	require.NoError(t, err)
+
 	ta.api.SetRequestHook(func(*http.Request, *patchy.API) (*http.Request, error) {
 		return nil, fmt.Errorf("test reject") //nolint:goerr113
 	})
 
-	created, err := patchyc.Create[testType](ctx, ta.pyc, &testType{Text: "foo"})
-	require.Error(t, err)
-	require.Nil(t, created)
+	get := &testType{}
+
+	resp, err := ta.r().
+		SetResult(get).
+		SetPathParam("id", created.ID).
+		Get("testtype/{id}")
+	require.NoError(t, err)
+	require.True(t, resp.IsError())
+	require.Contains(t, resp.String(), "test reject")
 }
