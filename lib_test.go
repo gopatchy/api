@@ -19,10 +19,11 @@ import (
 )
 
 type testAPI struct {
-	baseURL string
-	api     *patchy.API
-	rst     *resty.Client
-	pyc     *patchyc.Client
+	baseURL     string
+	baseBaseURL string
+	api         *patchy.API
+	rst         *resty.Client
+	pyc         *patchyc.Client
 
 	testBegin int
 	testEnd   int
@@ -120,7 +121,8 @@ func newTestAPIInt(t *testing.T, api *patchy.API, scheme string) *testAPI {
 		_ = api.Serve()
 	}()
 
-	ret.baseURL = fmt.Sprintf("%s://[::1]:%d/api/", scheme, api.Addr().Port)
+	ret.baseBaseURL = fmt.Sprintf("%s://[::1]:%d/", scheme, api.Addr().Port)
+	ret.baseURL = fmt.Sprintf("%sapi/", ret.baseBaseURL)
 
 	ret.rst = resty.New().
 		SetTLSClientConfig(&tls.Config{InsecureSkipVerify: true}). //nolint:gosec

@@ -1,0 +1,21 @@
+package goclient
+
+import (
+	"context"
+	"testing"
+
+	"github.com/stretchr/testify/require"
+)
+
+func TestDeleteInvalidID(t *testing.T) {
+	t.Parallel()
+
+	defer registerTest(t)()
+	c := getClient(t)
+	ctx := context.Background()
+
+	err := c.DeleteTestType(ctx, "doesnotexist", nil)
+	require.Error(t, err)
+}
+
+// vim: set filetype=go:

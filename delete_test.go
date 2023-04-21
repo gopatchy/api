@@ -8,60 +8,6 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestDeleteSuccess(t *testing.T) {
-	t.Parallel()
-
-	ta := newTestAPI(t)
-	defer ta.shutdown(t)
-
-	ctx := context.Background()
-
-	created, err := patchyc.Create[testType](ctx, ta.pyc, &testType{Text: "foo"})
-	require.NoError(t, err)
-
-	get, err := patchyc.Get[testType](ctx, ta.pyc, created.ID, nil)
-	require.NoError(t, err)
-	require.NotNil(t, get)
-	require.Equal(t, "foo", get.Text)
-
-	err = patchyc.Delete[testType](ctx, ta.pyc, created.ID, nil)
-	require.NoError(t, err)
-
-	get, err = patchyc.Get[testType](ctx, ta.pyc, created.ID, nil)
-	require.NoError(t, err)
-	require.Nil(t, get)
-}
-
-func TestDeleteInvalidID(t *testing.T) {
-	t.Parallel()
-
-	ta := newTestAPI(t)
-	defer ta.shutdown(t)
-
-	ctx := context.Background()
-
-	err := patchyc.Delete[testType](ctx, ta.pyc, "doesnotexist", nil)
-	require.Error(t, err)
-}
-
-func TestDeleteTwice(t *testing.T) {
-	t.Parallel()
-
-	ta := newTestAPI(t)
-	defer ta.shutdown(t)
-
-	ctx := context.Background()
-
-	created, err := patchyc.Create[testType](ctx, ta.pyc, &testType{Text: "foo"})
-	require.NoError(t, err)
-
-	err = patchyc.Delete[testType](ctx, ta.pyc, created.ID, nil)
-	require.NoError(t, err)
-
-	err = patchyc.Delete[testType](ctx, ta.pyc, created.ID, nil)
-	require.Error(t, err)
-}
-
 func TestDeleteStream(t *testing.T) {
 	t.Parallel()
 
