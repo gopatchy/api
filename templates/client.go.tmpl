@@ -46,6 +46,7 @@ type {{ $type.TypeUpperCamel }}Response struct {
 
 type {{ $type.TypeUpperCamel }}Request struct {
 	{{- range $field := .Fields }}
+	// TODO: Consider if the pointer gets us anything here, since we use omitempty anyway
 	{{ padRight $field.NameUpperCamel $type.FieldNameMaxLen }} {{ padRight (printf "*%s" $field.GoType) (add $type.FieldGoTypeMaxLen 2) }} `json:"{{ $field.NameLower }},omitempty"`
 	{{- end }}
 }

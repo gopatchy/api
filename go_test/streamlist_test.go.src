@@ -1,25 +1,23 @@
-package patchy_test
+package gotest
 
 import (
 	"context"
-	"net/http"
 	"testing"
 	"time"
 
-	"github.com/gopatchy/patchy"
-	"github.com/gopatchy/patchyc"
 	"github.com/stretchr/testify/require"
+
+	"test/goclient"
 )
 
 func TestStreamListHeartbeat(t *testing.T) {
 	t.Parallel()
 
-	ta := newTestAPI(t)
-	defer ta.shutdown(t)
-
+	defer registerTest(t)()
+	c := getClient(t)
 	ctx := context.Background()
 
-	stream, err := patchyc.StreamList[testType](ctx, ta.pyc, nil)
+	stream, err := c.StreamListTestType(ctx, nil)
 	require.NoError(t, err)
 
 	defer stream.Close()
@@ -47,18 +45,17 @@ func TestStreamListHeartbeat(t *testing.T) {
 func TestStreamListInitial(t *testing.T) {
 	t.Parallel()
 
-	ta := newTestAPI(t)
-	defer ta.shutdown(t)
-
+	defer registerTest(t)()
+	c := getClient(t)
 	ctx := context.Background()
 
-	_, err := patchyc.Create[testType](ctx, ta.pyc, &testType{Text: "foo"})
+	_, err := c.CreateTestType(ctx, &goclient.TestTypeRequest{Text: goclient.P("foo")})
 	require.NoError(t, err)
 
-	_, err = patchyc.Create[testType](ctx, ta.pyc, &testType{Text: "bar"})
+	_, err = c.CreateTestType(ctx, &goclient.TestTypeRequest{Text: goclient.P("bar")})
 	require.NoError(t, err)
 
-	stream, err := patchyc.StreamList[testType](ctx, ta.pyc, nil)
+	stream, err := c.StreamListTestType(ctx, nil)
 	require.NoError(t, err)
 
 	defer stream.Close()
@@ -72,12 +69,11 @@ func TestStreamListInitial(t *testing.T) {
 func TestStreamListAdd(t *testing.T) {
 	t.Parallel()
 
-	ta := newTestAPI(t)
-	defer ta.shutdown(t)
-
+	defer registerTest(t)()
+	c := getClient(t)
 	ctx := context.Background()
 
-	stream, err := patchyc.StreamList[testType](ctx, ta.pyc, nil)
+	stream, err := c.StreamListTestType(ctx, nil)
 	require.NoError(t, err)
 
 	defer stream.Close()
@@ -86,7 +82,7 @@ func TestStreamListAdd(t *testing.T) {
 	require.NotNil(t, s1, stream.Error())
 	require.Len(t, s1, 0)
 
-	_, err = patchyc.Create[testType](ctx, ta.pyc, &testType{Text: "foo"})
+	_, err = c.CreateTestType(ctx, &goclient.TestTypeRequest{Text: goclient.P("foo")})
 	require.NoError(t, err)
 
 	s2 := stream.Read()
@@ -98,15 +94,14 @@ func TestStreamListAdd(t *testing.T) {
 func TestStreamListUpdate(t *testing.T) {
 	t.Parallel()
 
-	ta := newTestAPI(t)
-	defer ta.shutdown(t)
-
+	defer registerTest(t)()
+	c := getClient(t)
 	ctx := context.Background()
 
-	created, err := patchyc.Create[testType](ctx, ta.pyc, &testType{Text: "foo"})
+	created, err := c.CreateTestType(ctx, &goclient.TestTypeRequest{Text: goclient.P("foo")})
 	require.NoError(t, err)
 
-	stream, err := patchyc.StreamList[testType](ctx, ta.pyc, nil)
+	stream, err := c.StreamListTestType(ctx, nil)
 	require.NoError(t, err)
 
 	defer stream.Close()
@@ -116,7 +111,7 @@ func TestStreamListUpdate(t *testing.T) {
 	require.Len(t, s1, 1)
 	require.Equal(t, "foo", s1[0].Text)
 
-	_, err = patchyc.Update[testType](ctx, ta.pyc, created.ID, &testType{Text: "bar"}, nil)
+	_, err = c.UpdateTestType(ctx, created.ID, &goclient.TestTypeRequest{Text: goclient.P("bar")}, nil)
 	require.NoError(t, err)
 
 	s2 := stream.Read()
@@ -128,15 +123,14 @@ func TestStreamListUpdate(t *testing.T) {
 func TestStreamListDelete(t *testing.T) {
 	t.Parallel()
 
-	ta := newTestAPI(t)
-	defer ta.shutdown(t)
-
+	defer registerTest(t)()
+	c := getClient(t)
 	ctx := context.Background()
 
-	created, err := patchyc.Create[testType](ctx, ta.pyc, &testType{Text: "foo"})
+	created, err := c.CreateTestType(ctx, &goclient.TestTypeRequest{Text: goclient.P("foo")})
 	require.NoError(t, err)
 
-	stream, err := patchyc.StreamList[testType](ctx, ta.pyc, nil)
+	stream, err := c.StreamListTestType(ctx, nil)
 	require.NoError(t, err)
 
 	defer stream.Close()
@@ -146,7 +140,7 @@ func TestStreamListDelete(t *testing.T) {
 	require.Len(t, s1, 1)
 	require.Equal(t, "foo", s1[0].Text)
 
-	err = patchyc.Delete[testType](ctx, ta.pyc, created.ID, nil)
+	err = c.DeleteTestType(ctx, created.ID, nil)
 	require.NoError(t, err)
 
 	s2 := stream.Read()
@@ -157,18 +151,17 @@ func TestStreamListDelete(t *testing.T) {
 func TestStreamListOpts(t *testing.T) {
 	t.Parallel()
 
-	ta := newTestAPI(t)
-	defer ta.shutdown(t)
-
+	defer registerTest(t)()
+	c := getClient(t)
 	ctx := context.Background()
 
-	_, err := patchyc.Create[testType](ctx, ta.pyc, &testType{Text: "foo"})
+	_, err := c.CreateTestType(ctx, &goclient.TestTypeRequest{Text: goclient.P("foo")})
 	require.NoError(t, err)
 
-	_, err = patchyc.Create[testType](ctx, ta.pyc, &testType{Text: "bar"})
+	_, err = c.CreateTestType(ctx, &goclient.TestTypeRequest{Text: goclient.P("bar")})
 	require.NoError(t, err)
 
-	stream, err := patchyc.StreamList[testType](ctx, ta.pyc, &patchyc.ListOpts{Limit: 1})
+	stream, err := c.StreamListTestType(ctx, &goclient.ListOpts{Limit: 1})
 	require.NoError(t, err)
 
 	defer stream.Close()
@@ -182,18 +175,17 @@ func TestStreamListOpts(t *testing.T) {
 func TestStreamListIgnoreIrrelevant(t *testing.T) {
 	t.Parallel()
 
-	ta := newTestAPI(t)
-	defer ta.shutdown(t)
-
+	defer registerTest(t)()
+	c := getClient(t)
 	ctx := context.Background()
 
-	created1, err := patchyc.Create[testType](ctx, ta.pyc, &testType{Text: "foo"})
+	created1, err := c.CreateTestType(ctx, &goclient.TestTypeRequest{Text: goclient.P("foo")})
 	require.NoError(t, err)
 
-	_, err = patchyc.Create[testType](ctx, ta.pyc, &testType{Text: "bar"})
+	_, err = c.CreateTestType(ctx, &goclient.TestTypeRequest{Text: goclient.P("bar")})
 	require.NoError(t, err)
 
-	stream, err := patchyc.StreamList[testType](ctx, ta.pyc, &patchyc.ListOpts{Sorts: []string{"+text"}, Limit: 1})
+	stream, err := c.StreamListTestType(ctx, &goclient.ListOpts{Sorts: []string{"+text"}, Limit: 1})
 	require.NoError(t, err)
 
 	defer stream.Close()
@@ -203,7 +195,7 @@ func TestStreamListIgnoreIrrelevant(t *testing.T) {
 	require.Len(t, s1, 1)
 	require.Equal(t, "bar", s1[0].Text)
 
-	_, err = patchyc.Update[testType](ctx, ta.pyc, created1.ID, &testType{Text: "zig"}, nil)
+	_, err = c.UpdateTestType(ctx, created1.ID, &goclient.TestTypeRequest{Text: goclient.P("zig")}, nil)
 	require.NoError(t, err)
 
 	time.Sleep(1 * time.Second)
@@ -214,7 +206,7 @@ func TestStreamListIgnoreIrrelevant(t *testing.T) {
 	default:
 	}
 
-	_, err = patchyc.Update[testType](ctx, ta.pyc, created1.ID, &testType{Text: "aaa"}, nil)
+	_, err = c.UpdateTestType(ctx, created1.ID, &goclient.TestTypeRequest{Text: goclient.P("aaa")}, nil)
 	require.NoError(t, err)
 
 	s3 := stream.Read()
@@ -226,15 +218,14 @@ func TestStreamListIgnoreIrrelevant(t *testing.T) {
 func TestStreamListPrev(t *testing.T) {
 	t.Parallel()
 
-	ta := newTestAPI(t)
-	defer ta.shutdown(t)
-
+	defer registerTest(t)()
+	c := getClient(t)
 	ctx := context.Background()
 
-	_, err := patchyc.Create[testType](ctx, ta.pyc, &testType{Text: "foo"})
+	_, err := c.CreateTestType(ctx, &goclient.TestTypeRequest{Text: goclient.P("foo")})
 	require.NoError(t, err)
 
-	stream1, err := patchyc.StreamList[testType](ctx, ta.pyc, nil)
+	stream1, err := c.StreamListTestType(ctx, nil)
 	require.NoError(t, err)
 
 	defer stream1.Close()
@@ -246,7 +237,7 @@ func TestStreamListPrev(t *testing.T) {
 
 	s1[0].Num = 5
 
-	stream2, err := patchyc.StreamList[testType](ctx, ta.pyc, &patchyc.ListOpts{Prev: s1})
+	stream2, err := c.StreamListTestType(ctx, &goclient.ListOpts{Prev: s1})
 	require.NoError(t, err)
 
 	defer stream2.Close()
@@ -261,15 +252,14 @@ func TestStreamListPrev(t *testing.T) {
 func TestStreamListDiffInitial(t *testing.T) {
 	t.Parallel()
 
-	ta := newTestAPI(t)
-	defer ta.shutdown(t)
-
+	defer registerTest(t)()
+	c := getClient(t)
 	ctx := context.Background()
 
-	_, err := patchyc.Create[testType](ctx, ta.pyc, &testType{Text: "foo"})
+	_, err := c.CreateTestType(ctx, &goclient.TestTypeRequest{Text: goclient.P("foo")})
 	require.NoError(t, err)
 
-	stream, err := patchyc.StreamList[testType](ctx, ta.pyc, &patchyc.ListOpts{Stream: "diff"})
+	stream, err := c.StreamListTestType(ctx, &goclient.ListOpts{Stream: "diff"})
 	require.NoError(t, err)
 
 	defer stream.Close()
@@ -283,12 +273,11 @@ func TestStreamListDiffInitial(t *testing.T) {
 func TestStreamListDiffCreate(t *testing.T) {
 	t.Parallel()
 
-	ta := newTestAPI(t)
-	defer ta.shutdown(t)
-
+	defer registerTest(t)()
+	c := getClient(t)
 	ctx := context.Background()
 
-	stream, err := patchyc.StreamList[testType](ctx, ta.pyc, &patchyc.ListOpts{Stream: "diff"})
+	stream, err := c.StreamListTestType(ctx, &goclient.ListOpts{Stream: "diff"})
 	require.NoError(t, err)
 
 	defer stream.Close()
@@ -297,7 +286,7 @@ func TestStreamListDiffCreate(t *testing.T) {
 	require.NotNil(t, s1, stream.Error())
 	require.Len(t, s1, 0)
 
-	_, err = patchyc.Create[testType](ctx, ta.pyc, &testType{Text: "foo"})
+	_, err = c.CreateTestType(ctx, &goclient.TestTypeRequest{Text: goclient.P("foo")})
 	require.NoError(t, err)
 
 	s2 := stream.Read()
@@ -309,15 +298,14 @@ func TestStreamListDiffCreate(t *testing.T) {
 func TestStreamListDiffUpdate(t *testing.T) {
 	t.Parallel()
 
-	ta := newTestAPI(t)
-	defer ta.shutdown(t)
-
+	defer registerTest(t)()
+	c := getClient(t)
 	ctx := context.Background()
 
-	created, err := patchyc.Create[testType](ctx, ta.pyc, &testType{Text: "foo", Num: 1})
+	created, err := c.CreateTestType(ctx, &goclient.TestTypeRequest{Text: goclient.P("foo"), Num: goclient.P[int64](1)})
 	require.NoError(t, err)
 
-	stream, err := patchyc.StreamList[testType](ctx, ta.pyc, &patchyc.ListOpts{Stream: "diff"})
+	stream, err := c.StreamListTestType(ctx, &goclient.ListOpts{Stream: "diff"})
 	require.NoError(t, err)
 
 	defer stream.Close()
@@ -328,7 +316,7 @@ func TestStreamListDiffUpdate(t *testing.T) {
 	require.Equal(t, "foo", s1[0].Text)
 	require.EqualValues(t, 1, s1[0].Num)
 
-	_, err = patchyc.Update[testType](ctx, ta.pyc, created.ID, &testTypeRequest{Text: patchyc.P("bar")}, nil)
+	_, err = c.UpdateTestType(ctx, created.ID, &goclient.TestTypeRequest{Text: goclient.P("bar")}, nil)
 	require.NoError(t, err)
 
 	s2 := stream.Read()
@@ -341,15 +329,14 @@ func TestStreamListDiffUpdate(t *testing.T) {
 func TestStreamListDiffReplace(t *testing.T) {
 	t.Parallel()
 
-	ta := newTestAPI(t)
-	defer ta.shutdown(t)
-
+	defer registerTest(t)()
+	c := getClient(t)
 	ctx := context.Background()
 
-	created, err := patchyc.Create[testType](ctx, ta.pyc, &testType{Text: "foo", Num: 1})
+	created, err := c.CreateTestType(ctx, &goclient.TestTypeRequest{Text: goclient.P("foo"), Num: goclient.P[int64](1)})
 	require.NoError(t, err)
 
-	stream, err := patchyc.StreamList[testType](ctx, ta.pyc, &patchyc.ListOpts{Stream: "diff"})
+	stream, err := c.StreamListTestType(ctx, &goclient.ListOpts{Stream: "diff"})
 	require.NoError(t, err)
 
 	defer stream.Close()
@@ -360,7 +347,7 @@ func TestStreamListDiffReplace(t *testing.T) {
 	require.Equal(t, "foo", s1[0].Text)
 	require.EqualValues(t, 1, s1[0].Num)
 
-	_, err = patchyc.Replace[testType](ctx, ta.pyc, created.ID, &testType{Text: "bar"}, nil)
+	_, err = c.ReplaceTestType(ctx, created.ID, &goclient.TestTypeRequest{Text: goclient.P("bar")}, nil)
 	require.NoError(t, err)
 
 	s2 := stream.Read()
@@ -373,15 +360,14 @@ func TestStreamListDiffReplace(t *testing.T) {
 func TestStreamListDiffDelete(t *testing.T) {
 	t.Parallel()
 
-	ta := newTestAPI(t)
-	defer ta.shutdown(t)
-
+	defer registerTest(t)()
+	c := getClient(t)
 	ctx := context.Background()
 
-	created, err := patchyc.Create[testType](ctx, ta.pyc, &testType{Text: "foo"})
+	created, err := c.CreateTestType(ctx, &goclient.TestTypeRequest{Text: goclient.P("foo")})
 	require.NoError(t, err)
 
-	stream, err := patchyc.StreamList[testType](ctx, ta.pyc, &patchyc.ListOpts{Stream: "diff"})
+	stream, err := c.StreamListTestType(ctx, &goclient.ListOpts{Stream: "diff"})
 	require.NoError(t, err)
 
 	defer stream.Close()
@@ -391,7 +377,7 @@ func TestStreamListDiffDelete(t *testing.T) {
 	require.Len(t, s1, 1)
 	require.Equal(t, "foo", s1[0].Text)
 
-	err = patchyc.Delete[testType](ctx, ta.pyc, created.ID, nil)
+	err = c.DeleteTestType(ctx, created.ID, nil)
 	require.NoError(t, err)
 
 	s2 := stream.Read()
@@ -402,15 +388,14 @@ func TestStreamListDiffDelete(t *testing.T) {
 func TestStreamListDiffSort(t *testing.T) {
 	t.Parallel()
 
-	ta := newTestAPI(t)
-	defer ta.shutdown(t)
-
+	defer registerTest(t)()
+	c := getClient(t)
 	ctx := context.Background()
 
-	_, err := patchyc.Create[testType](ctx, ta.pyc, &testType{Text: "foo"})
+	_, err := c.CreateTestType(ctx, &goclient.TestTypeRequest{Text: goclient.P("foo")})
 	require.NoError(t, err)
 
-	stream, err := patchyc.StreamList[testType](ctx, ta.pyc, &patchyc.ListOpts{
+	stream, err := c.StreamListTestType(ctx, &goclient.ListOpts{
 		Stream: "diff",
 		Sorts:  []string{"text"},
 		Limit:  1,
@@ -424,7 +409,7 @@ func TestStreamListDiffSort(t *testing.T) {
 	require.Len(t, s1, 1)
 	require.Equal(t, "foo", s1[0].Text)
 
-	_, err = patchyc.Create[testType](ctx, ta.pyc, &testType{Text: "bar"})
+	_, err = c.CreateTestType(ctx, &goclient.TestTypeRequest{Text: goclient.P("bar")})
 	require.NoError(t, err)
 
 	s2 := stream.Read()
@@ -436,18 +421,17 @@ func TestStreamListDiffSort(t *testing.T) {
 func TestStreamListDiffIgnoreIrrelevant(t *testing.T) {
 	t.Parallel()
 
-	ta := newTestAPI(t)
-	defer ta.shutdown(t)
-
+	defer registerTest(t)()
+	c := getClient(t)
 	ctx := context.Background()
 
-	created1, err := patchyc.Create[testType](ctx, ta.pyc, &testType{Text: "foo"})
+	created1, err := c.CreateTestType(ctx, &goclient.TestTypeRequest{Text: goclient.P("foo")})
 	require.NoError(t, err)
 
-	_, err = patchyc.Create[testType](ctx, ta.pyc, &testType{Text: "bar"})
+	_, err = c.CreateTestType(ctx, &goclient.TestTypeRequest{Text: goclient.P("bar")})
 	require.NoError(t, err)
 
-	stream, err := patchyc.StreamList[testType](ctx, ta.pyc, &patchyc.ListOpts{Stream: "diff", Sorts: []string{"+text"}, Limit: 1})
+	stream, err := c.StreamListTestType(ctx, &goclient.ListOpts{Stream: "diff", Sorts: []string{"+text"}, Limit: 1})
 	require.NoError(t, err)
 
 	defer stream.Close()
@@ -457,7 +441,7 @@ func TestStreamListDiffIgnoreIrrelevant(t *testing.T) {
 	require.Len(t, s1, 1)
 	require.Equal(t, "bar", s1[0].Text)
 
-	_, err = patchyc.Update[testType](ctx, ta.pyc, created1.ID, &testType{Text: "zig"}, nil)
+	_, err = c.UpdateTestType(ctx, created1.ID, &goclient.TestTypeRequest{Text: goclient.P("zig")}, nil)
 	require.NoError(t, err)
 
 	time.Sleep(1 * time.Second)
@@ -468,7 +452,7 @@ func TestStreamListDiffIgnoreIrrelevant(t *testing.T) {
 	default:
 	}
 
-	_, err = patchyc.Update[testType](ctx, ta.pyc, created1.ID, &testType{Text: "aaa"}, nil)
+	_, err = c.UpdateTestType(ctx, created1.ID, &goclient.TestTypeRequest{Text: goclient.P("aaa")}, nil)
 	require.NoError(t, err)
 
 	s3 := stream.Read()
@@ -480,15 +464,14 @@ func TestStreamListDiffIgnoreIrrelevant(t *testing.T) {
 func TestStreamListDiffPrev(t *testing.T) {
 	t.Parallel()
 
-	ta := newTestAPI(t)
-	defer ta.shutdown(t)
-
+	defer registerTest(t)()
+	c := getClient(t)
 	ctx := context.Background()
 
-	_, err := patchyc.Create[testType](ctx, ta.pyc, &testType{Text: "foo"})
+	_, err := c.CreateTestType(ctx, &goclient.TestTypeRequest{Text: goclient.P("foo")})
 	require.NoError(t, err)
 
-	stream1, err := patchyc.StreamList[testType](ctx, ta.pyc, &patchyc.ListOpts{Stream: "diff"})
+	stream1, err := c.StreamListTestType(ctx, &goclient.ListOpts{Stream: "diff"})
 	require.NoError(t, err)
 
 	defer stream1.Close()
@@ -500,7 +483,7 @@ func TestStreamListDiffPrev(t *testing.T) {
 
 	s1[0].Num = 5
 
-	stream2, err := patchyc.StreamList[testType](ctx, ta.pyc, &patchyc.ListOpts{Stream: "diff", Prev: s1})
+	stream2, err := c.StreamListTestType(ctx, &goclient.ListOpts{Stream: "diff", Prev: s1})
 	require.NoError(t, err)
 
 	defer stream2.Close()
@@ -511,7 +494,7 @@ func TestStreamListDiffPrev(t *testing.T) {
 	require.Equal(t, "foo", s3[0].Text)
 	require.EqualValues(t, 5, s3[0].Num)
 
-	_, err = patchyc.Create[testType](ctx, ta.pyc, &testType{Text: "bar"})
+	_, err = c.CreateTestType(ctx, &goclient.TestTypeRequest{Text: goclient.P("bar")})
 	require.NoError(t, err)
 
 	s4 := stream2.Read()
@@ -522,15 +505,14 @@ func TestStreamListDiffPrev(t *testing.T) {
 func TestStreamListDiffPrevMiss(t *testing.T) {
 	t.Parallel()
 
-	ta := newTestAPI(t)
-	defer ta.shutdown(t)
-
+	defer registerTest(t)()
+	c := getClient(t)
 	ctx := context.Background()
 
-	_, err := patchyc.Create[testType](ctx, ta.pyc, &testType{Text: "foo"})
+	_, err := c.CreateTestType(ctx, &goclient.TestTypeRequest{Text: goclient.P("foo")})
 	require.NoError(t, err)
 
-	stream1, err := patchyc.StreamList[testType](ctx, ta.pyc, &patchyc.ListOpts{Stream: "diff"})
+	stream1, err := c.StreamListTestType(ctx, &goclient.ListOpts{Stream: "diff"})
 	require.NoError(t, err)
 
 	defer stream1.Close()
@@ -542,10 +524,10 @@ func TestStreamListDiffPrevMiss(t *testing.T) {
 
 	s1[0].Num = 5
 
-	_, err = patchyc.Create[testType](ctx, ta.pyc, &testType{Text: "bar"})
+	_, err = c.CreateTestType(ctx, &goclient.TestTypeRequest{Text: goclient.P("bar")})
 	require.NoError(t, err)
 
-	stream2, err := patchyc.StreamList[testType](ctx, ta.pyc, &patchyc.ListOpts{Stream: "diff", Prev: s1})
+	stream2, err := c.StreamListTestType(ctx, &goclient.ListOpts{Stream: "diff", Prev: s1})
 	require.NoError(t, err)
 
 	defer stream2.Close()
@@ -555,11 +537,14 @@ func TestStreamListDiffPrevMiss(t *testing.T) {
 	require.Len(t, s4, 2)
 }
 
+/*
+// TODO: Build a header-based means to do this into the test API server
 func TestStreamListForceDiff(t *testing.T) {
 	t.Parallel()
 
-	ta := newTestAPI(t)
-	defer ta.shutdown(t)
+	defer registerTest(t)()
+	c := getClient(t)
+	ctx := context.Background()
 
 	ta.api.SetRequestHook(func(r *http.Request, _ *patchy.API) (*http.Request, error) {
 		r.Form.Set("_stream", "diff")
@@ -577,3 +562,6 @@ func TestStreamListForceDiff(t *testing.T) {
 	require.Equal(t, "diff", resp.Header().Get("Stream-Format"))
 	resp.RawBody().Close()
 }
+*/
+
+// vim: set filetype=go:
