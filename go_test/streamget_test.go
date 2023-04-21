@@ -1,26 +1,26 @@
-package patchy_test
+package gotest
 
 import (
 	"context"
 	"testing"
 	"time"
 
-	"github.com/gopatchy/patchyc"
 	"github.com/stretchr/testify/require"
+
+	"test/goclient"
 )
 
 func TestStreamGetHeartbeat(t *testing.T) {
 	t.Parallel()
 
-	ta := newTestAPI(t)
-	defer ta.shutdown(t)
-
+	defer registerTest(t)()
+	c := getClient(t)
 	ctx := context.Background()
 
-	created, err := patchyc.Create[testType](ctx, ta.pyc, &testType{Text: "foo"})
+	created, err := c.CreateTestType(ctx, &goclient.TestTypeRequest{Text: "foo"})
 	require.NoError(t, err)
 
-	stream, err := patchyc.StreamGet[testType](ctx, ta.pyc, created.ID, nil)
+	stream, err := c.StreamGetTestType(ctx, created.ID, nil)
 	require.NoError(t, err)
 
 	defer stream.Close()
@@ -48,15 +48,14 @@ func TestStreamGetHeartbeat(t *testing.T) {
 func TestStreamGet(t *testing.T) {
 	t.Parallel()
 
-	ta := newTestAPI(t)
-	defer ta.shutdown(t)
-
+	defer registerTest(t)()
+	c := getClient(t)
 	ctx := context.Background()
 
-	created, err := patchyc.Create[testType](ctx, ta.pyc, &testType{Text: "foo"})
+	created, err := c.CreateTestType(ctx, &goclient.TestTypeRequest{Text: "foo"})
 	require.NoError(t, err)
 
-	stream, err := patchyc.StreamGet[testType](ctx, ta.pyc, created.ID, nil)
+	stream, err := c.StreamGetTestType(ctx, created.ID, nil)
 	require.NoError(t, err)
 
 	defer stream.Close()
@@ -69,15 +68,14 @@ func TestStreamGet(t *testing.T) {
 func TestStreamGetUpdate(t *testing.T) {
 	t.Parallel()
 
-	ta := newTestAPI(t)
-	defer ta.shutdown(t)
-
+	defer registerTest(t)()
+	c := getClient(t)
 	ctx := context.Background()
 
-	created, err := patchyc.Create[testType](ctx, ta.pyc, &testType{Text: "foo"})
+	created, err := c.CreateTestType(ctx, &goclient.TestTypeRequest{Text: "foo"})
 	require.NoError(t, err)
 
-	stream, err := patchyc.StreamGet[testType](ctx, ta.pyc, created.ID, nil)
+	stream, err := c.StreamGetTestType(ctx, created.ID, nil)
 	require.NoError(t, err)
 
 	defer stream.Close()
@@ -86,7 +84,7 @@ func TestStreamGetUpdate(t *testing.T) {
 	require.NotNil(t, s1, stream.Error())
 	require.Equal(t, "foo", s1.Text)
 
-	_, err = patchyc.Update[testType](ctx, ta.pyc, created.ID, &testType{Text: "bar"}, nil)
+	_, err = c.UpdateTestType(ctx, created.ID, &goclient.TestTypeRequest{Text: "bar"}, nil)
 	require.NoError(t, err)
 
 	s2 := stream.Read()
@@ -97,15 +95,14 @@ func TestStreamGetUpdate(t *testing.T) {
 func TestStreamGetPrev(t *testing.T) {
 	t.Parallel()
 
-	ta := newTestAPI(t)
-	defer ta.shutdown(t)
-
+	defer registerTest(t)()
+	c := getClient(t)
 	ctx := context.Background()
 
-	created, err := patchyc.Create[testType](ctx, ta.pyc, &testType{Text: "foo"})
+	created, err := c.CreateTestType(ctx, &goclient.TestTypeRequest{Text: "foo"})
 	require.NoError(t, err)
 
-	stream1, err := patchyc.StreamGet[testType](ctx, ta.pyc, created.ID, nil)
+	stream1, err := c.StreamGetTestType(ctx, created.ID, nil)
 	require.NoError(t, err)
 
 	defer stream1.Close()
@@ -118,7 +115,7 @@ func TestStreamGetPrev(t *testing.T) {
 	// Validate that previous version passing only compares the ETag
 	s1.Num = 1
 
-	stream2, err := patchyc.StreamGet[testType](ctx, ta.pyc, created.ID, &patchyc.GetOpts{Prev: s1})
+	stream2, err := c.StreamGetTestType(ctx, created.ID, &goclient.GetOpts{Prev: s1})
 	require.NoError(t, err)
 
 	defer stream2.Close()
