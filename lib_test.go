@@ -99,21 +99,21 @@ func newTestAPIInt(t *testing.T, api *patchy.API, scheme string) *testAPI {
 
 		switch r.Form.Get("event") {
 		case "begin":
-			t.Logf("BEGIN [%s]", name)
+			t.Logf("[%s] BEGIN", name)
 			ret.testBegin++
 
 		case "end":
-			t.Logf("  END [%s]", name)
+			t.Logf("[%s] END", name)
 			ret.testEnd++
 			ret.testDone <- name
 
 		case "error":
-			t.Errorf("ERROR [%s] %s", name, r.Form.Get("details"))
+			t.Errorf("[%s] ERROR: %s", name, r.Form.Get("details"))
 			ret.testError++
 			ret.testDone <- name
 
 		case "log":
-			t.Logf("  LOG [%s] %s", name, r.Form.Get("details"))
+			t.Logf("[%s] LOG: %s", name, r.Form.Get("details"))
 		}
 	})
 
@@ -188,7 +188,17 @@ func runNoError(ctx1 context.Context, t *testing.T, dir string, env map[string]s
 	}
 
 	out, err := cmd.Output()
-	t.Logf("dir='%s'\ncmd='%s'\nargs=%v\nout='%s'\nerr='%s'", dir, name, arg, string(out), getStderr(err))
+	stderr := getStderr(err)
+
+	t.Logf("[in %s] %s %s", dir, name, strings.Join(arg, " "))
+
+	if len(out) > 0 {
+		t.Logf("STDOUT:\n%s", string(out))
+	}
+
+	if len(stderr) > 0 {
+		t.Logf("STDERR:\n%s", stderr)
+	}
 
 	if err != nil && strings.Contains(err.Error(), "signal: killed") {
 		return

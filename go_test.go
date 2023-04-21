@@ -93,10 +93,12 @@ func testGoPath(t *testing.T, src string, utils []string, goPath, cachePath stri
 		"GOCACHE":  cachePath,
 	}
 
-	runNoError(ctx, t, dir, env, "go", "mod", "init", "test")
-	runNoError(ctx, t, dir, env, "go", "mod", "tidy")
-	runNoError(ctx, t, dir, env, "go", "vet", ".")
-	runNoError(ctx, t, dir, env, "go", "test", ".")
+	gocmd := "go"
+
+	runNoError(ctx, t, dir, env, gocmd, "mod", "init", "test")
+	runNoError(ctx, t, dir, env, gocmd, "mod", "tidy")
+	runNoError(ctx, t, dir, env, gocmd, "vet", ".")
+	runNoError(ctx, t, dir, env, gocmd, "test", ".")
 
 	ta.checkTests(t)
 }
