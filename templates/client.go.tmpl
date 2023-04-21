@@ -27,6 +27,7 @@ type (
 	GetOpts    = patchyc.GetOpts
 	ListOpts   = patchyc.ListOpts
 	UpdateOpts = patchyc.UpdateOpts
+	OpenAPI    = patchyc.OpenAPI
 )
 
 {{- range $type := .Types }}
@@ -89,6 +90,10 @@ func (c *Client) SetTLSClientConfig(cfg *tls.Config) *Client {
 func (c *Client) SetDebug(debug bool) *Client {
 	c.patchyClient.SetDebug(debug)
 	return c
+}
+
+func (c *Client) OpenAPI(ctx context.Context) (*OpenAPI, error) {
+	return c.patchyClient.OpenAPI(ctx)
 }
 
 {{- if .AuthBasic }}

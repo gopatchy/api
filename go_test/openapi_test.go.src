@@ -1,4 +1,4 @@
-package patchy_test
+package goclient
 
 import (
 	"context"
@@ -10,13 +10,14 @@ import (
 func TestOpenAPI(t *testing.T) {
 	t.Parallel()
 
-	ta := newTestAPI(t)
-	defer ta.shutdown(t)
-
+	defer registerTest(t)()
+	c := getClient(t)
 	ctx := context.Background()
 
-	openapi, err := ta.pyc.OpenAPI(ctx)
+	openapi, err := c.OpenAPI(ctx)
 	require.NoError(t, err)
 	require.NotNil(t, openapi)
 	require.NotEmpty(t, openapi.OpenAPI)
 }
+
+// vim: set filetype=go:
