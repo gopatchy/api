@@ -1,0 +1,32 @@
+package goclient
+
+import (
+	"context"
+	"testing"
+
+	"github.com/stretchr/testify/require"
+)
+
+func TestDeleteIfMatchETagMismatch(t *testing.T) {
+	t.Parallel()
+
+	defer registerTest(t)()
+	c := getClient(t)
+	ctx := context.Background()
+
+	created, err := c.CreateTestType(ctx, &TestTypeRequest{Text: P("foo")})
+	require.NoError(t, err)
+
+	_, err = c.UpdateTestType(ctx, created.ID, &TestTypeRequest{Text: P("bar")}, nil)
+	require.NoError(t, err)
+
+	err = c.DeleteTestType(ctx, created.ID, &UpdateOpts{Prev: created})
+	require.Error(t, err)
+
+	get, err := c.GetTestType(ctx, created.ID, nil)
+	require.NoError(t, err)
+	require.NotNil(t, get)
+	require.Equal(t, "bar", get.Text)
+}
+
+// vim: set filetype=go:

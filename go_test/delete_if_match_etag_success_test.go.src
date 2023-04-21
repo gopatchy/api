@@ -1,0 +1,28 @@
+package goclient
+
+import (
+	"context"
+	"testing"
+
+	"github.com/stretchr/testify/require"
+)
+
+func TestDeleteIfMatchETagSuccess(t *testing.T) {
+	t.Parallel()
+
+	defer registerTest(t)()
+	c := getClient(t)
+	ctx := context.Background()
+
+	created, err := c.CreateTestType(ctx, &TestTypeRequest{Text: P("foo")})
+	require.NoError(t, err)
+
+	err = c.DeleteTestType(ctx, created.ID, &UpdateOpts{Prev: created})
+	require.NoError(t, err)
+
+	get, err := c.GetTestType(ctx, ta.pyc, created.ID, nil)
+	require.NoError(t, err)
+	require.Nil(t, get)
+}
+
+// vim: set filetype=go:
