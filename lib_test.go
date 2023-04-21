@@ -173,7 +173,7 @@ func (tt *testType3) MayWrite(context.Context, *testType3, *patchy.API) error {
 	return nil
 }
 
-func runNoError(ctx1 context.Context, t *testing.T, dir string, env map[string]string, name string, arg ...string) {
+func runNoError(ctx1 context.Context, t *testing.T, dir string, env map[string]string, name string, arg ...string) string {
 	ctx2, cancel := context.WithCancel(ctx1)
 	t.Cleanup(cancel)
 
@@ -201,10 +201,12 @@ func runNoError(ctx1 context.Context, t *testing.T, dir string, env map[string]s
 	}
 
 	if err != nil && strings.Contains(err.Error(), "signal: killed") {
-		return
+		return string(out)
 	}
 
 	require.NoError(t, err)
+
+	return string(out)
 }
 
 func getStderr(err error) string {

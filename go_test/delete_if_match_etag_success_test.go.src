@@ -1,10 +1,12 @@
-package goclient
+package gotest
 
 import (
 	"context"
 	"testing"
 
 	"github.com/stretchr/testify/require"
+
+	"test/goclient"
 )
 
 func TestDeleteIfMatchETagSuccess(t *testing.T) {
@@ -14,10 +16,10 @@ func TestDeleteIfMatchETagSuccess(t *testing.T) {
 	c := getClient(t)
 	ctx := context.Background()
 
-	created, err := c.CreateTestType(ctx, &TestTypeRequest{Text: P("foo")})
+	created, err := c.CreateTestType(ctx, &goclient.TestTypeRequest{Text: goclient.P("foo")})
 	require.NoError(t, err)
 
-	err = c.DeleteTestType(ctx, created.ID, &UpdateOpts{Prev: created})
+	err = c.DeleteTestType(ctx, created.ID, &goclient.UpdateOpts{Prev: created})
 	require.NoError(t, err)
 
 	get, err := c.GetTestType(ctx, created.ID, nil)

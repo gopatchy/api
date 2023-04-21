@@ -1,10 +1,12 @@
-package goclient
+package gotest
 
 import (
 	"context"
 	"testing"
 
 	"github.com/stretchr/testify/require"
+
+	"test/goclient"
 )
 
 func TestDeleteTwice(t *testing.T) {
@@ -14,7 +16,7 @@ func TestDeleteTwice(t *testing.T) {
 	c := getClient(t)
 	ctx := context.Background()
 
-	created, err := c.CreateTestType(ctx, &TestTypeRequest{Text: P("foo")})
+	created, err := c.CreateTestType(ctx, &goclient.TestTypeRequest{Text: goclient.P("foo")})
 	require.NoError(t, err)
 
 	err = c.DeleteTestType(ctx, created.ID, nil)

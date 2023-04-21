@@ -1,4 +1,4 @@
-package goclient
+package gotest
 
 import (
 	"context"

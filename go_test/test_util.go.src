@@ -1,4 +1,4 @@
-package goclient
+package gotest
 
 import (
 	"crypto/tls"
@@ -7,6 +7,8 @@ import (
 
 	"github.com/go-resty/resty/v2"
 	"github.com/stretchr/testify/require"
+
+	"test/goclient"
 )
 
 func registerTest(t *testing.T) func() {
@@ -17,8 +19,8 @@ func registerTest(t *testing.T) func() {
 	}
 }
 
-func getClient(t *testing.T) *Client {
-	return NewClient(getBaseURL(t)).
+func getClient(t *testing.T) *goclient.Client {
+	return goclient.NewClient(getBaseURL(t)).
 		SetTLSClientConfig(&tls.Config{InsecureSkipVerify: true}) //nolint:gosec
 }
 

@@ -2,6 +2,7 @@ package patchy_test
 
 import (
 	"context"
+	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
@@ -10,103 +11,131 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestGo(t *testing.T) { //nolint:tparallel
+func TestGo(t *testing.T) {
 	t.Parallel()
 
-	paths, err := filepath.Glob("go_test/*_test.go.src")
-	require.NoError(t, err)
-
-	utils, err := filepath.Glob("go_test/*_util.go.src")
-	require.NoError(t, err)
-
-	utilsAbs := []string{}
-
-	for _, util := range utils {
-		abs, err := filepath.Abs(util)
-		require.NoError(t, err)
-
-		utilsAbs = append(utilsAbs, abs)
-	}
-
-	goRoot, err := os.MkdirTemp("", "go_root")
-	require.NoError(t, err)
-
-	goPath, err := os.MkdirTemp("", "go_path")
-	require.NoError(t, err)
-
-	cachePath, err := os.MkdirTemp("", "go_cache")
-	require.NoError(t, err)
+	dir, testDir, env, tests := buildGo(t)
 
 	t.Cleanup(func() {
-		os.RemoveAll(goRoot)
-		os.RemoveAll(goPath)
-		os.RemoveAll(cachePath)
+		os.RemoveAll(dir)
 	})
 
-	first := true
-
-	for _, path := range paths {
-		path, err := filepath.Abs(path)
-		require.NoError(t, err)
+	for _, test := range tests {
+		test := test
 
 		t.Run(
-			filepath.Base(path),
+			test,
 			func(t *testing.T) {
-				// This ugly hack makes sure we have cached dependencies up front
-				if first {
-					first = false
-				} else {
-					t.Parallel()
-				}
-
-				testGoPath(t, path, utilsAbs, goRoot, goPath, cachePath)
+				t.Parallel()
+				testGoPath(t, testDir, env, test)
 			},
 		)
 	}
 }
 
-func testGoPath(t *testing.T, src string, utils []string, goRoot, goPath, cachePath string) {
+func testGoPath(t *testing.T, testDir string, env map[string]string, test string) {
 	ctx := context.Background()
 
+	ta := newTestAPI(t)
+	defer ta.shutdown(t)
+
+	env2 := map[string]string{}
+	for k, v := range env {
+		env2[k] = v
+	}
+
+	env2["BASE_URL"] = ta.baseBaseURL
+
+	runNoError(ctx, t, testDir, env2, goCmd(), "test", "-run", fmt.Sprintf("^%s$", test))
+
+	ta.checkTests(t)
+}
+
+func buildGo(t *testing.T) (string, string, map[string]string, []string) {
 	dir, err := os.MkdirTemp("", "go_test")
 	require.NoError(t, err)
 
-	defer os.RemoveAll(dir)
+	goRootDir := filepath.Join(dir, "root")
+	goPathDir := filepath.Join(dir, "path")
+	goCacheDir := filepath.Join(dir, "cache")
+	workDir := filepath.Join(dir, "work")
+	goClientDir := filepath.Join(dir, "work/goclient")
+	testDir := filepath.Join(dir, "work/gotest")
 
-	err = os.Symlink(src, filepath.Join(dir, strings.TrimSuffix(filepath.Base(src), ".src")))
+	require.NoError(t, os.MkdirAll(goRootDir, 0o700))
+	require.NoError(t, os.MkdirAll(goPathDir, 0o700))
+	require.NoError(t, os.MkdirAll(goCacheDir, 0o700))
+	require.NoError(t, os.MkdirAll(goClientDir, 0o700))
+	require.NoError(t, os.MkdirAll(testDir, 0o700))
+
+	paths, err := filepath.Glob("go_test/*")
 	require.NoError(t, err)
 
-	for _, util := range utils {
-		err = os.Symlink(util, filepath.Join(dir, strings.TrimSuffix(filepath.Base(util), ".src")))
+	for _, path := range paths {
+		src, err := filepath.Abs(path)
+		require.NoError(t, err)
+
+		base := strings.TrimSuffix(filepath.Base(path), ".src")
+
+		err = os.Symlink(src, filepath.Join(testDir, base))
 		require.NoError(t, err)
 	}
 
 	ta := newTestAPI(t)
 	defer ta.shutdown(t)
 
-	tc, err := ta.pyc.GoClient(ctx)
-	require.NoError(t, err)
-	require.NotEmpty(t, tc)
+	ctx := context.Background()
 
-	err = os.WriteFile(filepath.Join(dir, "client.go"), []byte(tc), 0o600)
+	gc, err := ta.pyc.GoClient(ctx)
+	require.NoError(t, err)
+	require.NotEmpty(t, gc)
+
+	err = os.WriteFile(filepath.Join(dir, "work/goclient/client.go"), []byte(gc), 0o600)
 	require.NoError(t, err)
 
 	env := map[string]string{
-		"BASE_URL": ta.baseBaseURL,
-		"GOROOT":   goRoot,
-		"GOPATH":   goPath,
-		"GOCACHE":  cachePath,
+		"GOROOT":  goRootDir,
+		"GOPATH":  goPathDir,
+		"GOCACHE": goCacheDir,
 	}
 
+	runNoError(ctx, t, goClientDir, env, goCmd(), "mod", "init", "test/goclient")
+	runNoError(ctx, t, goClientDir, env, goCmd(), "mod", "tidy")
+
+	runNoError(ctx, t, testDir, env, goCmd(), "mod", "init", "test/gotest")
+	runNoError(ctx, t, testDir, env, goCmd(), "mod", "tidy")
+
+	err = os.WriteFile(filepath.Join(workDir, "go.work"), []byte(`
+go 1.20
+
+use (
+	./goclient
+	./gotest
+)
+`), 0o600)
+	require.NoError(t, err)
+
+	runNoError(ctx, t, goClientDir, env, goCmd(), "vet")
+	runNoError(ctx, t, testDir, env, goCmd(), "vet")
+
+	testBlob := runNoError(ctx, t, testDir, env, goCmd(), "test", "-list", ".")
+
+	tests := []string{}
+
+	for _, line := range strings.Split(testBlob, "\n") {
+		if strings.HasPrefix(line, "Test") {
+			tests = append(tests, line)
+		}
+	}
+
+	return dir, testDir, env, tests
+}
+
+func goCmd() string {
 	gocmd := os.Getenv("GOCMD")
-	if gocmd == "" {
-		gocmd = "go"
+	if gocmd != "" {
+		return gocmd
 	}
 
-	runNoError(ctx, t, dir, env, gocmd, "mod", "init", "test")
-	runNoError(ctx, t, dir, env, gocmd, "mod", "tidy")
-	runNoError(ctx, t, dir, env, gocmd, "vet", ".")
-	runNoError(ctx, t, dir, env, gocmd, "test", ".")
-
-	ta.checkTests(t)
+	return "go"
 }
