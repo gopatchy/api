@@ -28,6 +28,9 @@ func TestGo(t *testing.T) { //nolint:tparallel
 		utilsAbs = append(utilsAbs, abs)
 	}
 
+	goRoot, err := os.MkdirTemp("", "go_root")
+	require.NoError(t, err)
+
 	goPath, err := os.MkdirTemp("", "go_path")
 	require.NoError(t, err)
 
@@ -35,6 +38,7 @@ func TestGo(t *testing.T) { //nolint:tparallel
 	require.NoError(t, err)
 
 	t.Cleanup(func() {
+		os.RemoveAll(goRoot)
 		os.RemoveAll(goPath)
 		os.RemoveAll(cachePath)
 	})
@@ -55,13 +59,13 @@ func TestGo(t *testing.T) { //nolint:tparallel
 					t.Parallel()
 				}
 
-				testGoPath(t, path, utilsAbs, goPath, cachePath)
+				testGoPath(t, path, utilsAbs, goRoot, goPath, cachePath)
 			},
 		)
 	}
 }
 
-func testGoPath(t *testing.T, src string, utils []string, goPath, cachePath string) {
+func testGoPath(t *testing.T, src string, utils []string, goRoot, goPath, cachePath string) {
 	ctx := context.Background()
 
 	dir, err := os.MkdirTemp("", "go_test")
@@ -89,11 +93,15 @@ func testGoPath(t *testing.T, src string, utils []string, goPath, cachePath stri
 
 	env := map[string]string{
 		"BASE_URL": ta.baseBaseURL,
+		"GOROOT":   goRoot,
 		"GOPATH":   goPath,
 		"GOCACHE":  cachePath,
 	}
 
-	gocmd := "go"
+	gocmd := os.Getenv("GOCMD")
+	if gocmd == "" {
+		gocmd = "go"
+	}
 
 	runNoError(ctx, t, dir, env, gocmd, "mod", "init", "test")
 	runNoError(ctx, t, dir, env, gocmd, "mod", "tidy")

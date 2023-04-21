@@ -187,10 +187,10 @@ func runNoError(ctx1 context.Context, t *testing.T, dir string, env map[string]s
 		cmd.Env = append(cmd.Env, fmt.Sprintf("%s=%s", k, v))
 	}
 
+	t.Logf("[in %s] %s %s", dir, name, strings.Join(arg, " "))
+
 	out, err := cmd.Output()
 	stderr := getStderr(err)
-
-	t.Logf("[in %s] %s %s", dir, name, strings.Join(arg, " "))
 
 	if len(out) > 0 {
 		t.Logf("STDOUT:\n%s", string(out))
