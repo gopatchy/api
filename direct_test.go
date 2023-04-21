@@ -5,7 +5,6 @@ import (
 	"testing"
 
 	"github.com/gopatchy/patchy"
-	"github.com/gopatchy/patchyc"
 	"github.com/stretchr/testify/require"
 )
 
@@ -83,7 +82,7 @@ func TestDirectUpdate(t *testing.T) {
 	require.Equal(t, "foo", get.Text)
 	require.EqualValues(t, 1, get.Num)
 
-	update, err := patchy.Update[testType](ctx, ta.api, create.ID, &testTypeRequest{Text: patchyc.P("bar")}, nil)
+	update, err := patchy.Update[testType](ctx, ta.api, create.ID, &testTypeRequest{Text: patchy.P("bar")}, nil)
 	require.NoError(t, err)
 	require.Equal(t, create.ID, update.ID)
 	require.Equal(t, "bar", update.Text)
