@@ -563,5 +563,3 @@ func TestStreamListForceDiff(t *testing.T) {
 	resp.RawBody().Close()
 }
 */
-
-// vim: set filetype=go:

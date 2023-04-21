@@ -19,5 +19,3 @@ func TestOpenAPI(t *testing.T) {
 	require.NotNil(t, openapi)
 	require.NotEmpty(t, openapi.OpenAPI)
 }
-
-// vim: set filetype=go:

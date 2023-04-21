@@ -4,14 +4,14 @@ default: tidy test
 
 tidy:
 	{{go}} mod tidy
-	goimports -l -w .
-	gofumpt -l -w .
-	{{go}} fmt ./...
+	find . -maxdepth 1 -name '*.go' -exec goimports -l -w '{}' ';'
+	find . -maxdepth 1 -name '*.go' -exec gofumpt -l -w '{}' ';'
+	{{go}} fmt
 
 test:
-	{{go}} vet ./...
-	golangci-lint run ./...
-	{{go}} test -race -coverprofile=cover.out -timeout=90s -parallel=10 ./...
+	{{go}} vet
+	golangci-lint run .
+	{{go}} test -race -coverprofile=cover.out -timeout=90s -parallel=10
 	{{go}} tool cover -html=cover.out -o=cover.html
 
 todo:

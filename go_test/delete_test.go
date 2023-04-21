@@ -127,5 +127,3 @@ func TestDeleteIfMatchETagMismatch(t *testing.T) {
 	require.NotNil(t, get)
 	require.Equal(t, "bar", get.Text)
 }
-
-// vim: set filetype=go:

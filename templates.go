@@ -62,8 +62,8 @@ type templateField struct {
 }
 
 func (api *API) registerTemplates() {
-	api.router.GET("/_client.go", api.writeTemplate("client.go.tmpl"))
-	api.router.GET("/_client.ts", api.writeTemplate("client.ts.tmpl"))
+	api.router.GET("/_client.go", api.writeTemplate("client.go"))
+	api.router.GET("/_client.ts", api.writeTemplate("client.ts"))
 }
 
 func (api *API) writeTemplate(name string) func(http.ResponseWriter, *http.Request, httprouter.Params) {

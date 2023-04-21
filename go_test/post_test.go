@@ -27,5 +27,3 @@ func TestPOST(t *testing.T) {
 	require.Equal(t, "foo", get.Text)
 	require.Equal(t, created.ID, get.ID)
 }
-
-// vim: set filetype=go:

@@ -742,5 +742,3 @@ export class Error {
 		return this.messages[0] ?? 'error';
 	}
 }
-
-// vim: set filetype=typescript:

@@ -42,5 +42,3 @@ func getBaseURL(t *testing.T) string {
 
 	return baseURL
 }
-
-// vim: set filetype=go:

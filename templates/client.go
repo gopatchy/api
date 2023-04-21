@@ -193,5 +193,3 @@ func StreamListName[TOut any](ctx context.Context, c *Client, name string, opts 
 func P[T any](v T) *T {
 	return patchyc.P(v)
 }
-
-// vim: set filetype=go:
