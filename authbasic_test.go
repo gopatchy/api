@@ -8,14 +8,7 @@ import (
 	"github.com/gopatchy/patchy"
 	"github.com/gopatchy/patchyc"
 	"github.com/stretchr/testify/require"
-	"golang.org/x/crypto/bcrypt"
 )
-
-type authBasicType struct {
-	patchy.Metadata
-	User string `json:"user" patchy:"authBasicUser"`
-	Pass string `json:"pass" patchy:"authBasicPass"`
-}
 
 func TestBasicAuthSuccess(t *testing.T) {
 	t.Parallel()
@@ -23,18 +16,7 @@ func TestBasicAuthSuccess(t *testing.T) {
 	ta := newTestAPI(t)
 	defer ta.shutdown(t)
 
-	patchy.Register[authBasicType](ta.api)
-
 	ctx := context.Background()
-
-	hash, err := bcrypt.GenerateFromPassword([]byte("abcd"), bcrypt.DefaultCost)
-	require.NoError(t, err)
-
-	_, err = patchyc.Create[authBasicType](ctx, ta.pyc, &authBasicType{
-		User: "foo",
-		Pass: string(hash),
-	})
-	require.NoError(t, err)
 
 	validUser := false
 
@@ -63,18 +45,7 @@ func TestBasicAuthInvalidUser(t *testing.T) {
 	ta := newTestAPI(t)
 	defer ta.shutdown(t)
 
-	patchy.Register[authBasicType](ta.api)
-
 	ctx := context.Background()
-
-	hash, err := bcrypt.GenerateFromPassword([]byte("abcd"), bcrypt.DefaultCost)
-	require.NoError(t, err)
-
-	_, err = patchyc.Create[authBasicType](ctx, ta.pyc, &authBasicType{
-		User: "foo",
-		Pass: string(hash),
-	})
-	require.NoError(t, err)
 
 	ta.api.SetRequestHook(func(r *http.Request, _ *patchy.API) (*http.Request, error) {
 		require.Fail(t, "should not reach request hook")
@@ -83,7 +54,7 @@ func TestBasicAuthInvalidUser(t *testing.T) {
 
 	ta.pyc.SetBasicAuth("bar", "abcd")
 
-	_, err = patchyc.List[authBasicType](ctx, ta.pyc, nil)
+	_, err := patchyc.List[authBasicType](ctx, ta.pyc, nil)
 	require.Error(t, err)
 	require.ErrorContains(t, err, "user not found")
 }
@@ -94,18 +65,7 @@ func TestBasicAuthInvalidPassword(t *testing.T) {
 	ta := newTestAPI(t)
 	defer ta.shutdown(t)
 
-	patchy.Register[authBasicType](ta.api)
-
 	ctx := context.Background()
-
-	hash, err := bcrypt.GenerateFromPassword([]byte("abcd"), bcrypt.DefaultCost)
-	require.NoError(t, err)
-
-	_, err = patchyc.Create[authBasicType](ctx, ta.pyc, &authBasicType{
-		User: "foo",
-		Pass: string(hash),
-	})
-	require.NoError(t, err)
 
 	ta.api.SetRequestHook(func(r *http.Request, _ *patchy.API) (*http.Request, error) {
 		require.Fail(t, "should not reach request hook")
@@ -114,7 +74,7 @@ func TestBasicAuthInvalidPassword(t *testing.T) {
 
 	ta.pyc.SetBasicAuth("foo", "bcde")
 
-	_, err = patchyc.List[authBasicType](ctx, ta.pyc, nil)
+	_, err := patchyc.List[authBasicType](ctx, ta.pyc, nil)
 	require.Error(t, err)
 	require.ErrorContains(t, err, "user password mismatch")
 }
@@ -124,8 +84,6 @@ func TestBasicAuthOptional(t *testing.T) {
 
 	ta := newTestAPI(t)
 	defer ta.shutdown(t)
-
-	patchy.Register[authBasicType](ta.api)
 
 	ctx := context.Background()
 

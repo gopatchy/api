@@ -62,6 +62,18 @@ type mayType struct {
 	Text1 string
 }
 
+type authBearerType struct {
+	patchy.Metadata
+	Name  string `json:"name"`
+	Token string `json:"token" patchy:"authBearerToken"`
+}
+
+type authBasicType struct {
+	patchy.Metadata
+	User string `json:"user" patchy:"authBasicUser"`
+	Pass string `json:"pass" patchy:"authBasicPass"`
+}
+
 func (mt *mayType) MayRead(ctx context.Context, api *patchy.API) error {
 	if ctx.Value(refuseRead) != nil {
 		return fmt.Errorf("may not read")
@@ -161,6 +173,8 @@ func newTestAPIInsecure(t *testing.T) *testAPI {
 }
 
 func newTestAPIInt(t *testing.T, api *patchy.API, scheme string) *testAPI {
+	ctx := context.Background()
+
 	patchy.Register[testType](api)
 	api.SetStripPrefix("/api")
 
@@ -171,6 +185,22 @@ func newTestAPIInt(t *testing.T, api *patchy.API, scheme string) *testAPI {
 
 	api.SetRequestHook(requestHook)
 	patchy.Register[mayType](api)
+
+	patchy.Register[authBearerType](api)
+
+	_, err := patchy.Create[authBearerType](ctx, api, &authBearerType{
+		Name:  "foo",
+		Token: "abcd",
+	})
+	require.NoError(t, err)
+
+	patchy.Register[authBasicType](api)
+
+	_, err = patchy.Create[authBasicType](ctx, api, &authBasicType{
+		User: "foo",
+		Pass: "$2a$10$ARCRvjao7aP7CU1Ck8rlqez3FkWwJZY1oe62sxGCA12fxeRcqj0K6", // abcd
+	})
+	require.NoError(t, err)
 
 	api.HandlerFunc("GET", "/_logEvent", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Access-Control-Allow-Origin", "*")

@@ -10,27 +10,13 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-type authBearerType struct {
-	patchy.Metadata
-	Name  string `json:"name"`
-	Token string `json:"token" patchy:"authBearerToken"`
-}
-
 func TestBearerAuthSuccess(t *testing.T) {
 	t.Parallel()
 
 	ta := newTestAPI(t)
 	defer ta.shutdown(t)
 
-	patchy.Register[authBearerType](ta.api)
-
 	ctx := context.Background()
-
-	_, err := patchyc.Create[authBearerType](ctx, ta.pyc, &authBearerType{
-		Name:  "foo",
-		Token: "abcd",
-	})
-	require.NoError(t, err)
 
 	validToken := false
 
@@ -59,12 +45,7 @@ func TestBearerAuthInvalidToken(t *testing.T) {
 	ta := newTestAPI(t)
 	defer ta.shutdown(t)
 
-	patchy.Register[authBearerType](ta.api)
-
 	ctx := context.Background()
-
-	_, err := patchyc.Create[authBearerType](ctx, ta.pyc, &authBearerType{Token: "abcd"})
-	require.NoError(t, err)
 
 	ta.api.SetRequestHook(func(r *http.Request, _ *patchy.API) (*http.Request, error) {
 		require.Fail(t, "should not reach request hook")
@@ -73,7 +54,7 @@ func TestBearerAuthInvalidToken(t *testing.T) {
 
 	ta.pyc.SetAuthToken("bcde")
 
-	_, err = patchyc.List[authBearerType](ctx, ta.pyc, nil)
+	_, err := patchyc.List[authBearerType](ctx, ta.pyc, nil)
 	require.Error(t, err)
 	require.ErrorContains(t, err, "token not found")
 }
@@ -83,8 +64,6 @@ func TestBearerAuthOptional(t *testing.T) {
 
 	ta := newTestAPI(t)
 	defer ta.shutdown(t)
-
-	patchy.Register[authBearerType](ta.api)
 
 	ctx := context.Background()
 
