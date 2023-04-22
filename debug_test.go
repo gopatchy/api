@@ -18,5 +18,7 @@ func TestDebugInfo(t *testing.T) {
 	debug, err := ta.pyc.DebugInfo(ctx)
 	require.NoError(t, err)
 	require.NotNil(t, debug)
-	require.NotEmpty(t, debug.Server.Hostname)
+	require.IsType(t, debug["server"], map[string]any{})
+	require.IsType(t, debug["server"].(map[string]any)["hostname"], "")
+	require.NotEmpty(t, debug["server"].(map[string]any)["hostname"].(string))
 }

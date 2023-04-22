@@ -210,20 +210,6 @@ func TestAcceptListFailure(t *testing.T) {
 	require.Equal(t, http.StatusNotAcceptable, resp.StatusCode())
 }
 
-func TestDebug(t *testing.T) {
-	t.Parallel()
-
-	ta := newTestAPI(t)
-	defer ta.shutdown(t)
-
-	ctx := context.Background()
-
-	dbg, err := ta.pyc.DebugInfo(ctx)
-	require.NoError(t, err)
-	require.NotNil(t, dbg)
-	require.NotEmpty(t, dbg.Server.Hostname)
-}
-
 func TestRequestHookError(t *testing.T) {
 	t.Parallel()
 

@@ -29,7 +29,6 @@ type (
 	GetOpts    = patchyc.GetOpts
 	ListOpts   = patchyc.ListOpts
 	UpdateOpts = patchyc.UpdateOpts
-	OpenAPI    = patchyc.OpenAPI
 )
 
 {{- range $type := .Types }}
@@ -99,7 +98,7 @@ func (c *Client) SetHeader(name, value string) *Client {
 	return c
 }
 
-func (c *Client) OpenAPI(ctx context.Context) (*OpenAPI, error) {
+func (c *Client) OpenAPI(ctx context.Context) (map[string]any, error) {
 	return c.patchyClient.OpenAPI(ctx)
 }
 
