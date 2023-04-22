@@ -17,5 +17,6 @@ func TestOpenAPI(t *testing.T) {
 	openapi, err := c.OpenAPI(ctx)
 	require.NoError(t, err)
 	require.NotNil(t, openapi)
-	require.NotEmpty(t, openapi.OpenAPI)
+	require.IsType(t, openapi["OpenAPI"], "")
+	require.NotEmpty(t, openapi["OpenAPI"].(string))
 }

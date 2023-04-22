@@ -10,7 +10,7 @@ require (
 	github.com/gopatchy/header v0.0.0-20230420200215-324f7ced8b07
 	github.com/gopatchy/jsrest v0.0.0-20230420184928-8e3c5df83e40
 	github.com/gopatchy/metadata v0.0.0-20230420053349-25837551c11d
-	github.com/gopatchy/patchyc v0.0.0-20230420200652-5a1bc7fd59c3
+	github.com/gopatchy/patchyc v0.0.0-20230422050552-5e4348e24d03
 	github.com/gopatchy/path v0.0.0-20230420200321-29e8a1fe5e57
 	github.com/gopatchy/potency v0.0.0-20230420200429-d4766011e8fe
 	github.com/gopatchy/selfcert v0.0.0-20230420184910-3fbee8464b44

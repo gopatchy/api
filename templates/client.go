@@ -102,6 +102,10 @@ func (c *Client) OpenAPI(ctx context.Context) (map[string]any, error) {
 	return c.patchyClient.OpenAPI(ctx)
 }
 
+func (c *Client) DebugInfo(ctx context.Context) (map[string]any, error) {
+	return c.patchyClient.DebugInfo(ctx)
+}
+
 {{- if .AuthBasic }}
 
 func (c *Client) SetBasicAuth(user, pass string) *Client {

@@ -1,4 +1,4 @@
-package patchy_test
+package gotest
 
 import (
 	"context"
@@ -10,12 +10,11 @@ import (
 func TestDebugInfo(t *testing.T) {
 	t.Parallel()
 
-	ta := newTestAPI(t)
-	defer ta.shutdown(t)
-
+	defer registerTest(t)()
+	c := getClient(t)
 	ctx := context.Background()
 
-	debug, err := ta.pyc.DebugInfo(ctx)
+	debug, err := c.DebugInfo(ctx)
 	require.NoError(t, err)
 	require.NotNil(t, debug)
 	require.IsType(t, debug["server"], map[string]any{})
