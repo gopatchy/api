@@ -35,6 +35,10 @@ type (
 {{- range $type := .Types }}
 {{- if $type.NameLower }}
 
+// TODO: Combine these two -- split goesn't make sense in Go
+// TODO: Get -> Replace cycle test
+// TODO: Less pointers throughout
+
 type {{ $type.TypeUpperCamel }}Response struct {
 	metadata.Metadata
 	{{- range $field := .Fields }}
@@ -87,6 +91,11 @@ func (c *Client) SetTLSClientConfig(cfg *tls.Config) *Client {
 
 func (c *Client) SetDebug(debug bool) *Client {
 	c.patchyClient.SetDebug(debug)
+	return c
+}
+
+func (c *Client) SetHeader(name, value string) *Client {
+	c.patchyClient.SetHeader(name, value)
 	return c
 }
 
