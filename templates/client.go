@@ -22,6 +22,8 @@ import (
 	"github.com/gopatchy/patchyc"
 )
 
+// TODO: Make ListOpts.Filters not pointers
+
 type (
 	Filter     = patchyc.Filter
 	GetOpts    = patchyc.GetOpts

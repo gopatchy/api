@@ -1,32 +1,31 @@
-package patchy_test
+package gotest
 
 import (
 	"context"
 	"testing"
 
-	"github.com/gopatchy/patchy"
-	"github.com/gopatchy/patchyc"
 	"github.com/stretchr/testify/require"
+
+	"test/goclient"
 )
 
 func TestList(t *testing.T) {
 	t.Parallel()
 
-	ta := newTestAPI(t)
-	defer ta.shutdown(t)
-
+	defer registerTest(t)()
+	c := getClient(t)
 	ctx := context.Background()
 
-	created1, err := patchyc.Create[testType](ctx, ta.pyc, &testType{Text: "foo"})
+	created1, err := c.CreateTestType(ctx, &goclient.TestTypeRequest{Text: "foo"})
 	require.NoError(t, err)
 
-	created2, err := patchyc.Create[testType](ctx, ta.pyc, &testType{Text: "bar"})
+	created2, err := c.CreateTestType(ctx, &goclient.TestTypeRequest{Text: "bar"})
 	require.NoError(t, err)
 
-	created3, err := patchyc.Create[testType](ctx, ta.pyc, &testType{Text: "zig"})
+	created3, err := c.CreateTestType(ctx, &goclient.TestTypeRequest{Text: "zig"})
 	require.NoError(t, err)
 
-	list, err := patchyc.List[testType](ctx, ta.pyc, nil)
+	list, err := c.ListTestType(ctx, nil)
 	require.NoError(t, err)
 	require.Len(t, list, 3)
 	require.ElementsMatch(t, []string{"foo", "bar", "zig"}, []string{list[0].Text, list[1].Text, list[2].Text})
@@ -40,19 +39,18 @@ func TestList(t *testing.T) {
 func TestListEquals(t *testing.T) {
 	t.Parallel()
 
-	ta := newTestAPI(t)
-	defer ta.shutdown(t)
-
+	defer registerTest(t)()
+	c := getClient(t)
 	ctx := context.Background()
 
-	_, err := patchyc.Create[testType](ctx, ta.pyc, &testType{Text: "foo"})
+	_, err := c.CreateTestType(ctx, &goclient.TestTypeRequest{Text: "foo"})
 	require.NoError(t, err)
 
-	_, err = patchyc.Create[testType](ctx, ta.pyc, &testType{Text: "bar"})
+	_, err = c.CreateTestType(ctx, &goclient.TestTypeRequest{Text: "bar"})
 	require.NoError(t, err)
 
-	list, err := patchyc.List[testType](ctx, ta.pyc, &patchyc.ListOpts{
-		Filters: []*patchyc.Filter{
+	list, err := c.ListTestType(ctx, &goclient.ListOpts{
+		Filters: []*goclient.Filter{
 			{
 				Path:  "text",
 				Op:    "eq",
@@ -68,16 +66,15 @@ func TestListEquals(t *testing.T) {
 func TestListInvalidOp(t *testing.T) {
 	t.Parallel()
 
-	ta := newTestAPI(t)
-	defer ta.shutdown(t)
-
+	defer registerTest(t)()
+	c := getClient(t)
 	ctx := context.Background()
 
-	_, err := patchyc.Create[testType](ctx, ta.pyc, &testType{Text: "foo"})
+	_, err := c.CreateTestType(ctx, &goclient.TestTypeRequest{Text: "foo"})
 	require.NoError(t, err)
 
-	list, err := patchyc.List[testType](ctx, ta.pyc, &patchyc.ListOpts{
-		Filters: []*patchyc.Filter{
+	list, err := c.ListTestType(ctx, &goclient.ListOpts{
+		Filters: []*goclient.Filter{
 			{
 				Path:  "text",
 				Op:    "invalid",
@@ -92,19 +89,18 @@ func TestListInvalidOp(t *testing.T) {
 func TestListGreaterThan(t *testing.T) {
 	t.Parallel()
 
-	ta := newTestAPI(t)
-	defer ta.shutdown(t)
-
+	defer registerTest(t)()
+	c := getClient(t)
 	ctx := context.Background()
 
-	_, err := patchyc.Create[testType](ctx, ta.pyc, &testType{Text: "foo"})
+	_, err := c.CreateTestType(ctx, &goclient.TestTypeRequest{Text: "foo"})
 	require.NoError(t, err)
 
-	_, err = patchyc.Create[testType](ctx, ta.pyc, &testType{Text: "bar"})
+	_, err = c.CreateTestType(ctx, &goclient.TestTypeRequest{Text: "bar"})
 	require.NoError(t, err)
 
-	list, err := patchyc.List[testType](ctx, ta.pyc, &patchyc.ListOpts{
-		Filters: []*patchyc.Filter{
+	list, err := c.ListTestType(ctx, &goclient.ListOpts{
+		Filters: []*goclient.Filter{
 			{
 				Path:  "text",
 				Op:    "gt",
@@ -120,22 +116,21 @@ func TestListGreaterThan(t *testing.T) {
 func TestListGreaterThanOrEqual(t *testing.T) {
 	t.Parallel()
 
-	ta := newTestAPI(t)
-	defer ta.shutdown(t)
-
+	defer registerTest(t)()
+	c := getClient(t)
 	ctx := context.Background()
 
-	_, err := patchyc.Create[testType](ctx, ta.pyc, &testType{Text: "foo"})
+	_, err := c.CreateTestType(ctx, &goclient.TestTypeRequest{Text: "foo"})
 	require.NoError(t, err)
 
-	_, err = patchyc.Create[testType](ctx, ta.pyc, &testType{Text: "bar"})
+	_, err = c.CreateTestType(ctx, &goclient.TestTypeRequest{Text: "bar"})
 	require.NoError(t, err)
 
-	_, err = patchyc.Create[testType](ctx, ta.pyc, &testType{Text: "zig"})
+	_, err = c.CreateTestType(ctx, &goclient.TestTypeRequest{Text: "zig"})
 	require.NoError(t, err)
 
-	list, err := patchyc.List[testType](ctx, ta.pyc, &patchyc.ListOpts{
-		Filters: []*patchyc.Filter{
+	list, err := c.ListTestType(ctx, &goclient.ListOpts{
+		Filters: []*goclient.Filter{
 			{
 				Path:  "text",
 				Op:    "gte",
@@ -151,19 +146,18 @@ func TestListGreaterThanOrEqual(t *testing.T) {
 func TestListHasPrefix(t *testing.T) {
 	t.Parallel()
 
-	ta := newTestAPI(t)
-	defer ta.shutdown(t)
-
+	defer registerTest(t)()
+	c := getClient(t)
 	ctx := context.Background()
 
-	_, err := patchyc.Create[testType](ctx, ta.pyc, &testType{Text: "foo"})
+	_, err := c.CreateTestType(ctx, &goclient.TestTypeRequest{Text: "foo"})
 	require.NoError(t, err)
 
-	_, err = patchyc.Create[testType](ctx, ta.pyc, &testType{Text: "bar"})
+	_, err = c.CreateTestType(ctx, &goclient.TestTypeRequest{Text: "bar"})
 	require.NoError(t, err)
 
-	list, err := patchyc.List[testType](ctx, ta.pyc, &patchyc.ListOpts{
-		Filters: []*patchyc.Filter{
+	list, err := c.ListTestType(ctx, &goclient.ListOpts{
+		Filters: []*goclient.Filter{
 			{
 				Path:  "text",
 				Op:    "hp",
@@ -179,19 +173,18 @@ func TestListHasPrefix(t *testing.T) {
 func TestListIn(t *testing.T) {
 	t.Parallel()
 
-	ta := newTestAPI(t)
-	defer ta.shutdown(t)
-
+	defer registerTest(t)()
+	c := getClient(t)
 	ctx := context.Background()
 
-	_, err := patchyc.Create[testType](ctx, ta.pyc, &testType{Text: "foo"})
+	_, err := c.CreateTestType(ctx, &goclient.TestTypeRequest{Text: "foo"})
 	require.NoError(t, err)
 
-	_, err = patchyc.Create[testType](ctx, ta.pyc, &testType{Text: "bar"})
+	_, err = c.CreateTestType(ctx, &goclient.TestTypeRequest{Text: "bar"})
 	require.NoError(t, err)
 
-	list, err := patchyc.List[testType](ctx, ta.pyc, &patchyc.ListOpts{
-		Filters: []*patchyc.Filter{
+	list, err := c.ListTestType(ctx, &goclient.ListOpts{
+		Filters: []*goclient.Filter{
 			{
 				Path:  "text",
 				Op:    "in",
@@ -207,19 +200,18 @@ func TestListIn(t *testing.T) {
 func TestListLessThan(t *testing.T) {
 	t.Parallel()
 
-	ta := newTestAPI(t)
-	defer ta.shutdown(t)
-
+	defer registerTest(t)()
+	c := getClient(t)
 	ctx := context.Background()
 
-	_, err := patchyc.Create[testType](ctx, ta.pyc, &testType{Text: "foo"})
+	_, err := c.CreateTestType(ctx, &goclient.TestTypeRequest{Text: "foo"})
 	require.NoError(t, err)
 
-	_, err = patchyc.Create[testType](ctx, ta.pyc, &testType{Text: "bar"})
+	_, err = c.CreateTestType(ctx, &goclient.TestTypeRequest{Text: "bar"})
 	require.NoError(t, err)
 
-	list, err := patchyc.List[testType](ctx, ta.pyc, &patchyc.ListOpts{
-		Filters: []*patchyc.Filter{
+	list, err := c.ListTestType(ctx, &goclient.ListOpts{
+		Filters: []*goclient.Filter{
 			{
 				Path:  "text",
 				Op:    "lt",
@@ -235,22 +227,21 @@ func TestListLessThan(t *testing.T) {
 func TestListLessThanOrEqual(t *testing.T) {
 	t.Parallel()
 
-	ta := newTestAPI(t)
-	defer ta.shutdown(t)
-
+	defer registerTest(t)()
+	c := getClient(t)
 	ctx := context.Background()
 
-	_, err := patchyc.Create[testType](ctx, ta.pyc, &testType{Text: "foo"})
+	_, err := c.CreateTestType(ctx, &goclient.TestTypeRequest{Text: "foo"})
 	require.NoError(t, err)
 
-	_, err = patchyc.Create[testType](ctx, ta.pyc, &testType{Text: "bar"})
+	_, err = c.CreateTestType(ctx, &goclient.TestTypeRequest{Text: "bar"})
 	require.NoError(t, err)
 
-	_, err = patchyc.Create[testType](ctx, ta.pyc, &testType{Text: "zig"})
+	_, err = c.CreateTestType(ctx, &goclient.TestTypeRequest{Text: "zig"})
 	require.NoError(t, err)
 
-	list, err := patchyc.List[testType](ctx, ta.pyc, &patchyc.ListOpts{
-		Filters: []*patchyc.Filter{
+	list, err := c.ListTestType(ctx, &goclient.ListOpts{
+		Filters: []*goclient.Filter{
 			{
 				Path:  "text",
 				Op:    "lte",
@@ -266,18 +257,17 @@ func TestListLessThanOrEqual(t *testing.T) {
 func TestListLimit(t *testing.T) {
 	t.Parallel()
 
-	ta := newTestAPI(t)
-	defer ta.shutdown(t)
-
+	defer registerTest(t)()
+	c := getClient(t)
 	ctx := context.Background()
 
-	_, err := patchyc.Create[testType](ctx, ta.pyc, &testType{Text: "foo"})
+	_, err := c.CreateTestType(ctx, &goclient.TestTypeRequest{Text: "foo"})
 	require.NoError(t, err)
 
-	_, err = patchyc.Create[testType](ctx, ta.pyc, &testType{Text: "bar"})
+	_, err = c.CreateTestType(ctx, &goclient.TestTypeRequest{Text: "bar"})
 	require.NoError(t, err)
 
-	list, err := patchyc.List[testType](ctx, ta.pyc, &patchyc.ListOpts{Limit: 1})
+	list, err := c.ListTestType(ctx, &goclient.ListOpts{Limit: 1})
 	require.NoError(t, err)
 	require.Len(t, list, 1)
 	require.Contains(t, []string{"foo", "bar"}, list[0].Text)
@@ -286,21 +276,20 @@ func TestListLimit(t *testing.T) {
 func TestListOffset(t *testing.T) {
 	t.Parallel()
 
-	ta := newTestAPI(t)
-	defer ta.shutdown(t)
-
+	defer registerTest(t)()
+	c := getClient(t)
 	ctx := context.Background()
 
-	_, err := patchyc.Create[testType](ctx, ta.pyc, &testType{Text: "foo"})
+	_, err := c.CreateTestType(ctx, &goclient.TestTypeRequest{Text: "foo"})
 	require.NoError(t, err)
 
-	_, err = patchyc.Create[testType](ctx, ta.pyc, &testType{Text: "bar"})
+	_, err = c.CreateTestType(ctx, &goclient.TestTypeRequest{Text: "bar"})
 	require.NoError(t, err)
 
-	_, err = patchyc.Create[testType](ctx, ta.pyc, &testType{Text: "zig"})
+	_, err = c.CreateTestType(ctx, &goclient.TestTypeRequest{Text: "zig"})
 	require.NoError(t, err)
 
-	list, err := patchyc.List[testType](ctx, ta.pyc, &patchyc.ListOpts{Offset: 1})
+	list, err := c.ListTestType(ctx, &goclient.ListOpts{Offset: 1})
 	require.NoError(t, err)
 	require.Len(t, list, 2)
 	require.Contains(t, []string{"foo", "bar", "zig"}, list[0].Text)
@@ -311,25 +300,24 @@ func TestListOffset(t *testing.T) {
 func TestListAfter(t *testing.T) {
 	t.Parallel()
 
-	ta := newTestAPI(t)
-	defer ta.shutdown(t)
-
+	defer registerTest(t)()
+	c := getClient(t)
 	ctx := context.Background()
 
-	_, err := patchyc.Create[testType](ctx, ta.pyc, &testType{Text: "foo"})
+	_, err := c.CreateTestType(ctx, &goclient.TestTypeRequest{Text: "foo"})
 	require.NoError(t, err)
 
-	_, err = patchyc.Create[testType](ctx, ta.pyc, &testType{Text: "bar"})
+	_, err = c.CreateTestType(ctx, &goclient.TestTypeRequest{Text: "bar"})
 	require.NoError(t, err)
 
-	_, err = patchyc.Create[testType](ctx, ta.pyc, &testType{Text: "zig"})
+	_, err = c.CreateTestType(ctx, &goclient.TestTypeRequest{Text: "zig"})
 	require.NoError(t, err)
 
-	list1, err := patchyc.List[testType](ctx, ta.pyc, nil)
+	list1, err := c.ListTestType(ctx, nil)
 	require.NoError(t, err)
 	require.Len(t, list1, 3)
 
-	list2, err := patchyc.List[testType](ctx, ta.pyc, &patchyc.ListOpts{After: list1[0].ID})
+	list2, err := c.ListTestType(ctx, &goclient.ListOpts{After: list1[0].ID})
 	require.NoError(t, err)
 	require.Len(t, list2, 2)
 	require.Equal(t, list2[0].Text, list1[1].Text)
@@ -339,21 +327,20 @@ func TestListAfter(t *testing.T) {
 func TestListSort(t *testing.T) {
 	t.Parallel()
 
-	ta := newTestAPI(t)
-	defer ta.shutdown(t)
-
+	defer registerTest(t)()
+	c := getClient(t)
 	ctx := context.Background()
 
-	_, err := patchyc.Create[testType](ctx, ta.pyc, &testType{Text: "foo"})
+	_, err := c.CreateTestType(ctx, &goclient.TestTypeRequest{Text: "foo"})
 	require.NoError(t, err)
 
-	_, err = patchyc.Create[testType](ctx, ta.pyc, &testType{Text: "bar"})
+	_, err = c.CreateTestType(ctx, &goclient.TestTypeRequest{Text: "bar"})
 	require.NoError(t, err)
 
-	_, err = patchyc.Create[testType](ctx, ta.pyc, &testType{Text: "zig"})
+	_, err = c.CreateTestType(ctx, &goclient.TestTypeRequest{Text: "zig"})
 	require.NoError(t, err)
 
-	list, err := patchyc.List[testType](ctx, ta.pyc, &patchyc.ListOpts{Sorts: []string{"text"}})
+	list, err := c.ListTestType(ctx, &goclient.ListOpts{Sorts: []string{"text"}})
 	require.NoError(t, err)
 	require.Len(t, list, 3)
 	require.Equal(t, []string{"bar", "foo", "zig"}, []string{list[0].Text, list[1].Text, list[2].Text})
@@ -362,21 +349,20 @@ func TestListSort(t *testing.T) {
 func TestListSortAsc(t *testing.T) {
 	t.Parallel()
 
-	ta := newTestAPI(t)
-	defer ta.shutdown(t)
-
+	defer registerTest(t)()
+	c := getClient(t)
 	ctx := context.Background()
 
-	_, err := patchyc.Create[testType](ctx, ta.pyc, &testType{Text: "foo"})
+	_, err := c.CreateTestType(ctx, &goclient.TestTypeRequest{Text: "foo"})
 	require.NoError(t, err)
 
-	_, err = patchyc.Create[testType](ctx, ta.pyc, &testType{Text: "bar"})
+	_, err = c.CreateTestType(ctx, &goclient.TestTypeRequest{Text: "bar"})
 	require.NoError(t, err)
 
-	_, err = patchyc.Create[testType](ctx, ta.pyc, &testType{Text: "zig"})
+	_, err = c.CreateTestType(ctx, &goclient.TestTypeRequest{Text: "zig"})
 	require.NoError(t, err)
 
-	list, err := patchyc.List[testType](ctx, ta.pyc, &patchyc.ListOpts{Sorts: []string{"+text"}})
+	list, err := c.ListTestType(ctx, &goclient.ListOpts{Sorts: []string{"+text"}})
 	require.NoError(t, err)
 	require.Len(t, list, 3)
 	require.Equal(t, []string{"bar", "foo", "zig"}, []string{list[0].Text, list[1].Text, list[2].Text})
@@ -385,21 +371,20 @@ func TestListSortAsc(t *testing.T) {
 func TestListSortDesc(t *testing.T) {
 	t.Parallel()
 
-	ta := newTestAPI(t)
-	defer ta.shutdown(t)
-
+	defer registerTest(t)()
+	c := getClient(t)
 	ctx := context.Background()
 
-	_, err := patchyc.Create[testType](ctx, ta.pyc, &testType{Text: "foo"})
+	_, err := c.CreateTestType(ctx, &goclient.TestTypeRequest{Text: "foo"})
 	require.NoError(t, err)
 
-	_, err = patchyc.Create[testType](ctx, ta.pyc, &testType{Text: "bar"})
+	_, err = c.CreateTestType(ctx, &goclient.TestTypeRequest{Text: "bar"})
 	require.NoError(t, err)
 
-	_, err = patchyc.Create[testType](ctx, ta.pyc, &testType{Text: "zig"})
+	_, err = c.CreateTestType(ctx, &goclient.TestTypeRequest{Text: "zig"})
 	require.NoError(t, err)
 
-	list, err := patchyc.List[testType](ctx, ta.pyc, &patchyc.ListOpts{Sorts: []string{"-text"}})
+	list, err := c.ListTestType(ctx, &goclient.ListOpts{Sorts: []string{"-text"}})
 	require.NoError(t, err)
 	require.Len(t, list, 3)
 	require.Equal(t, []string{"zig", "foo", "bar"}, []string{list[0].Text, list[1].Text, list[2].Text})
@@ -408,21 +393,20 @@ func TestListSortDesc(t *testing.T) {
 func TestListSortBeforeOffset(t *testing.T) {
 	t.Parallel()
 
-	ta := newTestAPI(t)
-	defer ta.shutdown(t)
-
+	defer registerTest(t)()
+	c := getClient(t)
 	ctx := context.Background()
 
-	_, err := patchyc.Create[testType](ctx, ta.pyc, &testType{Text: "foo"})
+	_, err := c.CreateTestType(ctx, &goclient.TestTypeRequest{Text: "foo"})
 	require.NoError(t, err)
 
-	_, err = patchyc.Create[testType](ctx, ta.pyc, &testType{Text: "bar"})
+	_, err = c.CreateTestType(ctx, &goclient.TestTypeRequest{Text: "bar"})
 	require.NoError(t, err)
 
-	_, err = patchyc.Create[testType](ctx, ta.pyc, &testType{Text: "zig"})
+	_, err = c.CreateTestType(ctx, &goclient.TestTypeRequest{Text: "zig"})
 	require.NoError(t, err)
 
-	list, err := patchyc.List[testType](ctx, ta.pyc, &patchyc.ListOpts{
+	list, err := c.ListTestType(ctx, &goclient.ListOpts{
 		Offset: 1,
 		Sorts:  []string{"text"},
 	})
@@ -434,21 +418,20 @@ func TestListSortBeforeOffset(t *testing.T) {
 func TestListSortBeforeLimit(t *testing.T) {
 	t.Parallel()
 
-	ta := newTestAPI(t)
-	defer ta.shutdown(t)
-
+	defer registerTest(t)()
+	c := getClient(t)
 	ctx := context.Background()
 
-	_, err := patchyc.Create[testType](ctx, ta.pyc, &testType{Text: "foo"})
+	_, err := c.CreateTestType(ctx, &goclient.TestTypeRequest{Text: "foo"})
 	require.NoError(t, err)
 
-	_, err = patchyc.Create[testType](ctx, ta.pyc, &testType{Text: "bar"})
+	_, err = c.CreateTestType(ctx, &goclient.TestTypeRequest{Text: "bar"})
 	require.NoError(t, err)
 
-	_, err = patchyc.Create[testType](ctx, ta.pyc, &testType{Text: "zig"})
+	_, err = c.CreateTestType(ctx, &goclient.TestTypeRequest{Text: "zig"})
 	require.NoError(t, err)
 
-	list, err := patchyc.List[testType](ctx, ta.pyc, &patchyc.ListOpts{
+	list, err := c.ListTestType(ctx, &goclient.ListOpts{
 		Limit: 2,
 		Sorts: []string{"text"},
 	})
@@ -460,31 +443,34 @@ func TestListSortBeforeLimit(t *testing.T) {
 func TestListPrev(t *testing.T) {
 	t.Parallel()
 
-	ta := newTestAPI(t)
-	defer ta.shutdown(t)
-
+	defer registerTest(t)()
+	c := getClient(t)
 	ctx := context.Background()
 
-	_, err := patchyc.Create[testType](ctx, ta.pyc, &testType{Text: "foo"})
+	_, err := c.CreateTestType(ctx, &goclient.TestTypeRequest{Text: "foo"})
 	require.NoError(t, err)
 
-	list, err := patchyc.List[testType](ctx, ta.pyc, nil)
+	list, err := c.ListTestType(ctx, nil)
 	require.NoError(t, err)
 	require.Len(t, list, 1)
 	require.Equal(t, "foo", list[0].Text)
 
-	// Doesn't actually verify that the list isn't sent over the wire, just that it doesn't fail.
-	list2, err := patchyc.List[testType](ctx, ta.pyc, &patchyc.ListOpts{Prev: list})
+	// TODO: Mutate the list but not the etags
+
+	list2, err := c.ListTestType(ctx, &goclient.ListOpts{Prev: list})
 	require.NoError(t, err)
 	require.Len(t, list2, 1)
 	require.Equal(t, "foo", list2[0].Text)
 }
 
+/*
+// TODO: Set up a header for this
 func TestListHook(t *testing.T) {
 	t.Parallel()
 
-	ta := newTestAPI(t)
-	defer ta.shutdown(t)
+	defer registerTest(t)()
+	c := getClient(t)
+	ctx := context.Background()
 
 	patchy.SetListHook[testType](ta.api, func(_ context.Context, opts *patchy.ListOpts, _ *patchy.API) error {
 		opts.Filters = append(opts.Filters, &patchy.Filter{
@@ -512,3 +498,4 @@ func TestListHook(t *testing.T) {
 	require.Len(t, list, 2)
 	require.ElementsMatch(t, []string{"foo", "zig"}, []string{list[0].Text, list[1].Text})
 }
+*/
