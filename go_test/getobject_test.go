@@ -1,25 +1,25 @@
-package patchy_test
+package gotest
 
 import (
 	"context"
 	"testing"
 
-	"github.com/gopatchy/patchyc"
 	"github.com/stretchr/testify/require"
+
+	"test/goclient"
 )
 
 func TestGetPrev(t *testing.T) {
 	t.Parallel()
 
-	ta := newTestAPI(t)
-	defer ta.shutdown(t)
-
+	defer registerTest(t)()
+	c := getClient(t)
 	ctx := context.Background()
 
-	created, err := patchyc.Create[testType](ctx, ta.pyc, &testType{Text: "foo"})
+	created, err := c.CreateTestType(ctx, &goclient.TestTypeRequest{Text: "foo"})
 	require.NoError(t, err)
 
-	get, err := patchyc.Get[testType](ctx, ta.pyc, created.ID, nil)
+	get, err := c.GetTestType(ctx, created.ID, nil)
 	require.NoError(t, err)
 	require.Equal(t, "foo", get.Text)
 	require.EqualValues(t, 0, get.Num)
@@ -27,7 +27,7 @@ func TestGetPrev(t *testing.T) {
 	// Validate that previous version passing only compares the ETag
 	get.Num = 1
 
-	get2, err := patchyc.Get[testType](ctx, ta.pyc, created.ID, &patchyc.GetOpts{Prev: get})
+	get2, err := c.GetTestType(ctx, created.ID, &goclient.GetOpts{Prev: get})
 	require.NoError(t, err)
 	require.Equal(t, "foo", get2.Text)
 	require.EqualValues(t, 1, get2.Num)
