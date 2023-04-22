@@ -1,3 +1,4 @@
+//nolint:goerr113
 package patchy_test
 
 import (
@@ -56,6 +57,85 @@ type missingMetadata struct {
 	Text string `json:"text"`
 }
 
+type mayType struct {
+	patchy.Metadata
+	Text1 string
+}
+
+func (mt *mayType) MayRead(ctx context.Context, api *patchy.API) error {
+	if ctx.Value(refuseRead) != nil {
+		return fmt.Errorf("may not read")
+	}
+
+	t1r := ctx.Value(text1Read)
+	if t1r != nil {
+		mt.Text1 = t1r.(string)
+	}
+
+	nt1 := ctx.Value(newText1)
+	if nt1 != nil {
+		// Use a separate context so we don't recursively create objects
+		_, err := patchy.Create[mayType](context.Background(), api, &mayType{Text1: nt1.(string)}) //nolint:contextcheck
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (mt *mayType) MayWrite(ctx context.Context, prev *mayType, _ *patchy.API) error {
+	if ctx.Value(refuseWrite) != nil {
+		return fmt.Errorf("may not write")
+	}
+
+	t1w := ctx.Value(text1Write)
+	if t1w != nil {
+		mt.Text1 = t1w.(string)
+	}
+
+	return nil
+}
+
+type contextKey int
+
+const (
+	refuseRead contextKey = iota
+	refuseWrite
+	text1Read
+	text1Write
+	newText1
+)
+
+func requestHook(r *http.Request, _ *patchy.API) (*http.Request, error) {
+	ctx := r.Context()
+
+	if r.Header.Get("X-Refuse-Read") != "" {
+		ctx = context.WithValue(ctx, refuseRead, true)
+	}
+
+	if r.Header.Get("X-Refuse-Write") != "" {
+		ctx = context.WithValue(ctx, refuseWrite, true)
+	}
+
+	t1r := r.Header.Get("X-Text1-Read")
+	if t1r != "" {
+		ctx = context.WithValue(ctx, text1Read, t1r)
+	}
+
+	t1w := r.Header.Get("X-Text1-Write")
+	if t1w != "" {
+		ctx = context.WithValue(ctx, text1Write, t1w)
+	}
+
+	nt1 := r.Header.Get("X-NewText1")
+	if nt1 != "" {
+		ctx = context.WithValue(ctx, newText1, nt1)
+	}
+
+	return r.WithContext(ctx), nil
+}
+
 func newTestAPI(t *testing.T) *testAPI {
 	dbname := fmt.Sprintf("file:%s?mode=memory&cache=shared", uniuri.New())
 
@@ -88,6 +168,9 @@ func newTestAPIInt(t *testing.T, api *patchy.API, scheme string) *testAPI {
 		api:      api,
 		testDone: make(chan string, 100),
 	}
+
+	api.SetRequestHook(requestHook)
+	patchy.Register[mayType](api)
 
 	api.HandlerFunc("GET", "/_logEvent", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Access-Control-Allow-Origin", "*")
