@@ -61,6 +61,8 @@ const (
 
 func NewAPI(dbname string) (*API, error) {
 	router := httprouter.New()
+	router.RedirectTrailingSlash = false
+	router.RedirectFixedPath = false
 
 	sb, err := storebus.NewStoreBus(dbname)
 	if err != nil {

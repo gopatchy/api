@@ -50,7 +50,7 @@ func TestListEquals(t *testing.T) {
 	require.NoError(t, err)
 
 	list, err := c.ListTestType(ctx, &goclient.ListOpts{
-		Filters: []*goclient.Filter{
+		Filters: []goclient.Filter{
 			{
 				Path:  "text",
 				Op:    "eq",
@@ -74,7 +74,7 @@ func TestListInvalidOp(t *testing.T) {
 	require.NoError(t, err)
 
 	list, err := c.ListTestType(ctx, &goclient.ListOpts{
-		Filters: []*goclient.Filter{
+		Filters: []goclient.Filter{
 			{
 				Path:  "text",
 				Op:    "invalid",
@@ -100,7 +100,7 @@ func TestListGreaterThan(t *testing.T) {
 	require.NoError(t, err)
 
 	list, err := c.ListTestType(ctx, &goclient.ListOpts{
-		Filters: []*goclient.Filter{
+		Filters: []goclient.Filter{
 			{
 				Path:  "text",
 				Op:    "gt",
@@ -130,7 +130,7 @@ func TestListGreaterThanOrEqual(t *testing.T) {
 	require.NoError(t, err)
 
 	list, err := c.ListTestType(ctx, &goclient.ListOpts{
-		Filters: []*goclient.Filter{
+		Filters: []goclient.Filter{
 			{
 				Path:  "text",
 				Op:    "gte",
@@ -157,7 +157,7 @@ func TestListHasPrefix(t *testing.T) {
 	require.NoError(t, err)
 
 	list, err := c.ListTestType(ctx, &goclient.ListOpts{
-		Filters: []*goclient.Filter{
+		Filters: []goclient.Filter{
 			{
 				Path:  "text",
 				Op:    "hp",
@@ -184,7 +184,7 @@ func TestListIn(t *testing.T) {
 	require.NoError(t, err)
 
 	list, err := c.ListTestType(ctx, &goclient.ListOpts{
-		Filters: []*goclient.Filter{
+		Filters: []goclient.Filter{
 			{
 				Path:  "text",
 				Op:    "in",
@@ -211,7 +211,7 @@ func TestListLessThan(t *testing.T) {
 	require.NoError(t, err)
 
 	list, err := c.ListTestType(ctx, &goclient.ListOpts{
-		Filters: []*goclient.Filter{
+		Filters: []goclient.Filter{
 			{
 				Path:  "text",
 				Op:    "lt",
@@ -241,7 +241,7 @@ func TestListLessThanOrEqual(t *testing.T) {
 	require.NoError(t, err)
 
 	list, err := c.ListTestType(ctx, &goclient.ListOpts{
-		Filters: []*goclient.Filter{
+		Filters: []goclient.Filter{
 			{
 				Path:  "text",
 				Op:    "lte",
