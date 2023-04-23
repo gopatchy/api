@@ -8,6 +8,8 @@ import (
 	"github.com/gopatchy/path"
 )
 
+// TODO: Remove dual generic types
+
 func CreateName[TOut, TIn any](ctx context.Context, api *API, name string, obj *TIn) (*TOut, error) {
 	cfg := api.registry[name]
 	if cfg == nil {
@@ -23,7 +25,7 @@ func CreateName[TOut, TIn any](ctx context.Context, api *API, name string, obj *
 }
 
 func Create[TOut, TIn any](ctx context.Context, api *API, obj *TIn) (*TOut, error) {
-	return CreateName[TOut, TIn](ctx, api, objName(new(TOut)), obj)
+	return CreateName[TOut, TIn](ctx, api, apiName[TOut](), obj)
 }
 
 func DeleteName[TOut any](ctx context.Context, api *API, name, id string, opts *UpdateOpts) error {
@@ -41,7 +43,7 @@ func DeleteName[TOut any](ctx context.Context, api *API, name, id string, opts *
 }
 
 func Delete[TOut any](ctx context.Context, api *API, id string, opts *UpdateOpts) error {
-	return DeleteName[TOut](ctx, api, objName(new(TOut)), id, opts)
+	return DeleteName[TOut](ctx, api, apiName[TOut](), id, opts)
 }
 
 func FindName[TOut any](ctx context.Context, api *API, name, shortID string) (*TOut, error) {
@@ -72,7 +74,7 @@ func FindName[TOut any](ctx context.Context, api *API, name, shortID string) (*T
 }
 
 func Find[TOut any](ctx context.Context, api *API, shortID string) (*TOut, error) {
-	return FindName[TOut](ctx, api, objName(new(TOut)), shortID)
+	return FindName[TOut](ctx, api, apiName[TOut](), shortID)
 }
 
 func GetName[TOut any](ctx context.Context, api *API, name, id string, opts *GetOpts) (*TOut, error) {
@@ -90,7 +92,7 @@ func GetName[TOut any](ctx context.Context, api *API, name, id string, opts *Get
 }
 
 func Get[TOut any](ctx context.Context, api *API, id string, opts *GetOpts) (*TOut, error) {
-	return GetName[TOut](ctx, api, objName(new(TOut)), id, opts)
+	return GetName[TOut](ctx, api, apiName[TOut](), id, opts)
 }
 
 func ListName[TOut any](ctx context.Context, api *API, name string, opts *ListOpts) ([]*TOut, error) {
@@ -113,7 +115,7 @@ func ListName[TOut any](ctx context.Context, api *API, name string, opts *ListOp
 }
 
 func List[TOut any](ctx context.Context, api *API, opts *ListOpts) ([]*TOut, error) {
-	return ListName[TOut](ctx, api, objName(new(TOut)), opts)
+	return ListName[TOut](ctx, api, apiName[TOut](), opts)
 }
 
 func ReplaceName[TOut, TIn any](ctx context.Context, api *API, name, id string, obj *TIn, opts *UpdateOpts) (*TOut, error) {
@@ -131,7 +133,7 @@ func ReplaceName[TOut, TIn any](ctx context.Context, api *API, name, id string, 
 }
 
 func Replace[TOut, TIn any](ctx context.Context, api *API, id string, obj *TIn, opts *UpdateOpts) (*TOut, error) {
-	return ReplaceName[TOut, TIn](ctx, api, objName(new(TOut)), id, obj, opts)
+	return ReplaceName[TOut, TIn](ctx, api, apiName[TOut](), id, obj, opts)
 }
 
 func UpdateName[TOut, TIn any](ctx context.Context, api *API, name, id string, obj *TIn, opts *UpdateOpts) (*TOut, error) {
@@ -154,7 +156,7 @@ func UpdateName[TOut, TIn any](ctx context.Context, api *API, name, id string, o
 }
 
 func Update[TOut, TIn any](ctx context.Context, api *API, id string, obj *TIn, opts *UpdateOpts) (*TOut, error) {
-	return UpdateName[TOut, TIn](ctx, api, objName(new(TOut)), id, obj, opts)
+	return UpdateName[TOut, TIn](ctx, api, apiName[TOut](), id, obj, opts)
 }
 
 func StreamGetName[T any](ctx context.Context, api *API, name, id string) (*GetStream[T], error) {
@@ -185,7 +187,7 @@ func StreamGetName[T any](ctx context.Context, api *API, name, id string) (*GetS
 }
 
 func StreamGet[TOut any](ctx context.Context, api *API, id string) (*GetStream[TOut], error) {
-	return StreamGetName[TOut](ctx, api, objName(new(TOut)), id)
+	return StreamGetName[TOut](ctx, api, apiName[TOut](), id)
 }
 
 func StreamListName[TOut any](ctx context.Context, api *API, name string, opts *ListOpts) (*ListStream[TOut], error) {
@@ -222,5 +224,5 @@ func StreamListName[TOut any](ctx context.Context, api *API, name string, opts *
 }
 
 func StreamList[TOut any](ctx context.Context, api *API, opts *ListOpts) (*ListStream[TOut], error) {
-	return StreamListName[TOut](ctx, api, objName(new(TOut)), opts)
+	return StreamListName[TOut](ctx, api, apiName[TOut](), opts)
 }

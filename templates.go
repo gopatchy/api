@@ -23,9 +23,8 @@ var templateFS embed.FS
 var templates = template.Must(
 	template.New("templates").
 		Funcs(template.FuncMap{
-			"add":        add,
-			"padRight":   padRight,
-			"upperFirst": upperFirst,
+			"add":      add,
+			"padRight": padRight,
 		}).
 		ParseFS(templateFS, "templates/*"))
 

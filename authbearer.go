@@ -58,5 +58,5 @@ func AddAuthBearerName[T any](api *API, name, pathToken string) {
 }
 
 func AddAuthBearer[T any](api *API, pathToken string) {
-	AddAuthBearerName[T](api, objName(new(T)), pathToken)
+	AddAuthBearerName[T](api, apiName[T](), pathToken)
 }

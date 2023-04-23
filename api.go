@@ -102,12 +102,12 @@ func NewAPI(dbname string) (*API, error) {
 }
 
 func Register[T any](api *API) {
-	RegisterName[T](api, objName(new(T)))
+	RegisterName[T](api, apiName[T](), typeName[T]())
 }
 
-func RegisterName[T any](api *API, apiName string) {
+func RegisterName[T any](api *API, apiName, typeName string) {
 	// TODO: Support nested types
-	cfg := newConfig[T](apiName)
+	cfg := newConfig[T](apiName, typeName)
 	api.registry[cfg.apiName] = cfg
 	api.registerHandlers(fmt.Sprintf("/%s", cfg.apiName), cfg)
 
@@ -381,6 +381,10 @@ func (api *API) names() []string {
 	return names
 }
 
-func objName[T any](obj *T) string {
-	return strings.ToLower(reflect.TypeOf(*obj).Name())
+func apiName[T any]() string {
+	return strings.ToLower(reflect.TypeOf(new(T)).Elem().Name())
+}
+
+func typeName[T any]() string {
+	return upperFirst(reflect.TypeOf(new(T)).Elem().Name())
 }

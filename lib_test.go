@@ -193,7 +193,7 @@ func newTestAPIInt(t *testing.T, api *patchy.API, scheme string) *testAPI {
 	api.SetStripPrefix("/api")
 
 	patchy.Register[testType](api)
-	patchy.RegisterName[testType](api, "testtypeb")
+	patchy.RegisterName[testType](api, "testtypeb", "TestTypeB")
 
 	ret := &testAPI{
 		api:      api,

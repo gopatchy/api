@@ -89,5 +89,5 @@ func AddAuthBasicName[T any](api *API, name, pathUser, pathPass string) {
 }
 
 func AddAuthBasic[T any](api *API, pathUser, pathPass string) {
-	AddAuthBasicName[T](api, objName(new(T)), pathUser, pathPass)
+	AddAuthBasicName[T](api, apiName[T](), pathUser, pathPass)
 }
