@@ -46,7 +46,7 @@ func Delete[TOut any](ctx context.Context, api *API, id string, opts *UpdateOpts
 
 func FindName[TOut any](ctx context.Context, api *API, name, shortID string) (*TOut, error) {
 	listOpts := &ListOpts{
-		Filters: []*Filter{
+		Filters: []Filter{
 			{
 				Path:  "id",
 				Op:    "hp",

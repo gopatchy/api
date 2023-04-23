@@ -22,7 +22,7 @@ func authBearer[T any](_ http.ResponseWriter, r *http.Request, api *API, name, p
 		api,
 		name,
 		&ListOpts{
-			Filters: []*Filter{
+			Filters: []Filter{
 				{
 					Path:  pathToken,
 					Op:    "eq",

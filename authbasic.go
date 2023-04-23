@@ -28,7 +28,7 @@ func authBasic[T any](_ http.ResponseWriter, r *http.Request, api *API, name, pa
 		api,
 		name,
 		&ListOpts{
-			Filters: []*Filter{
+			Filters: []Filter{
 				{
 					Path:  pathUser,
 					Op:    "eq",

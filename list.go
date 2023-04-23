@@ -24,7 +24,7 @@ type ListOpts struct {
 	Offset  int64
 	After   string
 	Sorts   []string
-	Filters []*Filter
+	Filters []Filter
 
 	IfNoneMatch []httpheader.EntityTag
 
@@ -210,7 +210,7 @@ func (api *API) parseListOpts(r *http.Request) (*ListOpts, error) {
 		}
 
 		for _, val := range vals {
-			f := &Filter{
+			f := Filter{
 				Path:  path,
 				Op:    "eq",
 				Value: val,
@@ -257,7 +257,7 @@ func (api *API) filterList(ctx context.Context, cfg *config, opts *ListOpts, lis
 	return list, nil
 }
 
-func match(obj any, filters []*Filter) (bool, error) {
+func match(obj any, filters []Filter) (bool, error) {
 	for _, filter := range filters {
 		var matches bool
 
