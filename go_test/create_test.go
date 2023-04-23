@@ -9,7 +9,7 @@ import (
 	"test/goclient"
 )
 
-func TestPOST(t *testing.T) {
+func TestCreate(t *testing.T) {
 	t.Parallel()
 
 	defer registerTest(t)()
