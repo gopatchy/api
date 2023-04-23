@@ -59,7 +59,7 @@ type templateType struct {
 	FieldNameMaxLen   int
 	FieldGoTypeMaxLen int
 
-	typeOf   reflect.Type
+	typeOf reflect.Type
 }
 
 type templateField struct {
