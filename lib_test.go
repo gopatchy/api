@@ -145,11 +145,6 @@ func requestHook(w http.ResponseWriter, r *http.Request, _ *patchy.API) (*http.R
 		ctx = context.WithValue(ctx, newText1, nt1)
 	}
 
-	bearer := ctx.Value(patchy.ContextAuthBearer)
-	if bearer != nil {
-		w.Header().Set("Bearer-Name", bearer.(*authBearerType).Name)
-	}
-
 	return r.WithContext(ctx), nil
 }
 
