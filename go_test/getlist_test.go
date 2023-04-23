@@ -454,17 +454,18 @@ func TestListPrev(t *testing.T) {
 	require.NoError(t, err)
 	require.Len(t, list, 1)
 	require.Equal(t, "foo", list[0].Text)
+	require.EqualValues(t, 0, list[0].Num)
 
-	// TODO: Mutate the list but not the etags
+	// Validate that previous version passing only compares the ETag
+	list[0].Num = 1
 
 	list2, err := c.ListTestType(ctx, &goclient.ListOpts{Prev: list})
 	require.NoError(t, err)
 	require.Len(t, list2, 1)
 	require.Equal(t, "foo", list2[0].Text)
+	require.EqualValues(t, 1, list2[0].Num)
 }
 
-/*
-// TODO: Set up a header for this
 func TestListHook(t *testing.T) {
 	t.Parallel()
 
@@ -472,30 +473,19 @@ func TestListHook(t *testing.T) {
 	c := getClient(t)
 	ctx := context.Background()
 
-	patchy.SetListHook[testType](ta.api, func(_ context.Context, opts *patchy.ListOpts, _ *patchy.API) error {
-		opts.Filters = append(opts.Filters, &patchy.Filter{
-			Path:  "text",
-			Op:    "gt",
-			Value: "eek",
-		})
-
-		return nil
-	})
-
-	ctx := context.Background()
-
-	_, err := patchyc.Create[testType](ctx, ta.pyc, &testType{Text: "foo"})
+	_, err := c.CreateTestType(ctx, &goclient.TestTypeRequest{Text: "foo"})
 	require.NoError(t, err)
 
-	_, err = patchyc.Create[testType](ctx, ta.pyc, &testType{Text: "bar"})
+	_, err = c.CreateTestType(ctx, &goclient.TestTypeRequest{Text: "bar"})
 	require.NoError(t, err)
 
-	_, err = patchyc.Create[testType](ctx, ta.pyc, &testType{Text: "zig"})
+	_, err = c.CreateTestType(ctx, &goclient.TestTypeRequest{Text: "zig"})
 	require.NoError(t, err)
 
-	list, err := patchyc.List[testType](ctx, ta.pyc, nil)
+	c.SetHeader("List-Hook", "x")
+
+	list, err := c.ListTestType(ctx, nil)
 	require.NoError(t, err)
 	require.Len(t, list, 2)
 	require.ElementsMatch(t, []string{"foo", "zig"}, []string{list[0].Text, list[1].Text})
 }
-*/

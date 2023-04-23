@@ -6,7 +6,7 @@ tidy:
 	{{go}} mod tidy
 	find . -maxdepth 1 -name '*.go' -exec goimports -l -w '{}' ';'
 	find . -maxdepth 1 -name '*.go' -exec gofumpt -l -w '{}' ';'
-	{{go}} fmt
+	{{go}} fmt . ./go_test
 
 test:
 	{{go}} vet

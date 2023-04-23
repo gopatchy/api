@@ -117,7 +117,7 @@ const (
 	newText1
 )
 
-func requestHook(w http.ResponseWriter, r *http.Request, _ *patchy.API) (*http.Request, error) {
+func requestHook(w http.ResponseWriter, r *http.Request, api *patchy.API) (*http.Request, error) {
 	ctx := r.Context()
 
 	if r.Header.Get("X-Refuse-Read") != "" {
@@ -146,6 +146,18 @@ func requestHook(w http.ResponseWriter, r *http.Request, _ *patchy.API) (*http.R
 	fs := r.Header.Get("Force-Stream")
 	if fs != "" {
 		r.Form.Set("_stream", fs)
+	}
+
+	if r.Header.Get("List-Hook") != "" {
+		patchy.SetListHook[testType](api, func(_ context.Context, opts *patchy.ListOpts, _ *patchy.API) error {
+			opts.Filters = append(opts.Filters, patchy.Filter{
+				Path:  "text",
+				Op:    "gt",
+				Value: "eek",
+			})
+
+			return nil
+		})
 	}
 
 	return r.WithContext(ctx), nil
