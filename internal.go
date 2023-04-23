@@ -36,7 +36,7 @@ func (api *API) createInt(ctx context.Context, cfg *config, obj any) (any, error
 		return nil, jsrest.Errorf(jsrest.ErrForbidden, "write check failed (%w)", err)
 	}
 
-	err = api.sb.Write(ctx, cfg.typeName, obj)
+	err = api.sb.Write(ctx, cfg.apiName, obj)
 	if err != nil {
 		return nil, jsrest.Errorf(jsrest.ErrInternalServerError, "write failed (%w)", err)
 	}
@@ -54,7 +54,7 @@ func (api *API) deleteInt(ctx context.Context, cfg *config, id string, opts *Upd
 		opts = &UpdateOpts{}
 	}
 
-	obj, err := api.sb.Read(ctx, cfg.typeName, id, cfg.factory)
+	obj, err := api.sb.Read(ctx, cfg.apiName, id, cfg.factory)
 	if err != nil {
 		return jsrest.Errorf(jsrest.ErrInternalServerError, "read failed: %s (%w)", id, err)
 	}
@@ -73,7 +73,7 @@ func (api *API) deleteInt(ctx context.Context, cfg *config, id string, opts *Upd
 		return jsrest.Errorf(jsrest.ErrForbidden, "write check failed (%w)", err)
 	}
 
-	err = api.sb.Delete(ctx, cfg.typeName, id)
+	err = api.sb.Delete(ctx, cfg.apiName, id)
 	if err != nil {
 		return jsrest.Errorf(jsrest.ErrInternalServerError, "delete failed: %s (%w)", id, err)
 	}
@@ -82,7 +82,7 @@ func (api *API) deleteInt(ctx context.Context, cfg *config, id string, opts *Upd
 }
 
 func (api *API) getInt(ctx context.Context, cfg *config, id string) (any, error) {
-	obj, err := api.sb.Read(ctx, cfg.typeName, id, cfg.factory)
+	obj, err := api.sb.Read(ctx, cfg.apiName, id, cfg.factory)
 	if err != nil {
 		return nil, jsrest.Errorf(jsrest.ErrInternalServerError, "read failed: %s (%w)", id, err)
 	}
@@ -112,7 +112,7 @@ func (api *API) listInt(ctx context.Context, cfg *config, opts *ListOpts) ([]any
 		}
 	}
 
-	list, err := api.sb.List(ctx, cfg.typeName, cfg.factory)
+	list, err := api.sb.List(ctx, cfg.apiName, cfg.factory)
 	if err != nil {
 		return nil, jsrest.Errorf(jsrest.ErrInternalServerError, "read list failed (%w)", err)
 	}
@@ -133,7 +133,7 @@ func (api *API) replaceInt(ctx context.Context, cfg *config, id string, replace 
 	cfg.lock(id)
 	defer cfg.unlock(id)
 
-	obj, err := api.sb.Read(ctx, cfg.typeName, id, cfg.factory)
+	obj, err := api.sb.Read(ctx, cfg.apiName, id, cfg.factory)
 	if err != nil {
 		return nil, jsrest.Errorf(jsrest.ErrInternalServerError, "read failed: %s (%w)", id, err)
 	}
@@ -164,7 +164,7 @@ func (api *API) replaceInt(ctx context.Context, cfg *config, id string, replace 
 		return nil, jsrest.Errorf(jsrest.ErrForbidden, "write check failed (%w)", err)
 	}
 
-	err = api.sb.Write(ctx, cfg.typeName, replace)
+	err = api.sb.Write(ctx, cfg.apiName, replace)
 	if err != nil {
 		return nil, jsrest.Errorf(jsrest.ErrInternalServerError, "write failed: %s (%w)", id, err)
 	}
@@ -190,7 +190,7 @@ func (api *API) updateInt(ctx context.Context, cfg *config, id string, patch map
 	delete(patch, "etag")
 	delete(patch, "generation")
 
-	obj, err := api.sb.Read(ctx, cfg.typeName, id, cfg.factory)
+	obj, err := api.sb.Read(ctx, cfg.apiName, id, cfg.factory)
 	if err != nil {
 		return nil, jsrest.Errorf(jsrest.ErrInternalServerError, "read failed: %s (%w)", id, err)
 	}
@@ -221,7 +221,7 @@ func (api *API) updateInt(ctx context.Context, cfg *config, id string, patch map
 		return nil, jsrest.Errorf(jsrest.ErrForbidden, "write check failed (%w)", err)
 	}
 
-	err = api.sb.Write(ctx, cfg.typeName, obj)
+	err = api.sb.Write(ctx, cfg.apiName, obj)
 	if err != nil {
 		return nil, jsrest.Errorf(jsrest.ErrInternalServerError, "write failed: %s (%w)", id, err)
 	}
@@ -235,7 +235,7 @@ func (api *API) updateInt(ctx context.Context, cfg *config, id string, patch map
 }
 
 func (api *API) streamGetInt(ctx context.Context, cfg *config, id string) (*getStreamInt, error) {
-	in, err := api.sb.ReadStream(ctx, cfg.typeName, id, cfg.factory)
+	in, err := api.sb.ReadStream(ctx, cfg.apiName, id, cfg.factory)
 	if err != nil {
 		return nil, jsrest.Errorf(jsrest.ErrInternalServerError, "read failed: %s (%w)", id, err)
 	}
@@ -269,7 +269,7 @@ func (api *API) streamListInt(ctx context.Context, cfg *config, opts *ListOpts) 
 		opts = &ListOpts{}
 	}
 
-	in, err := api.sb.ListStream(ctx, cfg.typeName, cfg.factory)
+	in, err := api.sb.ListStream(ctx, cfg.apiName, cfg.factory)
 	if err != nil {
 		return nil, jsrest.Errorf(jsrest.ErrInternalServerError, "read list failed (%w)", err)
 	}
@@ -298,7 +298,7 @@ func (api *API) streamListInt(ctx context.Context, cfg *config, opts *ListOpts) 
 }
 
 func (gsi *getStreamInt) Close() {
-	gsi.api.sb.CloseReadStream(gsi.cfg.typeName, gsi.id, gsi.sbChan)
+	gsi.api.sb.CloseReadStream(gsi.cfg.apiName, gsi.id, gsi.sbChan)
 }
 
 func (gsi *getStreamInt) Chan() <-chan any {
@@ -306,7 +306,7 @@ func (gsi *getStreamInt) Chan() <-chan any {
 }
 
 func (lsi *listStreamInt) Close() {
-	lsi.api.sb.CloseListStream(lsi.cfg.typeName, lsi.sbChan)
+	lsi.api.sb.CloseListStream(lsi.cfg.apiName, lsi.sbChan)
 }
 
 func (lsi *listStreamInt) Chan() <-chan []any {

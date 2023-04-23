@@ -105,11 +105,11 @@ func Register[T any](api *API) {
 	RegisterName[T](api, objName(new(T)))
 }
 
-func RegisterName[T any](api *API, typeName string) {
+func RegisterName[T any](api *API, apiName string) {
 	// TODO: Support nested types
-	cfg := newConfig[T](typeName)
-	api.registry[cfg.typeName] = cfg
-	api.registerHandlers(fmt.Sprintf("/%s", cfg.typeName), cfg)
+	cfg := newConfig[T](apiName)
+	api.registry[cfg.apiName] = cfg
+	api.registerHandlers(fmt.Sprintf("/%s", cfg.apiName), cfg)
 
 	authBasicUserPath, ok := path.FindTagValueType(cfg.typeOf, "patchy", "authBasicUser")
 	if ok {
@@ -118,12 +118,12 @@ func RegisterName[T any](api *API, typeName string) {
 			panic("patchy:authBasicUser without patchy:authBasicPass")
 		}
 
-		AddAuthBasicName[T](api, typeName, authBasicUserPath, authBasicPassPath)
+		AddAuthBasicName[T](api, apiName, authBasicUserPath, authBasicPassPath)
 	}
 
 	authBearerTokenPath, ok := path.FindTagValueType(cfg.typeOf, "patchy", "authBearerToken")
 	if ok {
-		AddAuthBearerName[T](api, typeName, authBearerTokenPath)
+		AddAuthBearerName[T](api, apiName, authBearerTokenPath)
 	}
 }
 

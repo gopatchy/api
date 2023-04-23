@@ -449,7 +449,7 @@ func (api *API) buildOpenAPIGlobal(r *http.Request) (*openapi3.T, error) {
 
 func (api *API) buildOpenAPIType(t *openapi3.T, cfg *config) error {
 	t.Tags = append(t.Tags, &openapi3.Tag{
-		Name: cfg.typeName,
+		Name: cfg.apiName,
 	})
 
 	{
@@ -459,13 +459,13 @@ func (api *API) buildOpenAPIType(t *openapi3.T, cfg *config) error {
 		}
 
 		responseSchema.Ref = ""
-		responseSchema.Value.Title = fmt.Sprintf("%s Response", cfg.typeName)
+		responseSchema.Value.Title = fmt.Sprintf("%s Response", cfg.apiName)
 
 		responseSchema.Value.Properties["id"] = &openapi3.SchemaRef{Ref: "#/components/schemas/id"}
 		responseSchema.Value.Properties["etag"] = &openapi3.SchemaRef{Ref: "#/components/schemas/etag"}
 		responseSchema.Value.Properties["generation"] = &openapi3.SchemaRef{Ref: "#/components/schemas/generation"}
 
-		t.Components.Schemas[fmt.Sprintf("%s--response", cfg.typeName)] = responseSchema
+		t.Components.Schemas[fmt.Sprintf("%s--response", cfg.apiName)] = responseSchema
 	}
 
 	{
@@ -479,27 +479,27 @@ func (api *API) buildOpenAPIType(t *openapi3.T, cfg *config) error {
 		delete(requestSchema.Value.Properties, "etag")
 		delete(requestSchema.Value.Properties, "generation")
 
-		requestSchema.Value.Title = fmt.Sprintf("%s Request", cfg.typeName)
+		requestSchema.Value.Title = fmt.Sprintf("%s Request", cfg.apiName)
 
-		t.Components.Schemas[fmt.Sprintf("%s--request", cfg.typeName)] = requestSchema
+		t.Components.Schemas[fmt.Sprintf("%s--request", cfg.apiName)] = requestSchema
 	}
 
-	t.Components.RequestBodies[cfg.typeName] = &openapi3.RequestBodyRef{
+	t.Components.RequestBodies[cfg.apiName] = &openapi3.RequestBodyRef{
 		Value: &openapi3.RequestBody{
 			Required: true,
 			Content: openapi3.Content{
 				"application/json": &openapi3.MediaType{
 					Schema: &openapi3.SchemaRef{
-						Ref: fmt.Sprintf("#/components/schemas/%s--request", cfg.typeName),
+						Ref: fmt.Sprintf("#/components/schemas/%s--request", cfg.apiName),
 					},
 				},
 			},
 		},
 	}
 
-	t.Components.Responses[cfg.typeName] = &openapi3.ResponseRef{
+	t.Components.Responses[cfg.apiName] = &openapi3.ResponseRef{
 		Value: &openapi3.Response{
-			Description: P(fmt.Sprintf("OK: `%s`", cfg.typeName)),
+			Description: P(fmt.Sprintf("OK: `%s`", cfg.apiName)),
 			Headers: openapi3.Headers{
 				"ETag": &openapi3.HeaderRef{
 					Ref: "#/components/headers/etag",
@@ -508,7 +508,7 @@ func (api *API) buildOpenAPIType(t *openapi3.T, cfg *config) error {
 			Content: openapi3.Content{
 				"application/json": &openapi3.MediaType{
 					Schema: &openapi3.SchemaRef{
-						Ref: fmt.Sprintf("#/components/schemas/%s--response", cfg.typeName),
+						Ref: fmt.Sprintf("#/components/schemas/%s--response", cfg.apiName),
 					},
 				},
 				"text/event-stream": &openapi3.MediaType{
@@ -520,9 +520,9 @@ func (api *API) buildOpenAPIType(t *openapi3.T, cfg *config) error {
 		},
 	}
 
-	t.Components.Responses[fmt.Sprintf("%s--list", cfg.typeName)] = &openapi3.ResponseRef{
+	t.Components.Responses[fmt.Sprintf("%s--list", cfg.apiName)] = &openapi3.ResponseRef{
 		Value: &openapi3.Response{
-			Description: P(fmt.Sprintf("OK: List of `%s`", cfg.typeName)),
+			Description: P(fmt.Sprintf("OK: List of `%s`", cfg.apiName)),
 			Headers: openapi3.Headers{
 				"ETag": &openapi3.HeaderRef{
 					Ref: "#/components/headers/etag",
@@ -534,7 +534,7 @@ func (api *API) buildOpenAPIType(t *openapi3.T, cfg *config) error {
 						Value: &openapi3.Schema{
 							Type: "array",
 							Items: &openapi3.SchemaRef{
-								Ref: fmt.Sprintf("#/components/schemas/%s--response", cfg.typeName),
+								Ref: fmt.Sprintf("#/components/schemas/%s--response", cfg.apiName),
 							},
 						},
 					},
@@ -634,10 +634,10 @@ func (api *API) buildOpenAPIType(t *openapi3.T, cfg *config) error {
 		}...)
 	}
 
-	t.Paths[fmt.Sprintf("/%s", cfg.typeName)] = &openapi3.PathItem{
+	t.Paths[fmt.Sprintf("/%s", cfg.apiName)] = &openapi3.PathItem{
 		Get: &openapi3.Operation{
-			Tags:    []string{cfg.typeName},
-			Summary: fmt.Sprintf("List %s objects", cfg.typeName),
+			Tags:    []string{cfg.apiName},
+			Summary: fmt.Sprintf("List %s objects", cfg.apiName),
 			Parameters: append(filters, openapi3.Parameters{
 				&openapi3.ParameterRef{
 					Ref: "#/components/headers/if-none-match",
@@ -676,7 +676,7 @@ func (api *API) buildOpenAPIType(t *openapi3.T, cfg *config) error {
 			}...),
 			Responses: openapi3.Responses{
 				"200": &openapi3.ResponseRef{
-					Ref: fmt.Sprintf("#/components/responses/%s--list", cfg.typeName),
+					Ref: fmt.Sprintf("#/components/responses/%s--list", cfg.apiName),
 				},
 				"304": &openapi3.ResponseRef{
 					Ref: "#/components/responses/not-modified",
@@ -694,19 +694,19 @@ func (api *API) buildOpenAPIType(t *openapi3.T, cfg *config) error {
 		},
 
 		Post: &openapi3.Operation{
-			Tags:    []string{cfg.typeName},
-			Summary: fmt.Sprintf("Create new %s object", cfg.typeName),
+			Tags:    []string{cfg.apiName},
+			Summary: fmt.Sprintf("Create new %s object", cfg.apiName),
 			Parameters: openapi3.Parameters{
 				&openapi3.ParameterRef{
 					Ref: "#/components/headers/idempotency-key",
 				},
 			},
 			RequestBody: &openapi3.RequestBodyRef{
-				Ref: fmt.Sprintf("#/components/requestBodies/%s", cfg.typeName),
+				Ref: fmt.Sprintf("#/components/requestBodies/%s", cfg.apiName),
 			},
 			Responses: openapi3.Responses{
 				"200": &openapi3.ResponseRef{
-					Ref: fmt.Sprintf("#/components/responses/%s", cfg.typeName),
+					Ref: fmt.Sprintf("#/components/responses/%s", cfg.apiName),
 				},
 				"400": &openapi3.ResponseRef{
 					Ref: "#/components/responses/bad-request",
@@ -727,7 +727,7 @@ func (api *API) buildOpenAPIType(t *openapi3.T, cfg *config) error {
 		},
 	}
 
-	t.Paths[fmt.Sprintf("/%s/{id}", cfg.typeName)] = &openapi3.PathItem{
+	t.Paths[fmt.Sprintf("/%s/{id}", cfg.apiName)] = &openapi3.PathItem{
 		Parameters: openapi3.Parameters{
 			&openapi3.ParameterRef{
 				Ref: "#/components/parameters/id",
@@ -735,8 +735,8 @@ func (api *API) buildOpenAPIType(t *openapi3.T, cfg *config) error {
 		},
 
 		Get: &openapi3.Operation{
-			Tags:    []string{cfg.typeName},
-			Summary: fmt.Sprintf("Get %s object", cfg.typeName),
+			Tags:    []string{cfg.apiName},
+			Summary: fmt.Sprintf("Get %s object", cfg.apiName),
 			Parameters: openapi3.Parameters{
 				&openapi3.ParameterRef{
 					Ref: "#/components/headers/if-none-match",
@@ -744,7 +744,7 @@ func (api *API) buildOpenAPIType(t *openapi3.T, cfg *config) error {
 			},
 			Responses: openapi3.Responses{
 				"200": &openapi3.ResponseRef{
-					Ref: fmt.Sprintf("#/components/responses/%s", cfg.typeName),
+					Ref: fmt.Sprintf("#/components/responses/%s", cfg.apiName),
 				},
 				"304": &openapi3.ResponseRef{
 					Ref: "#/components/responses/not-modified",
@@ -765,8 +765,8 @@ func (api *API) buildOpenAPIType(t *openapi3.T, cfg *config) error {
 		},
 
 		Put: &openapi3.Operation{
-			Tags:    []string{cfg.typeName},
-			Summary: fmt.Sprintf("Replace %s object", cfg.typeName),
+			Tags:    []string{cfg.apiName},
+			Summary: fmt.Sprintf("Replace %s object", cfg.apiName),
 			Parameters: openapi3.Parameters{
 				&openapi3.ParameterRef{
 					Ref: "#/components/headers/if-match",
@@ -776,11 +776,11 @@ func (api *API) buildOpenAPIType(t *openapi3.T, cfg *config) error {
 				},
 			},
 			RequestBody: &openapi3.RequestBodyRef{
-				Ref: fmt.Sprintf("#/components/requestBodies/%s", cfg.typeName),
+				Ref: fmt.Sprintf("#/components/requestBodies/%s", cfg.apiName),
 			},
 			Responses: openapi3.Responses{
 				"200": &openapi3.ResponseRef{
-					Ref: fmt.Sprintf("#/components/responses/%s", cfg.typeName),
+					Ref: fmt.Sprintf("#/components/responses/%s", cfg.apiName),
 				},
 				"400": &openapi3.ResponseRef{
 					Ref: "#/components/responses/bad-request",
@@ -807,8 +807,8 @@ func (api *API) buildOpenAPIType(t *openapi3.T, cfg *config) error {
 		},
 
 		Patch: &openapi3.Operation{
-			Tags:    []string{cfg.typeName},
-			Summary: fmt.Sprintf("Update %s object", cfg.typeName),
+			Tags:    []string{cfg.apiName},
+			Summary: fmt.Sprintf("Update %s object", cfg.apiName),
 			Parameters: openapi3.Parameters{
 				&openapi3.ParameterRef{
 					Ref: "#/components/headers/if-match",
@@ -818,11 +818,11 @@ func (api *API) buildOpenAPIType(t *openapi3.T, cfg *config) error {
 				},
 			},
 			RequestBody: &openapi3.RequestBodyRef{
-				Ref: fmt.Sprintf("#/components/requestBodies/%s", cfg.typeName),
+				Ref: fmt.Sprintf("#/components/requestBodies/%s", cfg.apiName),
 			},
 			Responses: openapi3.Responses{
 				"200": &openapi3.ResponseRef{
-					Ref: fmt.Sprintf("#/components/responses/%s", cfg.typeName),
+					Ref: fmt.Sprintf("#/components/responses/%s", cfg.apiName),
 				},
 				"400": &openapi3.ResponseRef{
 					Ref: "#/components/responses/bad-request",
@@ -849,8 +849,8 @@ func (api *API) buildOpenAPIType(t *openapi3.T, cfg *config) error {
 		},
 
 		Delete: &openapi3.Operation{
-			Tags:    []string{cfg.typeName},
-			Summary: fmt.Sprintf("Delete %s object", cfg.typeName),
+			Tags:    []string{cfg.apiName},
+			Summary: fmt.Sprintf("Delete %s object", cfg.apiName),
 			Parameters: openapi3.Parameters{
 				&openapi3.ParameterRef{
 					Ref: "#/components/headers/if-match",

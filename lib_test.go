@@ -190,8 +190,10 @@ func newTestAPIInsecure(t *testing.T) *testAPI {
 func newTestAPIInt(t *testing.T, api *patchy.API, scheme string) *testAPI {
 	ctx := context.Background()
 
-	patchy.Register[testType](api)
 	api.SetStripPrefix("/api")
+
+	patchy.Register[testType](api)
+	patchy.RegisterName[testType](api, "testtypeb")
 
 	ret := &testAPI{
 		api:      api,
