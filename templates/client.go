@@ -114,7 +114,7 @@ func (c *Client) SetAuthToken(token string) *Client {
 //// {{ $type.NameUpperCamel }}
 
 func (c *Client) Create{{ $type.NameUpperCamel }}(ctx context.Context, obj *{{ $type.TypeUpperCamel }}) (*{{ $type.TypeUpperCamel }}, error) {
-	return CreateName[{{ $type.TypeUpperCamel }}, {{ $type.TypeUpperCamel }}](ctx, c, "{{ $type.NameLower }}", obj)
+	return CreateName[{{ $type.TypeUpperCamel }}](ctx, c, "{{ $type.NameLower }}", obj)
 }
 
 func (c *Client) Delete{{ $type.NameUpperCamel }}(ctx context.Context, id string, opts *UpdateOpts) error {
@@ -134,11 +134,11 @@ func (c *Client) List{{ $type.NameUpperCamel }}(ctx context.Context, opts *ListO
 }
 
 func (c *Client) Replace{{ $type.NameUpperCamel }}(ctx context.Context, id string, obj *{{ $type.TypeUpperCamel }}, opts *UpdateOpts) (*{{ $type.TypeUpperCamel }}, error) {
-	return ReplaceName[{{ $type.TypeUpperCamel }}, {{ $type.TypeUpperCamel }}](ctx, c, "{{ $type.NameLower }}", id, obj, opts)
+	return ReplaceName[{{ $type.TypeUpperCamel }}](ctx, c, "{{ $type.NameLower }}", id, obj, opts)
 }
 
 func (c *Client) Update{{ $type.NameUpperCamel }}(ctx context.Context, id string, obj *{{ $type.TypeUpperCamel }}, opts *UpdateOpts) (*{{ $type.TypeUpperCamel }}, error) {
-	return UpdateName[{{ $type.TypeUpperCamel }}, {{ $type.TypeUpperCamel }}](ctx, c, "{{ $type.NameLower }}", id, obj, opts)
+	return UpdateName[{{ $type.TypeUpperCamel }}](ctx, c, "{{ $type.NameLower }}", id, obj, opts)
 }
 
 func (c *Client) StreamGet{{ $type.NameUpperCamel }}(ctx context.Context, id string, opts *GetOpts) (*patchyc.GetStream[{{ $type.TypeUpperCamel }}], error) {
@@ -152,40 +152,40 @@ func (c *Client) StreamList{{ $type.NameUpperCamel }}(ctx context.Context, opts 
 
 //// Generic
 
-func CreateName[TOut, TIn any](ctx context.Context, c *Client, name string, obj *TIn) (*TOut, error) {
-	return patchyc.CreateName[TOut, TIn](ctx, c.patchyClient, name, obj)
+func CreateName[T any](ctx context.Context, c *Client, name string, obj *T) (*T, error) {
+	return patchyc.CreateName[T](ctx, c.patchyClient, name, obj)
 }
 
-func DeleteName[TOut any](ctx context.Context, c *Client, name, id string, opts *UpdateOpts) error {
-	return patchyc.DeleteName[TOut](ctx, c.patchyClient, name, id, opts)
+func DeleteName[T any](ctx context.Context, c *Client, name, id string, opts *UpdateOpts) error {
+	return patchyc.DeleteName[T](ctx, c.patchyClient, name, id, opts)
 }
 
-func FindName[TOut any](ctx context.Context, c *Client, name, shortID string) (*TOut, error) {
-	return patchyc.FindName[TOut](ctx, c.patchyClient, name, shortID)
+func FindName[T any](ctx context.Context, c *Client, name, shortID string) (*T, error) {
+	return patchyc.FindName[T](ctx, c.patchyClient, name, shortID)
 }
 
-func GetName[TOut any](ctx context.Context, c *Client, name, id string, opts *GetOpts) (*TOut, error) {
-	return patchyc.GetName[TOut](ctx, c.patchyClient, name, id, opts)
+func GetName[T any](ctx context.Context, c *Client, name, id string, opts *GetOpts) (*T, error) {
+	return patchyc.GetName[T](ctx, c.patchyClient, name, id, opts)
 }
 
-func ListName[TOut any](ctx context.Context, c *Client, name string, opts *ListOpts) ([]*TOut, error) {
-	return patchyc.ListName[TOut](ctx, c.patchyClient, name, opts)
+func ListName[T any](ctx context.Context, c *Client, name string, opts *ListOpts) ([]*T, error) {
+	return patchyc.ListName[T](ctx, c.patchyClient, name, opts)
 }
 
-func ReplaceName[TOut, TIn any](ctx context.Context, c *Client, name, id string, obj *TIn, opts *UpdateOpts) (*TOut, error) {
-	return patchyc.ReplaceName[TOut, TIn](ctx, c.patchyClient, name, id, obj, opts)
+func ReplaceName[T any](ctx context.Context, c *Client, name, id string, obj *T, opts *UpdateOpts) (*T, error) {
+	return patchyc.ReplaceName[T](ctx, c.patchyClient, name, id, obj, opts)
 }
 
-func UpdateName[TOut, TIn any](ctx context.Context, c *Client, name, id string, obj *TIn, opts *UpdateOpts) (*TOut, error) {
-	return patchyc.UpdateName[TOut, TIn](ctx, c.patchyClient, name, id, obj, opts)
+func UpdateName[T any](ctx context.Context, c *Client, name, id string, obj *T, opts *UpdateOpts) (*T, error) {
+	return patchyc.UpdateName[T](ctx, c.patchyClient, name, id, obj, opts)
 }
 
-func StreamGetName[TOut any](ctx context.Context, c *Client, name, id string, opts *GetOpts) (*patchyc.GetStream[TOut], error) {
-	return patchyc.StreamGetName[TOut](ctx, c.patchyClient, name, id, opts)
+func StreamGetName[T any](ctx context.Context, c *Client, name, id string, opts *GetOpts) (*patchyc.GetStream[T], error) {
+	return patchyc.StreamGetName[T](ctx, c.patchyClient, name, id, opts)
 }
 
-func StreamListName[TOut any](ctx context.Context, c *Client, name string, opts *ListOpts) (*patchyc.ListStream[TOut], error) {
-	return patchyc.StreamListName[TOut](ctx, c.patchyClient, name, opts)
+func StreamListName[T any](ctx context.Context, c *Client, name string, opts *ListOpts) (*patchyc.ListStream[T], error) {
+	return patchyc.StreamListName[T](ctx, c.patchyClient, name, opts)
 }
 
 //// Utility generic

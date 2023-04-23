@@ -40,6 +40,8 @@ type templateInput struct {
 	AuthBearer bool
 }
 
+// TODO: Split list of types and list of API objects
+
 type templateType struct {
 	NameLower      string // "homeaddress"
 	NameUpperCamel string // "HomeAddress"
