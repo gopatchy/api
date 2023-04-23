@@ -15,7 +15,6 @@ import (
 	"github.com/dchest/uniuri"
 	"github.com/go-resty/resty/v2"
 	"github.com/gopatchy/patchy"
-	"github.com/gopatchy/patchyc"
 	"github.com/stretchr/testify/require"
 )
 
@@ -24,7 +23,6 @@ type testAPI struct {
 	baseBaseURL string
 	api         *patchy.API
 	rst         *resty.Client
-	pyc         *patchyc.Client
 
 	testBegin int
 	testEnd   int
@@ -242,12 +240,8 @@ func newTestAPIInt(t *testing.T, api *patchy.API, scheme string) *testAPI {
 		SetHeader("Content-Type", "application/json").
 		SetBaseURL(ret.baseURL)
 
-	ret.pyc = patchyc.NewClient(ret.baseURL).
-		SetTLSClientConfig(&tls.Config{InsecureSkipVerify: true}) //nolint:gosec
-
 	if os.Getenv("PATCHY_DEBUG") != "" {
 		ret.rst.SetDebug(true)
-		ret.pyc.SetDebug(true)
 	}
 
 	return ret

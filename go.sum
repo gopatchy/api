@@ -27,8 +27,6 @@ github.com/gopatchy/jsrest v0.0.0-20230420184928-8e3c5df83e40 h1:O81TZmmHcnaiygH
 github.com/gopatchy/jsrest v0.0.0-20230420184928-8e3c5df83e40/go.mod h1:Ryi8LRBLFDhQsMQHuh+6VL7HcFWjBXOEiOy9Ip/Q+Ps=
 github.com/gopatchy/metadata v0.0.0-20230420053349-25837551c11d h1:chunoM47vkWSanIvLx4uRSkLMG6chDZOy09L2tt/bv8=
 github.com/gopatchy/metadata v0.0.0-20230420053349-25837551c11d/go.mod h1:VgD33raUShjDePCDBo55aj+eSXFtUEpMzs+Ie39g2zo=
-github.com/gopatchy/patchyc v0.0.0-20230422050552-5e4348e24d03 h1:8nS7AixifIs+jyRw0QpJlyiC5mCISQtljcEMauWZyhA=
-github.com/gopatchy/patchyc v0.0.0-20230422050552-5e4348e24d03/go.mod h1:gKOai2B95GQO8vofk07aK9yyRrW64VRxJUadNd6Th7o=
 github.com/gopatchy/path v0.0.0-20230420200321-29e8a1fe5e57 h1:WGb9bKu1TbymQZgdiKDTokHvWxhjLDnoE73WG+IpsfU=
 github.com/gopatchy/path v0.0.0-20230420200321-29e8a1fe5e57/go.mod h1:CwQN4Obvk1xcK1CId/xAoFGVGjPdzoyUcpm8OxyG9As=
 github.com/gopatchy/potency v0.0.0-20230420200429-d4766011e8fe h1:hS8AOCeZv+RH5eiapHa3Gm2B31/ZAnEA5c3bXEp1toE=

@@ -86,8 +86,11 @@ func buildGo(t *testing.T) (string, string, map[string]string, []string) {
 
 	ctx := context.Background()
 
-	gc, err := ta.pyc.GoClient(ctx)
+	resp, err := ta.r().Get("_client.go")
 	require.NoError(t, err)
+	require.True(t, resp.IsSuccess())
+
+	gc := resp.String()
 	require.NotEmpty(t, gc)
 
 	err = os.WriteFile(filepath.Join(dir, "work/goclient/client.go"), []byte(gc), 0o600)

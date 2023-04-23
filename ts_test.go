@@ -141,8 +141,11 @@ func buildTS(t *testing.T, env string) string {
 
 	ctx := context.Background()
 
-	tc, err := ta.pyc.TSClient(ctx)
+	resp, err := ta.r().Get("_client.ts")
 	require.NoError(t, err)
+	require.True(t, resp.IsSuccess())
+
+	tc := resp.String()
 	require.NotEmpty(t, tc)
 
 	err = os.WriteFile(filepath.Join(dir, "client.ts"), []byte(tc), 0o600)
