@@ -3,52 +3,33 @@
 {{- end }}
 
 {{- range $type := .Types }}
-{{- if $type.NameLower }}
-
-export interface {{ $type.TypeUpperCamel }}Request {
-	{{- range $field := .Fields }}
-	{{ padRight (printf "%s?:" $field.NameLowerCamel) (add $type.FieldNameMaxLen 2) }} {{ $field.TSType }};
-	{{- end }}
-}
-
-export interface {{ $type.TypeUpperCamel }}Response extends MetadataResponse {
-	{{- range $field := .Fields }}
-	{{- if $field.Optional }}
-	{{ padRight (printf "%s?:" $field.NameLowerCamel) (add $type.FieldNameMaxLen 2) }} {{ $field.TSType }};
-	{{- else }}
-	{{ padRight (printf "%s:" $field.NameLowerCamel) (add $type.FieldNameMaxLen 2) }} {{ $field.TSType }};
-	{{- end }}
-	{{- end }}
-}
-
-{{- else }}
 
 export interface {{ $type.TypeUpperCamel }} {
 	{{- range $field := .Fields }}
 	{{ padRight (printf "%s?:" $field.NameLowerCamel) (add $type.FieldNameMaxLen 2) }} {{ $field.TSType }};
 	{{- end }}
 }
-{{- end }}
+
 {{- end }}
 
-export interface MetadataResponse {
+export interface Metadata {
 	id:           string;
 	etag:         string;
 	generation:   number;
 }
 
-export interface GetOpts<T extends MetadataResponse> {
-	prev?: T;
+export interface GetOpts<T> {
+	prev?: T & Metadata;
 }
 
-export interface ListOpts<T extends MetadataResponse> {
+export interface ListOpts<T> {
 	stream?:  string;
 	limit?:   number;
 	offset?:  number;
 	after?:   string;
 	sorts?:   string[];
 	filters?: Filter[];
-	prev?:    T[];
+	prev?:    (T & Metadata)[];
 }
 
 export interface Filter {
@@ -57,8 +38,8 @@ export interface Filter {
 	value:  string;
 }
 
-export interface UpdateOpts<T extends MetadataResponse> {
-	prev?: T;
+export interface UpdateOpts<T> {
+	prev?: T & Metadata;
 }
 
 export interface JSONError {
@@ -194,16 +175,16 @@ class StreamCore {
 	}
 }
 
-export class GetStream<T extends MetadataResponse> extends StreamCore {
-	private prev: T | null;
+export class GetStream<T> extends StreamCore {
+	private prev: (T & Metadata) | null;
 
-	constructor(resp: Response, controller: AbortController, prev: T | null | undefined) {
+	constructor(resp: Response, controller: AbortController, prev: (T & Metadata) | null | undefined) {
 		super(resp, controller);
 
 		this.prev = prev ?? null;
 	}
 
-	async read(): Promise<T | null> {
+	async read(): Promise<(T & Metadata) | null> {
 		while (true) {
 			const ev = await this.readEvent();
 
@@ -240,7 +221,7 @@ export class GetStream<T extends MetadataResponse> extends StreamCore {
 		for await (const _ of this) {}
 	}
 
-	async *[Symbol.asyncIterator](): AsyncIterableIterator<T> {
+	async *[Symbol.asyncIterator](): AsyncIterableIterator<T & Metadata> {
 		while (true) {
 			const obj = await this.read();
 
@@ -253,7 +234,7 @@ export class GetStream<T extends MetadataResponse> extends StreamCore {
 	}
 }
 
-export abstract class ListStream<T extends MetadataResponse> extends StreamCore {
+export abstract class ListStream<T> extends StreamCore {
 	constructor(resp: Response, controller: AbortController) {
 		super(resp, controller);
 	}
@@ -264,9 +245,9 @@ export abstract class ListStream<T extends MetadataResponse> extends StreamCore 
 		for await (const _ of this) {}
 	}
 
-	abstract read(): Promise<T[] | null>;
+	abstract read(): Promise<(T & Metadata)[] | null>;
 
-	async *[Symbol.asyncIterator](): AsyncIterableIterator<T[]> {
+	async *[Symbol.asyncIterator](): AsyncIterableIterator<(T & Metadata)[]> {
 		while (true) {
 			const list = await this.read();
 
@@ -279,15 +260,15 @@ export abstract class ListStream<T extends MetadataResponse> extends StreamCore 
 	}
 }
 
-export class ListStreamFull<T extends MetadataResponse> extends ListStream<T> {
-	private prev: T[] | null;
+export class ListStreamFull<T> extends ListStream<T> {
+	private prev: (T & Metadata)[] | null;
 
-	constructor(resp: Response, controller: AbortController, prev: T[] | null | undefined) {
+	constructor(resp: Response, controller: AbortController, prev: (T & Metadata)[] | null | undefined) {
 		super(resp, controller);
 		this.prev = prev ?? null;
 	}
 
-	async read(): Promise<T[] | null> {
+	async read(): Promise<(T & Metadata)[] | null> {
 		while (true) {
 			const ev = await this.readEvent();
 
@@ -319,16 +300,16 @@ export class ListStreamFull<T extends MetadataResponse> extends ListStream<T> {
 	}
 }
 
-export class ListStreamDiff<T extends MetadataResponse> extends ListStream<T> {
-	private prev: T[] | null;
-	private objs: T[] = [];
+export class ListStreamDiff<T> extends ListStream<T> {
+	private prev: (T & Metadata)[] | null;
+	private objs: (T & Metadata)[] = [];
 
-	constructor(resp: Response, controller: AbortController, prev: T[] | null | undefined) {
+	constructor(resp: Response, controller: AbortController, prev: (T & Metadata)[] | null | undefined) {
 		super(resp, controller);
 		this.prev = prev ?? null;
 	}
 
-	async read(): Promise<T[] | null> {
+	async read(): Promise<(T & Metadata)[] | null> {
 		while (true) {
 			const ev = await this.readEvent();
 
@@ -336,13 +317,13 @@ export class ListStreamDiff<T extends MetadataResponse> extends ListStream<T> {
 				return null;
 
 			} else if (ev.eventType == 'add') {
-				const obj = JSON.parse(ev.data) as T;
+				const obj = JSON.parse(ev.data) as T & Metadata;
 				this.objs.splice(parseInt(ev.params.get('new-position')!, 10), 0, obj);
 
 			} else if (ev.eventType == 'update') {
 				this.objs.splice(parseInt(ev.params.get('old-position')!, 10), 1);
 
-				const obj = JSON.parse(ev.data) as T;
+				const obj = JSON.parse(ev.data) as T & Metadata;
 				this.objs.splice(parseInt(ev.params.get('new-position')!, 10), 0, obj);
 
 			} else if (ev.eventType == 'remove') {
@@ -385,7 +366,7 @@ class ClientCore {
 
 	//// Generic
 
-	async createName<TOut extends MetadataResponse, TIn>(name: string, obj: TIn): Promise<TOut> {
+	async createName<T>(name: string, obj: T): Promise<T & Metadata> {
 		return this.fetch(
 			'POST',
 			encodeURIComponent(name),
@@ -395,7 +376,7 @@ class ClientCore {
 		);
 	}
 
-	async deleteName<TOut extends MetadataResponse>(name: string, id: string, opts?: UpdateOpts<TOut> | null): Promise<void> {
+	async deleteName<T>(name: string, id: string, opts?: UpdateOpts<T> | null): Promise<void> {
 		return this.fetch(
 			'DELETE',
 			`${encodeURIComponent(name)}/${encodeURIComponent(id)}`,
@@ -405,8 +386,8 @@ class ClientCore {
 		);
 	}
 
-	async findName<TOut extends MetadataResponse>(name: string, shortID: string): Promise<TOut> {
-		const opts: ListOpts<TOut> = {
+	async findName<T>(name: string, shortID: string): Promise<T & Metadata> {
+		const opts: ListOpts<T> = {
 			filters: [
 				{
 					path: 'id',
@@ -416,7 +397,7 @@ class ClientCore {
 			],
 		};
 
-		const list = await this.listName<TOut>(name, opts);
+		const list = await this.listName<T>(name, opts);
 
 		if (list.length != 1) {
 			throw new Error({
@@ -429,7 +410,7 @@ class ClientCore {
 		return list[0]!;
 	}
 
-	async getName<TOut extends MetadataResponse>(name: string, id: string, opts?: GetOpts<TOut> | null): Promise<TOut> {
+	async getName<T>(name: string, id: string, opts?: GetOpts<T> | null): Promise<T & Metadata> {
 		return this.fetch(
 			'GET',
 			`${encodeURIComponent(name)}/${encodeURIComponent(id)}`,
@@ -440,7 +421,7 @@ class ClientCore {
 		);
 	}
 
-	async listName<TOut extends MetadataResponse>(name: string, opts?: ListOpts<TOut> | null): Promise<TOut[]> {
+	async listName<T>(name: string, opts?: ListOpts<T> | null): Promise<(T & Metadata)[]> {
 		return this.fetch(
 			'GET',
 			`${encodeURIComponent(name)}`,
@@ -452,7 +433,7 @@ class ClientCore {
 		);
 	}
 
-	async replaceName<TOut extends MetadataResponse, TIn>(name: string, id: string, obj: TIn, opts?: UpdateOpts<TOut> | null): Promise<TOut> {
+	async replaceName<T>(name: string, id: string, obj: T, opts?: UpdateOpts<T> | null): Promise<T & Metadata> {
 		return this.fetch(
 			'PUT',
 			`${encodeURIComponent(name)}/${encodeURIComponent(id)}`,
@@ -463,7 +444,7 @@ class ClientCore {
 		);
 	}
 
-	async updateName<TOut extends MetadataResponse, TIn>(name: string, id: string, obj: TIn, opts?: UpdateOpts<TOut> | null): Promise<TOut> {
+	async updateName<T>(name: string, id: string, obj: T, opts?: UpdateOpts<T> | null): Promise<T & Metadata> {
 		return this.fetch(
 			'PATCH',
 			`${encodeURIComponent(name)}/${encodeURIComponent(id)}`,
@@ -474,7 +455,7 @@ class ClientCore {
 		);
 	}
 
-	async streamGetName<TOut extends MetadataResponse>(name: string, id: string, opts?: GetOpts<TOut> | null): Promise<GetStream<TOut>> {
+	async streamGetName<T>(name: string, id: string, opts?: GetOpts<T> | null): Promise<GetStream<T>> {
 		const controller = new AbortController();
 
 		const resp = await this.fetch(
@@ -487,10 +468,10 @@ class ClientCore {
 			},
 		);
 
-		return new GetStream<TOut>(resp, controller, opts?.prev);
+		return new GetStream<T>(resp, controller, opts?.prev);
 	}
 
-	async streamListName<TOut extends MetadataResponse>(name: string, opts?: ListOpts<TOut> | null): Promise<ListStream<TOut>> {
+	async streamListName<T>(name: string, opts?: ListOpts<T> | null): Promise<ListStream<T>> {
 		const controller = new AbortController();
 
 		const resp = await this.fetch(
@@ -507,10 +488,10 @@ class ClientCore {
 		try {
 			switch (resp.headers.get('Stream-Format')) {
 			case 'full':
-				return new ListStreamFull<TOut>(resp, controller, opts?.prev);
+				return new ListStreamFull<T>(resp, controller, opts?.prev);
 
 			case 'diff':
-				return new ListStreamDiff<TOut>(resp, controller, opts?.prev);
+				return new ListStreamDiff<T>(resp, controller, opts?.prev);
 
 			default:
 				throw new Error({
@@ -525,7 +506,7 @@ class ClientCore {
 		}
 	}
 
-	private buildListParams<T extends MetadataResponse>(opts: ListOpts<T> | null | undefined): URLSearchParams {
+	private buildListParams<T>(opts: ListOpts<T> | null | undefined): URLSearchParams {
 		const params = new URLSearchParams();
 
 		if (!opts) {
@@ -559,7 +540,7 @@ class ClientCore {
 		return params;
 	}
 
-	private buildListHeaders<T extends MetadataResponse>(opts: ListOpts<T> | null | undefined): Headers {
+	private buildListHeaders<T>(opts: ListOpts<T> | null | undefined): Headers {
 		const headers = new Headers();
 
 		this.addETagHeader(headers, 'If-None-Match', opts?.prev);
@@ -567,7 +548,7 @@ class ClientCore {
 		return headers;
 	}
 
-	private buildGetHeaders<T extends MetadataResponse>(opts: GetOpts<T> | null | undefined): Headers {
+	private buildGetHeaders<T>(opts: GetOpts<T> | null | undefined): Headers {
 		const headers = new Headers();
 
 		this.addETagHeader(headers, 'If-None-Match', opts?.prev);
@@ -575,7 +556,7 @@ class ClientCore {
 		return headers;
 	}
 
-	private buildUpdateHeaders<T extends MetadataResponse>(opts: UpdateOpts<T> | null | undefined): Headers {
+	private buildUpdateHeaders<T>(opts: UpdateOpts<T> | null | undefined): Headers {
 		const headers = new Headers();
 
 		this.addETagHeader(headers, 'If-Match', opts?.prev);
@@ -692,40 +673,40 @@ export class Client extends ClientCore {
 
 	//// {{ $type.NameUpperCamel }}
 
-	async create{{ $type.NameUpperCamel }}(obj: {{ $type.TypeUpperCamel }}Request): Promise<{{ $type.TypeUpperCamel }}Response> {
-		return this.createName<{{ $type.TypeUpperCamel }}Response, {{ $type.TypeUpperCamel }}Request>('{{ $type.NameLower }}', obj);
+	async create{{ $type.NameUpperCamel }}(obj: {{ $type.TypeUpperCamel }}): Promise<{{ $type.TypeUpperCamel }} & Metadata> {
+		return this.createName<{{ $type.TypeUpperCamel }}>('{{ $type.NameLower }}', obj);
 	}
 
-	async delete{{ $type.NameUpperCamel }}(id: string, opts?: UpdateOpts<{{ $type.TypeUpperCamel }}Response> | null): Promise<void> {
+	async delete{{ $type.NameUpperCamel }}(id: string, opts?: UpdateOpts<{{ $type.TypeUpperCamel }}> | null): Promise<void> {
 		return this.deleteName('{{ $type.NameLower }}', id, opts);
 	}
 
-	async find{{ $type.NameUpperCamel }}(shortID: string): Promise<{{ $type.TypeUpperCamel }}Response> {
-		return this.findName<{{ $type.TypeUpperCamel }}Response>('{{ $type.NameLower }}', shortID);
+	async find{{ $type.NameUpperCamel }}(shortID: string): Promise<{{ $type.TypeUpperCamel }} & Metadata> {
+		return this.findName<{{ $type.TypeUpperCamel }}>('{{ $type.NameLower }}', shortID);
 	}
 
-	async get{{ $type.NameUpperCamel }}(id: string, opts?: GetOpts<{{ $type.TypeUpperCamel }}Response> | null): Promise<{{ $type.TypeUpperCamel }}Response> {
-		return this.getName<{{ $type.TypeUpperCamel }}Response>('{{ $type.NameLower }}', id, opts);
+	async get{{ $type.NameUpperCamel }}(id: string, opts?: GetOpts<{{ $type.TypeUpperCamel }}> | null): Promise<{{ $type.TypeUpperCamel }} & Metadata> {
+		return this.getName<{{ $type.TypeUpperCamel }}>('{{ $type.NameLower }}', id, opts);
 	}
 
-	async list{{ $type.NameUpperCamel }}(opts?: ListOpts<{{ $type.TypeUpperCamel }}Response> | null): Promise<{{ $type.TypeUpperCamel }}Response[]> {
-		return this.listName<{{ $type.TypeUpperCamel }}Response>('{{ $type.NameLower }}', opts);
+	async list{{ $type.NameUpperCamel }}(opts?: ListOpts<{{ $type.TypeUpperCamel }}> | null): Promise<({{ $type.TypeUpperCamel }} & Metadata)[]> {
+		return this.listName<{{ $type.TypeUpperCamel }}>('{{ $type.NameLower }}', opts);
 	}
 
-	async replace{{ $type.NameUpperCamel }}(id: string, obj: {{ $type.TypeUpperCamel }}Request, opts?: UpdateOpts<{{ $type.TypeUpperCamel }}Response> | null): Promise<{{ $type.TypeUpperCamel }}Response> {
-		return this.replaceName<{{ $type.TypeUpperCamel }}Response, {{ $type.TypeUpperCamel }}Request>('{{ $type.NameLower }}', id, obj, opts);
+	async replace{{ $type.NameUpperCamel }}(id: string, obj: {{ $type.TypeUpperCamel }}, opts?: UpdateOpts<{{ $type.TypeUpperCamel }}> | null): Promise<{{ $type.TypeUpperCamel }} & Metadata> {
+		return this.replaceName<{{ $type.TypeUpperCamel }}>('{{ $type.NameLower }}', id, obj, opts);
 	}
 
-	async update{{ $type.NameUpperCamel }}(id: string, obj: {{ $type.TypeUpperCamel }}Request, opts?: UpdateOpts<{{ $type.TypeUpperCamel }}Response> | null): Promise<{{ $type.TypeUpperCamel }}Response> {
-		return this.updateName<{{ $type.TypeUpperCamel }}Response, {{ $type.TypeUpperCamel }}Request>('{{ $type.NameLower }}', id, obj, opts);
+	async update{{ $type.NameUpperCamel }}(id: string, obj: {{ $type.TypeUpperCamel }}, opts?: UpdateOpts<{{ $type.TypeUpperCamel }}> | null): Promise<{{ $type.TypeUpperCamel }} & Metadata> {
+		return this.updateName<{{ $type.TypeUpperCamel }}>('{{ $type.NameLower }}', id, obj, opts);
 	}
 
-	async streamGet{{ $type.NameUpperCamel }}(id: string, opts?: GetOpts<{{ $type.TypeUpperCamel }}Response> | null): Promise<GetStream<{{ $type.TypeUpperCamel }}Response>> {
-		return this.streamGetName<{{ $type.TypeUpperCamel }}Response>('{{ $type.NameLower }}', id, opts);
+	async streamGet{{ $type.NameUpperCamel }}(id: string, opts?: GetOpts<{{ $type.TypeUpperCamel }}> | null): Promise<GetStream<{{ $type.TypeUpperCamel }}>> {
+		return this.streamGetName<{{ $type.TypeUpperCamel }}>('{{ $type.NameLower }}', id, opts);
 	}
 
-	async streamList{{ $type.NameUpperCamel }}(opts?: ListOpts<{{ $type.TypeUpperCamel }}Response> | null): Promise<ListStream<{{ $type.TypeUpperCamel }}Response>> {
-		return this.streamListName<{{ $type.TypeUpperCamel }}Response>('{{ $type.NameLower }}', opts);
+	async streamList{{ $type.NameUpperCamel }}(opts?: ListOpts<{{ $type.TypeUpperCamel }}> | null): Promise<ListStream<{{ $type.TypeUpperCamel }}>> {
+		return this.streamListName<{{ $type.TypeUpperCamel }}>('{{ $type.NameLower }}', opts);
 	}
 
 	{{- end }}
