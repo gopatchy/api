@@ -115,7 +115,7 @@ func TestStreamGetPrev(t *testing.T) {
 	// Validate that previous version passing only compares the ETag
 	s1.Num = 1
 
-	stream2, err := c.StreamGetTestType(ctx, created.ID, &goclient.GetOpts{Prev: s1})
+	stream2, err := c.StreamGetTestType(ctx, created.ID, &goclient.GetOpts[goclient.TestType]{Prev: s1})
 	require.NoError(t, err)
 
 	defer stream2.Close()

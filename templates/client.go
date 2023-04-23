@@ -33,10 +33,8 @@ import (
 	"golang.org/x/exp/slices"
 )
 
-// TODO: Make Prev generic
-
-type GetOpts struct {
-	Prev any
+type GetOpts[T any] struct {
+	Prev *T
 }
 
 type ListOpts struct {
@@ -181,7 +179,7 @@ func (c *Client) Find{{ $api.NameUpperCamel }}(ctx context.Context, shortID stri
 	return FindName[{{ $api.TypeUpperCamel }}](ctx, c, "{{ $api.NameLower }}", shortID)
 }
 
-func (c *Client) Get{{ $api.NameUpperCamel }}(ctx context.Context, id string, opts *GetOpts) (*{{ $api.TypeUpperCamel }}, error) {
+func (c *Client) Get{{ $api.NameUpperCamel }}(ctx context.Context, id string, opts *GetOpts[{{ $api.TypeUpperCamel }}]) (*{{ $api.TypeUpperCamel }}, error) {
 	return GetName[{{ $api.TypeUpperCamel }}](ctx, c, "{{ $api.NameLower }}", id, opts)
 }
 
@@ -197,7 +195,7 @@ func (c *Client) Update{{ $api.NameUpperCamel }}(ctx context.Context, id string,
 	return UpdateName[{{ $api.TypeUpperCamel }}](ctx, c, "{{ $api.NameLower }}", id, obj, opts)
 }
 
-func (c *Client) StreamGet{{ $api.NameUpperCamel }}(ctx context.Context, id string, opts *GetOpts) (*GetStream[{{ $api.TypeUpperCamel }}], error) {
+func (c *Client) StreamGet{{ $api.NameUpperCamel }}(ctx context.Context, id string, opts *GetOpts[{{ $api.TypeUpperCamel }}]) (*GetStream[{{ $api.TypeUpperCamel }}], error) {
 	return StreamGetName[{{ $api.TypeUpperCamel }}](ctx, c, "{{ $api.NameLower }}", id, opts)
 }
 
@@ -277,7 +275,7 @@ func FindName[T any](ctx context.Context, c *Client, name, shortID string) (*T, 
 	return objs[0], nil
 }
 
-func GetName[T any](ctx context.Context, c *Client, name, id string, opts *GetOpts) (*T, error) {
+func GetName[T any](ctx context.Context, c *Client, name, id string, opts *GetOpts[T]) (*T, error) {
 	obj := new(T)
 
 	r := c.rst.R().
@@ -300,7 +298,7 @@ func GetName[T any](ctx context.Context, c *Client, name, id string, opts *GetOp
 	}
 
 	if opts != nil && opts.Prev != nil && resp.StatusCode() == http.StatusNotModified {
-		return opts.Prev.(*T), nil
+		return opts.Prev, nil
 	}
 
 	if resp.IsError() {
@@ -393,7 +391,7 @@ func UpdateName[T any](ctx context.Context, c *Client, name, id string, obj *T, 
 	return updated, nil
 }
 
-func StreamGetName[T any](ctx context.Context, c *Client, name, id string, opts *GetOpts) (*GetStream[T], error) {
+func StreamGetName[T any](ctx context.Context, c *Client, name, id string, opts *GetOpts[T]) (*GetStream[T], error) {
 	r := c.rst.R().
 		SetDoNotParseResponse(true).
 		SetHeader("Accept", "text/event-stream").
@@ -445,7 +443,7 @@ func StreamGetName[T any](ctx context.Context, c *Client, name, id string, opts 
 
 			case "notModified":
 				if opts != nil && opts.Prev != nil {
-					stream.writeEvent(opts.Prev.(*T))
+					stream.writeEvent(opts.Prev)
 				} else {
 					stream.writeError(fmt.Errorf("notModified without If-None-Match (%w)", ErrInvalidStreamEvent))
 					return
@@ -822,7 +820,7 @@ func (c *Client) fetchString(ctx context.Context, path string) (string, error) {
 	return resp.String(), nil
 }
 
-func applyGetOpts(opts *GetOpts, req *resty.Request) {
+func applyGetOpts[T any](opts *GetOpts[T], req *resty.Request) {
 	if opts.Prev != nil {
 		md := metadata.GetMetadata(opts.Prev)
 		req.SetHeader("If-None-Match", fmt.Sprintf(`"%s"`, md.ETag))

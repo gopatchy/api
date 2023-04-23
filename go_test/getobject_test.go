@@ -27,7 +27,7 @@ func TestGetPrev(t *testing.T) {
 	// Validate that previous version passing only compares the ETag
 	get.Num = 1
 
-	get2, err := c.GetTestType(ctx, created.ID, &goclient.GetOpts{Prev: get})
+	get2, err := c.GetTestType(ctx, created.ID, &goclient.GetOpts[goclient.TestType]{Prev: get})
 	require.NoError(t, err)
 	require.Equal(t, "foo", get2.Text)
 	require.EqualValues(t, 1, get2.Num)
