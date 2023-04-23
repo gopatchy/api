@@ -35,14 +35,14 @@ type API struct {
 
 	prefix string
 
-	stripPrefix RequestHook
-	authBasic   RequestHook
-	authBearer  RequestHook
-	requestHook RequestHook
+	requestHooks []RequestHook
+
+	authBasic  bool
+	authBearer bool
 }
 
 type (
-	RequestHook func(*http.Request, *API) (*http.Request, error)
+	RequestHook func(http.ResponseWriter, *http.Request, *API) (*http.Request, error)
 	ContextKey  int
 	Metadata    = metadata.Metadata
 )
@@ -116,19 +116,19 @@ func RegisterName[T any](api *API, typeName string) {
 			panic("patchy:authBasicUser without patchy:authBasicPass")
 		}
 
-		SetAuthBasicName[T](api, typeName, authBasicUserPath, authBasicPassPath)
+		AddAuthBasicName[T](api, typeName, authBasicUserPath, authBasicPassPath)
 	}
 
 	authBearerTokenPath, ok := path.FindTagValueType(cfg.typeOf, "patchy", "authBearerToken")
 	if ok {
-		SetAuthBearerName[T](api, typeName, authBearerTokenPath)
+		AddAuthBearerName[T](api, typeName, authBearerTokenPath)
 	}
 }
 
 func (api *API) SetStripPrefix(prefix string) {
 	api.prefix = prefix
 
-	api.stripPrefix = func(r *http.Request, _ *API) (*http.Request, error) {
+	api.AddRequestHook(func(_ http.ResponseWriter, r *http.Request, _ *API) (*http.Request, error) {
 		if !strings.HasPrefix(r.URL.Path, prefix) {
 			return nil, jsrest.Errorf(jsrest.ErrNotFound, "not found")
 		}
@@ -136,11 +136,11 @@ func (api *API) SetStripPrefix(prefix string) {
 		r.URL.Path = strings.TrimPrefix(r.URL.Path, prefix)
 
 		return r, nil
-	}
+	})
 }
 
-func (api *API) SetRequestHook(hook RequestHook) {
-	api.requestHook = hook
+func (api *API) AddRequestHook(hook RequestHook) {
+	api.requestHooks = append(api.requestHooks, hook)
 }
 
 func (api *API) IsSafe() error {
@@ -262,31 +262,10 @@ func (api *API) serveHTTP(w http.ResponseWriter, r *http.Request) error {
 		return jsrest.Errorf(jsrest.ErrUnauthorized, "parse form failed (%w)", err)
 	}
 
-	if api.stripPrefix != nil {
-		r, err = api.stripPrefix(r, api)
-		if err != nil {
-			return jsrest.Errorf(jsrest.ErrUnauthorized, "strip prefix failed (%w)", err)
-		}
-	}
-
-	if api.authBasic != nil {
-		r, err = api.authBasic(r, api)
-		if err != nil {
-			return jsrest.Errorf(jsrest.ErrUnauthorized, "basic authentication failed (%w)", err)
-		}
-	}
-
-	if api.authBearer != nil {
-		r, err = api.authBearer(r, api)
-		if err != nil {
-			return jsrest.Errorf(jsrest.ErrUnauthorized, "bearer authentication failed (%w)", err)
-		}
-	}
-
-	if api.requestHook != nil {
+	for _, hook := range api.requestHooks {
 		var err error
 
-		r, err = api.requestHook(r, api)
+		r, err = hook(w, r, api)
 		if err != nil {
 			return jsrest.Errorf(jsrest.ErrInternalServerError, "request hook failed (%w)", err)
 		}

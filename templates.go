@@ -72,8 +72,8 @@ func (api *API) writeTemplate(name string) func(http.ResponseWriter, *http.Reque
 			Info:       api.openAPI.info,
 			Form:       r.Form,
 			URLPrefix:  api.prefix,
-			AuthBasic:  api.authBasic != nil,
-			AuthBearer: api.authBearer != nil,
+			AuthBasic:  api.authBasic,
+			AuthBearer: api.authBearer,
 		}
 
 		typeQueue := []*templateType{}

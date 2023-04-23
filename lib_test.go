@@ -119,7 +119,7 @@ const (
 	newText1
 )
 
-func requestHook(r *http.Request, _ *patchy.API) (*http.Request, error) {
+func requestHook(w http.ResponseWriter, r *http.Request, _ *patchy.API) (*http.Request, error) {
 	ctx := r.Context()
 
 	if r.Header.Get("X-Refuse-Read") != "" {
@@ -143,6 +143,11 @@ func requestHook(r *http.Request, _ *patchy.API) (*http.Request, error) {
 	nt1 := r.Header.Get("X-NewText1")
 	if nt1 != "" {
 		ctx = context.WithValue(ctx, newText1, nt1)
+	}
+
+	bearer := ctx.Value(patchy.ContextAuthBearer)
+	if bearer != nil {
+		w.Header().Set("Bearer-Name", bearer.(*authBearerType).Name)
 	}
 
 	return r.WithContext(ctx), nil
@@ -183,7 +188,7 @@ func newTestAPIInt(t *testing.T, api *patchy.API, scheme string) *testAPI {
 		testDone: make(chan string, 100),
 	}
 
-	api.SetRequestHook(requestHook)
+	api.AddRequestHook(requestHook)
 	patchy.Register[mayType](api)
 
 	patchy.Register[authBearerType](api)

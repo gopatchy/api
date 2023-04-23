@@ -10,7 +10,7 @@ import (
 	"github.com/gopatchy/path"
 )
 
-func authBearer[T any](r *http.Request, api *API, name, pathToken string) (*http.Request, error) {
+func authBearer[T any](_ http.ResponseWriter, r *http.Request, api *API, name, pathToken string) (*http.Request, error) {
 	scheme, val := header.ParseAuthorization(r)
 
 	if strings.ToLower(scheme) != "bearer" {
@@ -49,12 +49,14 @@ func authBearer[T any](r *http.Request, api *API, name, pathToken string) (*http
 	return r.WithContext(context.WithValue(r.Context(), ContextAuthBearer, bearer)), nil
 }
 
-func SetAuthBearerName[T any](api *API, name, pathToken string) {
-	api.authBearer = func(r *http.Request, a *API) (*http.Request, error) {
-		return authBearer[T](r, a, name, pathToken)
-	}
+func AddAuthBearerName[T any](api *API, name, pathToken string) {
+	api.AddRequestHook(func(w http.ResponseWriter, r *http.Request, a *API) (*http.Request, error) {
+		return authBearer[T](w, r, a, name, pathToken)
+	})
+
+	api.authBearer = true
 }
 
-func SetAuthBearer[T any](api *API, pathToken string) {
-	SetAuthBearerName[T](api, objName(new(T)), pathToken)
+func AddAuthBearer[T any](api *API, pathToken string) {
+	AddAuthBearerName[T](api, objName(new(T)), pathToken)
 }

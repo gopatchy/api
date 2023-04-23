@@ -221,7 +221,7 @@ func TestRequestHookError(t *testing.T) {
 	created, err := patchy.Create[testType](ctx, ta.api, &testType{Text: "foo"})
 	require.NoError(t, err)
 
-	ta.api.SetRequestHook(func(*http.Request, *patchy.API) (*http.Request, error) {
+	ta.api.AddRequestHook(func(http.ResponseWriter, *http.Request, *patchy.API) (*http.Request, error) {
 		return nil, fmt.Errorf("test reject") //nolint:goerr113
 	})
 

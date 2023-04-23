@@ -20,7 +20,7 @@ func TestBearerAuthSuccess(t *testing.T) {
 
 	validToken := false
 
-	ta.api.SetRequestHook(func(r *http.Request, _ *patchy.API) (*http.Request, error) {
+	ta.api.AddRequestHook(func(_ http.ResponseWriter, r *http.Request, _ *patchy.API) (*http.Request, error) {
 		bearer := r.Context().Value(patchy.ContextAuthBearer)
 		require.NotNil(t, bearer)
 		require.IsType(t, &authBearerType{}, bearer)
@@ -47,7 +47,7 @@ func TestBearerAuthInvalidToken(t *testing.T) {
 
 	ctx := context.Background()
 
-	ta.api.SetRequestHook(func(r *http.Request, _ *patchy.API) (*http.Request, error) {
+	ta.api.AddRequestHook(func(_ http.ResponseWriter, r *http.Request, _ *patchy.API) (*http.Request, error) {
 		require.Fail(t, "should not reach request hook")
 		return r, nil
 	})

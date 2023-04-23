@@ -20,7 +20,7 @@ func TestBasicAuthSuccess(t *testing.T) {
 
 	validUser := false
 
-	ta.api.SetRequestHook(func(r *http.Request, _ *patchy.API) (*http.Request, error) {
+	ta.api.AddRequestHook(func(_ http.ResponseWriter, r *http.Request, _ *patchy.API) (*http.Request, error) {
 		basic := r.Context().Value(patchy.ContextAuthBasic)
 		require.NotNil(t, basic)
 		require.IsType(t, &authBasicType{}, basic)
@@ -47,7 +47,7 @@ func TestBasicAuthInvalidUser(t *testing.T) {
 
 	ctx := context.Background()
 
-	ta.api.SetRequestHook(func(r *http.Request, _ *patchy.API) (*http.Request, error) {
+	ta.api.AddRequestHook(func(_ http.ResponseWriter, r *http.Request, _ *patchy.API) (*http.Request, error) {
 		require.Fail(t, "should not reach request hook")
 		return r, nil
 	})
@@ -67,7 +67,7 @@ func TestBasicAuthInvalidPassword(t *testing.T) {
 
 	ctx := context.Background()
 
-	ta.api.SetRequestHook(func(r *http.Request, _ *patchy.API) (*http.Request, error) {
+	ta.api.AddRequestHook(func(_ http.ResponseWriter, r *http.Request, _ *patchy.API) (*http.Request, error) {
 		require.Fail(t, "should not reach request hook")
 		return r, nil
 	})

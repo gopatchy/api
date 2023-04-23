@@ -11,7 +11,7 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
-func authBasic[T any](r *http.Request, api *API, name, pathUser, pathPass string) (*http.Request, error) {
+func authBasic[T any](_ http.ResponseWriter, r *http.Request, api *API, name, pathUser, pathPass string) (*http.Request, error) {
 	scheme, val := header.ParseAuthorization(r)
 
 	if strings.ToLower(scheme) != "basic" {
@@ -80,12 +80,14 @@ func authBasic[T any](r *http.Request, api *API, name, pathUser, pathPass string
 	return r.WithContext(context.WithValue(r.Context(), ContextAuthBasic, user)), nil
 }
 
-func SetAuthBasicName[T any](api *API, name, pathUser, pathPass string) {
-	api.authBasic = func(r *http.Request, a *API) (*http.Request, error) {
-		return authBasic[T](r, a, name, pathUser, pathPass)
-	}
+func AddAuthBasicName[T any](api *API, name, pathUser, pathPass string) {
+	api.AddRequestHook(func(w http.ResponseWriter, r *http.Request, a *API) (*http.Request, error) {
+		return authBasic[T](w, r, a, name, pathUser, pathPass)
+	})
+
+	api.authBasic = true
 }
 
-func SetAuthBasic[T any](api *API, pathUser, pathPass string) {
-	SetAuthBasicName[T](api, objName(new(T)), pathUser, pathPass)
+func AddAuthBasic[T any](api *API, pathUser, pathPass string) {
+	AddAuthBasicName[T](api, objName(new(T)), pathUser, pathPass)
 }
