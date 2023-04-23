@@ -49,10 +49,10 @@ func TestStreamListInitial(t *testing.T) {
 	c := getClient(t)
 	ctx := context.Background()
 
-	_, err := c.CreateTestType(ctx, &goclient.TestTypeRequest{Text: "foo"})
+	_, err := c.CreateTestType(ctx, &goclient.TestType{Text: "foo"})
 	require.NoError(t, err)
 
-	_, err = c.CreateTestType(ctx, &goclient.TestTypeRequest{Text: "bar"})
+	_, err = c.CreateTestType(ctx, &goclient.TestType{Text: "bar"})
 	require.NoError(t, err)
 
 	stream, err := c.StreamListTestType(ctx, nil)
@@ -82,7 +82,7 @@ func TestStreamListAdd(t *testing.T) {
 	require.NotNil(t, s1, stream.Error())
 	require.Len(t, s1, 0)
 
-	_, err = c.CreateTestType(ctx, &goclient.TestTypeRequest{Text: "foo"})
+	_, err = c.CreateTestType(ctx, &goclient.TestType{Text: "foo"})
 	require.NoError(t, err)
 
 	s2 := stream.Read()
@@ -98,7 +98,7 @@ func TestStreamListUpdate(t *testing.T) {
 	c := getClient(t)
 	ctx := context.Background()
 
-	created, err := c.CreateTestType(ctx, &goclient.TestTypeRequest{Text: "foo"})
+	created, err := c.CreateTestType(ctx, &goclient.TestType{Text: "foo"})
 	require.NoError(t, err)
 
 	stream, err := c.StreamListTestType(ctx, nil)
@@ -111,7 +111,7 @@ func TestStreamListUpdate(t *testing.T) {
 	require.Len(t, s1, 1)
 	require.Equal(t, "foo", s1[0].Text)
 
-	_, err = c.UpdateTestType(ctx, created.ID, &goclient.TestTypeRequest{Text: "bar"}, nil)
+	_, err = c.UpdateTestType(ctx, created.ID, &goclient.TestType{Text: "bar"}, nil)
 	require.NoError(t, err)
 
 	s2 := stream.Read()
@@ -127,7 +127,7 @@ func TestStreamListDelete(t *testing.T) {
 	c := getClient(t)
 	ctx := context.Background()
 
-	created, err := c.CreateTestType(ctx, &goclient.TestTypeRequest{Text: "foo"})
+	created, err := c.CreateTestType(ctx, &goclient.TestType{Text: "foo"})
 	require.NoError(t, err)
 
 	stream, err := c.StreamListTestType(ctx, nil)
@@ -155,10 +155,10 @@ func TestStreamListOpts(t *testing.T) {
 	c := getClient(t)
 	ctx := context.Background()
 
-	_, err := c.CreateTestType(ctx, &goclient.TestTypeRequest{Text: "foo"})
+	_, err := c.CreateTestType(ctx, &goclient.TestType{Text: "foo"})
 	require.NoError(t, err)
 
-	_, err = c.CreateTestType(ctx, &goclient.TestTypeRequest{Text: "bar"})
+	_, err = c.CreateTestType(ctx, &goclient.TestType{Text: "bar"})
 	require.NoError(t, err)
 
 	stream, err := c.StreamListTestType(ctx, &goclient.ListOpts{Limit: 1})
@@ -179,10 +179,10 @@ func TestStreamListIgnoreIrrelevant(t *testing.T) {
 	c := getClient(t)
 	ctx := context.Background()
 
-	created1, err := c.CreateTestType(ctx, &goclient.TestTypeRequest{Text: "foo"})
+	created1, err := c.CreateTestType(ctx, &goclient.TestType{Text: "foo"})
 	require.NoError(t, err)
 
-	_, err = c.CreateTestType(ctx, &goclient.TestTypeRequest{Text: "bar"})
+	_, err = c.CreateTestType(ctx, &goclient.TestType{Text: "bar"})
 	require.NoError(t, err)
 
 	stream, err := c.StreamListTestType(ctx, &goclient.ListOpts{Sorts: []string{"+text"}, Limit: 1})
@@ -195,7 +195,7 @@ func TestStreamListIgnoreIrrelevant(t *testing.T) {
 	require.Len(t, s1, 1)
 	require.Equal(t, "bar", s1[0].Text)
 
-	_, err = c.UpdateTestType(ctx, created1.ID, &goclient.TestTypeRequest{Text: "zig"}, nil)
+	_, err = c.UpdateTestType(ctx, created1.ID, &goclient.TestType{Text: "zig"}, nil)
 	require.NoError(t, err)
 
 	time.Sleep(1 * time.Second)
@@ -206,7 +206,7 @@ func TestStreamListIgnoreIrrelevant(t *testing.T) {
 	default:
 	}
 
-	_, err = c.UpdateTestType(ctx, created1.ID, &goclient.TestTypeRequest{Text: "aaa"}, nil)
+	_, err = c.UpdateTestType(ctx, created1.ID, &goclient.TestType{Text: "aaa"}, nil)
 	require.NoError(t, err)
 
 	s3 := stream.Read()
@@ -222,7 +222,7 @@ func TestStreamListPrev(t *testing.T) {
 	c := getClient(t)
 	ctx := context.Background()
 
-	_, err := c.CreateTestType(ctx, &goclient.TestTypeRequest{Text: "foo"})
+	_, err := c.CreateTestType(ctx, &goclient.TestType{Text: "foo"})
 	require.NoError(t, err)
 
 	stream1, err := c.StreamListTestType(ctx, nil)
@@ -256,7 +256,7 @@ func TestStreamListDiffInitial(t *testing.T) {
 	c := getClient(t)
 	ctx := context.Background()
 
-	_, err := c.CreateTestType(ctx, &goclient.TestTypeRequest{Text: "foo"})
+	_, err := c.CreateTestType(ctx, &goclient.TestType{Text: "foo"})
 	require.NoError(t, err)
 
 	stream, err := c.StreamListTestType(ctx, &goclient.ListOpts{Stream: "diff"})
@@ -286,7 +286,7 @@ func TestStreamListDiffCreate(t *testing.T) {
 	require.NotNil(t, s1, stream.Error())
 	require.Len(t, s1, 0)
 
-	_, err = c.CreateTestType(ctx, &goclient.TestTypeRequest{Text: "foo"})
+	_, err = c.CreateTestType(ctx, &goclient.TestType{Text: "foo"})
 	require.NoError(t, err)
 
 	s2 := stream.Read()
@@ -302,7 +302,7 @@ func TestStreamListDiffUpdate(t *testing.T) {
 	c := getClient(t)
 	ctx := context.Background()
 
-	created, err := c.CreateTestType(ctx, &goclient.TestTypeRequest{Text: "foo", Num: 1})
+	created, err := c.CreateTestType(ctx, &goclient.TestType{Text: "foo", Num: 1})
 	require.NoError(t, err)
 
 	stream, err := c.StreamListTestType(ctx, &goclient.ListOpts{Stream: "diff"})
@@ -316,7 +316,7 @@ func TestStreamListDiffUpdate(t *testing.T) {
 	require.Equal(t, "foo", s1[0].Text)
 	require.EqualValues(t, 1, s1[0].Num)
 
-	_, err = c.UpdateTestType(ctx, created.ID, &goclient.TestTypeRequest{Text: "bar"}, nil)
+	_, err = c.UpdateTestType(ctx, created.ID, &goclient.TestType{Text: "bar"}, nil)
 	require.NoError(t, err)
 
 	s2 := stream.Read()
@@ -333,7 +333,7 @@ func TestStreamListDiffReplace(t *testing.T) {
 	c := getClient(t)
 	ctx := context.Background()
 
-	created, err := c.CreateTestType(ctx, &goclient.TestTypeRequest{Text: "foo", Num: 1})
+	created, err := c.CreateTestType(ctx, &goclient.TestType{Text: "foo", Num: 1})
 	require.NoError(t, err)
 
 	stream, err := c.StreamListTestType(ctx, &goclient.ListOpts{Stream: "diff"})
@@ -347,7 +347,7 @@ func TestStreamListDiffReplace(t *testing.T) {
 	require.Equal(t, "foo", s1[0].Text)
 	require.EqualValues(t, 1, s1[0].Num)
 
-	_, err = c.ReplaceTestType(ctx, created.ID, &goclient.TestTypeRequest{Text: "bar"}, nil)
+	_, err = c.ReplaceTestType(ctx, created.ID, &goclient.TestType{Text: "bar"}, nil)
 	require.NoError(t, err)
 
 	s2 := stream.Read()
@@ -364,7 +364,7 @@ func TestStreamListDiffDelete(t *testing.T) {
 	c := getClient(t)
 	ctx := context.Background()
 
-	created, err := c.CreateTestType(ctx, &goclient.TestTypeRequest{Text: "foo"})
+	created, err := c.CreateTestType(ctx, &goclient.TestType{Text: "foo"})
 	require.NoError(t, err)
 
 	stream, err := c.StreamListTestType(ctx, &goclient.ListOpts{Stream: "diff"})
@@ -392,7 +392,7 @@ func TestStreamListDiffSort(t *testing.T) {
 	c := getClient(t)
 	ctx := context.Background()
 
-	_, err := c.CreateTestType(ctx, &goclient.TestTypeRequest{Text: "foo"})
+	_, err := c.CreateTestType(ctx, &goclient.TestType{Text: "foo"})
 	require.NoError(t, err)
 
 	stream, err := c.StreamListTestType(ctx, &goclient.ListOpts{
@@ -409,7 +409,7 @@ func TestStreamListDiffSort(t *testing.T) {
 	require.Len(t, s1, 1)
 	require.Equal(t, "foo", s1[0].Text)
 
-	_, err = c.CreateTestType(ctx, &goclient.TestTypeRequest{Text: "bar"})
+	_, err = c.CreateTestType(ctx, &goclient.TestType{Text: "bar"})
 	require.NoError(t, err)
 
 	s2 := stream.Read()
@@ -425,10 +425,10 @@ func TestStreamListDiffIgnoreIrrelevant(t *testing.T) {
 	c := getClient(t)
 	ctx := context.Background()
 
-	created1, err := c.CreateTestType(ctx, &goclient.TestTypeRequest{Text: "foo"})
+	created1, err := c.CreateTestType(ctx, &goclient.TestType{Text: "foo"})
 	require.NoError(t, err)
 
-	_, err = c.CreateTestType(ctx, &goclient.TestTypeRequest{Text: "bar"})
+	_, err = c.CreateTestType(ctx, &goclient.TestType{Text: "bar"})
 	require.NoError(t, err)
 
 	stream, err := c.StreamListTestType(ctx, &goclient.ListOpts{Stream: "diff", Sorts: []string{"+text"}, Limit: 1})
@@ -441,7 +441,7 @@ func TestStreamListDiffIgnoreIrrelevant(t *testing.T) {
 	require.Len(t, s1, 1)
 	require.Equal(t, "bar", s1[0].Text)
 
-	_, err = c.UpdateTestType(ctx, created1.ID, &goclient.TestTypeRequest{Text: "zig"}, nil)
+	_, err = c.UpdateTestType(ctx, created1.ID, &goclient.TestType{Text: "zig"}, nil)
 	require.NoError(t, err)
 
 	time.Sleep(1 * time.Second)
@@ -452,7 +452,7 @@ func TestStreamListDiffIgnoreIrrelevant(t *testing.T) {
 	default:
 	}
 
-	_, err = c.UpdateTestType(ctx, created1.ID, &goclient.TestTypeRequest{Text: "aaa"}, nil)
+	_, err = c.UpdateTestType(ctx, created1.ID, &goclient.TestType{Text: "aaa"}, nil)
 	require.NoError(t, err)
 
 	s3 := stream.Read()
@@ -468,7 +468,7 @@ func TestStreamListDiffPrev(t *testing.T) {
 	c := getClient(t)
 	ctx := context.Background()
 
-	_, err := c.CreateTestType(ctx, &goclient.TestTypeRequest{Text: "foo"})
+	_, err := c.CreateTestType(ctx, &goclient.TestType{Text: "foo"})
 	require.NoError(t, err)
 
 	stream1, err := c.StreamListTestType(ctx, &goclient.ListOpts{Stream: "diff"})
@@ -494,7 +494,7 @@ func TestStreamListDiffPrev(t *testing.T) {
 	require.Equal(t, "foo", s3[0].Text)
 	require.EqualValues(t, 5, s3[0].Num)
 
-	_, err = c.CreateTestType(ctx, &goclient.TestTypeRequest{Text: "bar"})
+	_, err = c.CreateTestType(ctx, &goclient.TestType{Text: "bar"})
 	require.NoError(t, err)
 
 	s4 := stream2.Read()
@@ -509,7 +509,7 @@ func TestStreamListDiffPrevMiss(t *testing.T) {
 	c := getClient(t)
 	ctx := context.Background()
 
-	_, err := c.CreateTestType(ctx, &goclient.TestTypeRequest{Text: "foo"})
+	_, err := c.CreateTestType(ctx, &goclient.TestType{Text: "foo"})
 	require.NoError(t, err)
 
 	stream1, err := c.StreamListTestType(ctx, &goclient.ListOpts{Stream: "diff"})
@@ -524,7 +524,7 @@ func TestStreamListDiffPrevMiss(t *testing.T) {
 
 	s1[0].Num = 5
 
-	_, err = c.CreateTestType(ctx, &goclient.TestTypeRequest{Text: "bar"})
+	_, err = c.CreateTestType(ctx, &goclient.TestType{Text: "bar"})
 	require.NoError(t, err)
 
 	stream2, err := c.StreamListTestType(ctx, &goclient.ListOpts{Stream: "diff", Prev: s1})

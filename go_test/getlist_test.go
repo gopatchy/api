@@ -16,13 +16,13 @@ func TestList(t *testing.T) {
 	c := getClient(t)
 	ctx := context.Background()
 
-	created1, err := c.CreateTestType(ctx, &goclient.TestTypeRequest{Text: "foo"})
+	created1, err := c.CreateTestType(ctx, &goclient.TestType{Text: "foo"})
 	require.NoError(t, err)
 
-	created2, err := c.CreateTestType(ctx, &goclient.TestTypeRequest{Text: "bar"})
+	created2, err := c.CreateTestType(ctx, &goclient.TestType{Text: "bar"})
 	require.NoError(t, err)
 
-	created3, err := c.CreateTestType(ctx, &goclient.TestTypeRequest{Text: "zig"})
+	created3, err := c.CreateTestType(ctx, &goclient.TestType{Text: "zig"})
 	require.NoError(t, err)
 
 	list, err := c.ListTestType(ctx, nil)
@@ -43,10 +43,10 @@ func TestListEquals(t *testing.T) {
 	c := getClient(t)
 	ctx := context.Background()
 
-	_, err := c.CreateTestType(ctx, &goclient.TestTypeRequest{Text: "foo"})
+	_, err := c.CreateTestType(ctx, &goclient.TestType{Text: "foo"})
 	require.NoError(t, err)
 
-	_, err = c.CreateTestType(ctx, &goclient.TestTypeRequest{Text: "bar"})
+	_, err = c.CreateTestType(ctx, &goclient.TestType{Text: "bar"})
 	require.NoError(t, err)
 
 	list, err := c.ListTestType(ctx, &goclient.ListOpts{
@@ -70,7 +70,7 @@ func TestListInvalidOp(t *testing.T) {
 	c := getClient(t)
 	ctx := context.Background()
 
-	_, err := c.CreateTestType(ctx, &goclient.TestTypeRequest{Text: "foo"})
+	_, err := c.CreateTestType(ctx, &goclient.TestType{Text: "foo"})
 	require.NoError(t, err)
 
 	list, err := c.ListTestType(ctx, &goclient.ListOpts{
@@ -93,10 +93,10 @@ func TestListGreaterThan(t *testing.T) {
 	c := getClient(t)
 	ctx := context.Background()
 
-	_, err := c.CreateTestType(ctx, &goclient.TestTypeRequest{Text: "foo"})
+	_, err := c.CreateTestType(ctx, &goclient.TestType{Text: "foo"})
 	require.NoError(t, err)
 
-	_, err = c.CreateTestType(ctx, &goclient.TestTypeRequest{Text: "bar"})
+	_, err = c.CreateTestType(ctx, &goclient.TestType{Text: "bar"})
 	require.NoError(t, err)
 
 	list, err := c.ListTestType(ctx, &goclient.ListOpts{
@@ -120,13 +120,13 @@ func TestListGreaterThanOrEqual(t *testing.T) {
 	c := getClient(t)
 	ctx := context.Background()
 
-	_, err := c.CreateTestType(ctx, &goclient.TestTypeRequest{Text: "foo"})
+	_, err := c.CreateTestType(ctx, &goclient.TestType{Text: "foo"})
 	require.NoError(t, err)
 
-	_, err = c.CreateTestType(ctx, &goclient.TestTypeRequest{Text: "bar"})
+	_, err = c.CreateTestType(ctx, &goclient.TestType{Text: "bar"})
 	require.NoError(t, err)
 
-	_, err = c.CreateTestType(ctx, &goclient.TestTypeRequest{Text: "zig"})
+	_, err = c.CreateTestType(ctx, &goclient.TestType{Text: "zig"})
 	require.NoError(t, err)
 
 	list, err := c.ListTestType(ctx, &goclient.ListOpts{
@@ -150,10 +150,10 @@ func TestListHasPrefix(t *testing.T) {
 	c := getClient(t)
 	ctx := context.Background()
 
-	_, err := c.CreateTestType(ctx, &goclient.TestTypeRequest{Text: "foo"})
+	_, err := c.CreateTestType(ctx, &goclient.TestType{Text: "foo"})
 	require.NoError(t, err)
 
-	_, err = c.CreateTestType(ctx, &goclient.TestTypeRequest{Text: "bar"})
+	_, err = c.CreateTestType(ctx, &goclient.TestType{Text: "bar"})
 	require.NoError(t, err)
 
 	list, err := c.ListTestType(ctx, &goclient.ListOpts{
@@ -177,10 +177,10 @@ func TestListIn(t *testing.T) {
 	c := getClient(t)
 	ctx := context.Background()
 
-	_, err := c.CreateTestType(ctx, &goclient.TestTypeRequest{Text: "foo"})
+	_, err := c.CreateTestType(ctx, &goclient.TestType{Text: "foo"})
 	require.NoError(t, err)
 
-	_, err = c.CreateTestType(ctx, &goclient.TestTypeRequest{Text: "bar"})
+	_, err = c.CreateTestType(ctx, &goclient.TestType{Text: "bar"})
 	require.NoError(t, err)
 
 	list, err := c.ListTestType(ctx, &goclient.ListOpts{
@@ -204,10 +204,10 @@ func TestListLessThan(t *testing.T) {
 	c := getClient(t)
 	ctx := context.Background()
 
-	_, err := c.CreateTestType(ctx, &goclient.TestTypeRequest{Text: "foo"})
+	_, err := c.CreateTestType(ctx, &goclient.TestType{Text: "foo"})
 	require.NoError(t, err)
 
-	_, err = c.CreateTestType(ctx, &goclient.TestTypeRequest{Text: "bar"})
+	_, err = c.CreateTestType(ctx, &goclient.TestType{Text: "bar"})
 	require.NoError(t, err)
 
 	list, err := c.ListTestType(ctx, &goclient.ListOpts{
@@ -231,13 +231,13 @@ func TestListLessThanOrEqual(t *testing.T) {
 	c := getClient(t)
 	ctx := context.Background()
 
-	_, err := c.CreateTestType(ctx, &goclient.TestTypeRequest{Text: "foo"})
+	_, err := c.CreateTestType(ctx, &goclient.TestType{Text: "foo"})
 	require.NoError(t, err)
 
-	_, err = c.CreateTestType(ctx, &goclient.TestTypeRequest{Text: "bar"})
+	_, err = c.CreateTestType(ctx, &goclient.TestType{Text: "bar"})
 	require.NoError(t, err)
 
-	_, err = c.CreateTestType(ctx, &goclient.TestTypeRequest{Text: "zig"})
+	_, err = c.CreateTestType(ctx, &goclient.TestType{Text: "zig"})
 	require.NoError(t, err)
 
 	list, err := c.ListTestType(ctx, &goclient.ListOpts{
@@ -261,10 +261,10 @@ func TestListLimit(t *testing.T) {
 	c := getClient(t)
 	ctx := context.Background()
 
-	_, err := c.CreateTestType(ctx, &goclient.TestTypeRequest{Text: "foo"})
+	_, err := c.CreateTestType(ctx, &goclient.TestType{Text: "foo"})
 	require.NoError(t, err)
 
-	_, err = c.CreateTestType(ctx, &goclient.TestTypeRequest{Text: "bar"})
+	_, err = c.CreateTestType(ctx, &goclient.TestType{Text: "bar"})
 	require.NoError(t, err)
 
 	list, err := c.ListTestType(ctx, &goclient.ListOpts{Limit: 1})
@@ -280,13 +280,13 @@ func TestListOffset(t *testing.T) {
 	c := getClient(t)
 	ctx := context.Background()
 
-	_, err := c.CreateTestType(ctx, &goclient.TestTypeRequest{Text: "foo"})
+	_, err := c.CreateTestType(ctx, &goclient.TestType{Text: "foo"})
 	require.NoError(t, err)
 
-	_, err = c.CreateTestType(ctx, &goclient.TestTypeRequest{Text: "bar"})
+	_, err = c.CreateTestType(ctx, &goclient.TestType{Text: "bar"})
 	require.NoError(t, err)
 
-	_, err = c.CreateTestType(ctx, &goclient.TestTypeRequest{Text: "zig"})
+	_, err = c.CreateTestType(ctx, &goclient.TestType{Text: "zig"})
 	require.NoError(t, err)
 
 	list, err := c.ListTestType(ctx, &goclient.ListOpts{Offset: 1})
@@ -304,13 +304,13 @@ func TestListAfter(t *testing.T) {
 	c := getClient(t)
 	ctx := context.Background()
 
-	_, err := c.CreateTestType(ctx, &goclient.TestTypeRequest{Text: "foo"})
+	_, err := c.CreateTestType(ctx, &goclient.TestType{Text: "foo"})
 	require.NoError(t, err)
 
-	_, err = c.CreateTestType(ctx, &goclient.TestTypeRequest{Text: "bar"})
+	_, err = c.CreateTestType(ctx, &goclient.TestType{Text: "bar"})
 	require.NoError(t, err)
 
-	_, err = c.CreateTestType(ctx, &goclient.TestTypeRequest{Text: "zig"})
+	_, err = c.CreateTestType(ctx, &goclient.TestType{Text: "zig"})
 	require.NoError(t, err)
 
 	list1, err := c.ListTestType(ctx, nil)
@@ -331,13 +331,13 @@ func TestListSort(t *testing.T) {
 	c := getClient(t)
 	ctx := context.Background()
 
-	_, err := c.CreateTestType(ctx, &goclient.TestTypeRequest{Text: "foo"})
+	_, err := c.CreateTestType(ctx, &goclient.TestType{Text: "foo"})
 	require.NoError(t, err)
 
-	_, err = c.CreateTestType(ctx, &goclient.TestTypeRequest{Text: "bar"})
+	_, err = c.CreateTestType(ctx, &goclient.TestType{Text: "bar"})
 	require.NoError(t, err)
 
-	_, err = c.CreateTestType(ctx, &goclient.TestTypeRequest{Text: "zig"})
+	_, err = c.CreateTestType(ctx, &goclient.TestType{Text: "zig"})
 	require.NoError(t, err)
 
 	list, err := c.ListTestType(ctx, &goclient.ListOpts{Sorts: []string{"text"}})
@@ -353,13 +353,13 @@ func TestListSortAsc(t *testing.T) {
 	c := getClient(t)
 	ctx := context.Background()
 
-	_, err := c.CreateTestType(ctx, &goclient.TestTypeRequest{Text: "foo"})
+	_, err := c.CreateTestType(ctx, &goclient.TestType{Text: "foo"})
 	require.NoError(t, err)
 
-	_, err = c.CreateTestType(ctx, &goclient.TestTypeRequest{Text: "bar"})
+	_, err = c.CreateTestType(ctx, &goclient.TestType{Text: "bar"})
 	require.NoError(t, err)
 
-	_, err = c.CreateTestType(ctx, &goclient.TestTypeRequest{Text: "zig"})
+	_, err = c.CreateTestType(ctx, &goclient.TestType{Text: "zig"})
 	require.NoError(t, err)
 
 	list, err := c.ListTestType(ctx, &goclient.ListOpts{Sorts: []string{"+text"}})
@@ -375,13 +375,13 @@ func TestListSortDesc(t *testing.T) {
 	c := getClient(t)
 	ctx := context.Background()
 
-	_, err := c.CreateTestType(ctx, &goclient.TestTypeRequest{Text: "foo"})
+	_, err := c.CreateTestType(ctx, &goclient.TestType{Text: "foo"})
 	require.NoError(t, err)
 
-	_, err = c.CreateTestType(ctx, &goclient.TestTypeRequest{Text: "bar"})
+	_, err = c.CreateTestType(ctx, &goclient.TestType{Text: "bar"})
 	require.NoError(t, err)
 
-	_, err = c.CreateTestType(ctx, &goclient.TestTypeRequest{Text: "zig"})
+	_, err = c.CreateTestType(ctx, &goclient.TestType{Text: "zig"})
 	require.NoError(t, err)
 
 	list, err := c.ListTestType(ctx, &goclient.ListOpts{Sorts: []string{"-text"}})
@@ -397,13 +397,13 @@ func TestListSortBeforeOffset(t *testing.T) {
 	c := getClient(t)
 	ctx := context.Background()
 
-	_, err := c.CreateTestType(ctx, &goclient.TestTypeRequest{Text: "foo"})
+	_, err := c.CreateTestType(ctx, &goclient.TestType{Text: "foo"})
 	require.NoError(t, err)
 
-	_, err = c.CreateTestType(ctx, &goclient.TestTypeRequest{Text: "bar"})
+	_, err = c.CreateTestType(ctx, &goclient.TestType{Text: "bar"})
 	require.NoError(t, err)
 
-	_, err = c.CreateTestType(ctx, &goclient.TestTypeRequest{Text: "zig"})
+	_, err = c.CreateTestType(ctx, &goclient.TestType{Text: "zig"})
 	require.NoError(t, err)
 
 	list, err := c.ListTestType(ctx, &goclient.ListOpts{
@@ -422,13 +422,13 @@ func TestListSortBeforeLimit(t *testing.T) {
 	c := getClient(t)
 	ctx := context.Background()
 
-	_, err := c.CreateTestType(ctx, &goclient.TestTypeRequest{Text: "foo"})
+	_, err := c.CreateTestType(ctx, &goclient.TestType{Text: "foo"})
 	require.NoError(t, err)
 
-	_, err = c.CreateTestType(ctx, &goclient.TestTypeRequest{Text: "bar"})
+	_, err = c.CreateTestType(ctx, &goclient.TestType{Text: "bar"})
 	require.NoError(t, err)
 
-	_, err = c.CreateTestType(ctx, &goclient.TestTypeRequest{Text: "zig"})
+	_, err = c.CreateTestType(ctx, &goclient.TestType{Text: "zig"})
 	require.NoError(t, err)
 
 	list, err := c.ListTestType(ctx, &goclient.ListOpts{
@@ -447,7 +447,7 @@ func TestListPrev(t *testing.T) {
 	c := getClient(t)
 	ctx := context.Background()
 
-	_, err := c.CreateTestType(ctx, &goclient.TestTypeRequest{Text: "foo"})
+	_, err := c.CreateTestType(ctx, &goclient.TestType{Text: "foo"})
 	require.NoError(t, err)
 
 	list, err := c.ListTestType(ctx, nil)
@@ -473,13 +473,13 @@ func TestListHook(t *testing.T) {
 	c := getClient(t)
 	ctx := context.Background()
 
-	_, err := c.CreateTestType(ctx, &goclient.TestTypeRequest{Text: "foo"})
+	_, err := c.CreateTestType(ctx, &goclient.TestType{Text: "foo"})
 	require.NoError(t, err)
 
-	_, err = c.CreateTestType(ctx, &goclient.TestTypeRequest{Text: "bar"})
+	_, err = c.CreateTestType(ctx, &goclient.TestType{Text: "bar"})
 	require.NoError(t, err)
 
-	_, err = c.CreateTestType(ctx, &goclient.TestTypeRequest{Text: "zig"})
+	_, err = c.CreateTestType(ctx, &goclient.TestType{Text: "zig"})
 	require.NoError(t, err)
 
 	c.SetHeader("List-Hook", "x")

@@ -16,10 +16,10 @@ func TestReplace(t *testing.T) {
 	c := getClient(t)
 	ctx := context.Background()
 
-	created, err := c.CreateTestType(ctx, &goclient.TestTypeRequest{Text: "foo", Num: 1})
+	created, err := c.CreateTestType(ctx, &goclient.TestType{Text: "foo", Num: 1})
 	require.NoError(t, err)
 
-	replaced, err := c.ReplaceTestType(ctx, created.ID, &goclient.TestTypeRequest{Text: "bar"}, nil)
+	replaced, err := c.ReplaceTestType(ctx, created.ID, &goclient.TestType{Text: "bar"}, nil)
 	require.NoError(t, err)
 	require.NotNil(t, replaced)
 	require.Equal(t, "bar", replaced.Text)
@@ -40,9 +40,27 @@ func TestReplaceNotExist(t *testing.T) {
 	c := getClient(t)
 	ctx := context.Background()
 
-	replaced, err := c.ReplaceTestType(ctx, "doesnotexist", &goclient.TestTypeRequest{Text: "bar"}, nil)
+	replaced, err := c.ReplaceTestType(ctx, "doesnotexist", &goclient.TestType{Text: "bar"}, nil)
 	require.Error(t, err)
 	require.Nil(t, replaced)
+}
+
+func TestReplaceWithModify(t *testing.T) {
+	t.Parallel()
+
+	defer registerTest(t)()
+	c := getClient(t)
+	ctx := context.Background()
+
+	created, err := c.CreateTestType(ctx, &goclient.TestType{Text: "foo"})
+	require.NoError(t, err)
+
+	created.Num = 5
+
+	replaced, err := c.ReplaceTestType(ctx, created.ID, created, &goclient.UpdateOpts{Prev: created})
+	require.NoError(t, err)
+	require.Equal(t, "foo", replaced.Text)
+	require.EqualValues(t, 5, replaced.Num)
 }
 
 func TestReplaceIfMatchETagSuccess(t *testing.T) {
@@ -52,10 +70,10 @@ func TestReplaceIfMatchETagSuccess(t *testing.T) {
 	c := getClient(t)
 	ctx := context.Background()
 
-	created, err := c.CreateTestType(ctx, &goclient.TestTypeRequest{Text: "foo"})
+	created, err := c.CreateTestType(ctx, &goclient.TestType{Text: "foo"})
 	require.NoError(t, err)
 
-	replaced, err := c.ReplaceTestType(ctx, created.ID, &goclient.TestTypeRequest{Text: "bar"}, &goclient.UpdateOpts{Prev: created})
+	replaced, err := c.ReplaceTestType(ctx, created.ID, &goclient.TestType{Text: "bar"}, &goclient.UpdateOpts{Prev: created})
 	require.NoError(t, err)
 	require.Equal(t, "bar", replaced.Text)
 
@@ -71,12 +89,12 @@ func TestReplaceIfMatchETagMismatch(t *testing.T) {
 	c := getClient(t)
 	ctx := context.Background()
 
-	created, err := c.CreateTestType(ctx, &goclient.TestTypeRequest{Text: "foo"})
+	created, err := c.CreateTestType(ctx, &goclient.TestType{Text: "foo"})
 	require.NoError(t, err)
 
 	created.ETag = "etag:doesnotmatch"
 
-	replaced, err := c.ReplaceTestType(ctx, created.ID, &goclient.TestTypeRequest{Text: "bar"}, &goclient.UpdateOpts{Prev: created})
+	replaced, err := c.ReplaceTestType(ctx, created.ID, &goclient.TestType{Text: "bar"}, &goclient.UpdateOpts{Prev: created})
 	require.Error(t, err)
 	require.Nil(t, replaced)
 

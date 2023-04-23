@@ -16,7 +16,7 @@ func TestGetPrev(t *testing.T) {
 	c := getClient(t)
 	ctx := context.Background()
 
-	created, err := c.CreateTestType(ctx, &goclient.TestTypeRequest{Text: "foo"})
+	created, err := c.CreateTestType(ctx, &goclient.TestType{Text: "foo"})
 	require.NoError(t, err)
 
 	get, err := c.GetTestType(ctx, created.ID, nil)

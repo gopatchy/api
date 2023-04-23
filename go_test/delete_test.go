@@ -16,7 +16,7 @@ func TestDeleteSuccess(t *testing.T) {
 	c := getClient(t)
 	ctx := context.Background()
 
-	created, err := c.CreateTestType(ctx, &goclient.TestTypeRequest{Text: "foo"})
+	created, err := c.CreateTestType(ctx, &goclient.TestType{Text: "foo"})
 	require.NoError(t, err)
 
 	get, err := c.GetTestType(ctx, created.ID, nil)
@@ -50,7 +50,7 @@ func TestDeleteTwice(t *testing.T) {
 	c := getClient(t)
 	ctx := context.Background()
 
-	created, err := c.CreateTestType(ctx, &goclient.TestTypeRequest{Text: "foo"})
+	created, err := c.CreateTestType(ctx, &goclient.TestType{Text: "foo"})
 	require.NoError(t, err)
 
 	err = c.DeleteTestType(ctx, created.ID, nil)
@@ -67,7 +67,7 @@ func TestDeleteStream(t *testing.T) {
 	c := getClient(t)
 	ctx := context.Background()
 
-	created, err := c.CreateTestType(ctx, &goclient.TestTypeRequest{Text: "foo"})
+	created, err := c.CreateTestType(ctx, &goclient.TestType{Text: "foo"})
 	require.NoError(t, err)
 
 	stream, err := c.StreamGetTestType(ctx, created.ID, nil)
@@ -95,7 +95,7 @@ func TestDeleteIfMatchETagSuccess(t *testing.T) {
 	c := getClient(t)
 	ctx := context.Background()
 
-	created, err := c.CreateTestType(ctx, &goclient.TestTypeRequest{Text: "foo"})
+	created, err := c.CreateTestType(ctx, &goclient.TestType{Text: "foo"})
 	require.NoError(t, err)
 
 	err = c.DeleteTestType(ctx, created.ID, &goclient.UpdateOpts{Prev: created})
@@ -113,10 +113,10 @@ func TestDeleteIfMatchETagMismatch(t *testing.T) {
 	c := getClient(t)
 	ctx := context.Background()
 
-	created, err := c.CreateTestType(ctx, &goclient.TestTypeRequest{Text: "foo"})
+	created, err := c.CreateTestType(ctx, &goclient.TestType{Text: "foo"})
 	require.NoError(t, err)
 
-	_, err = c.UpdateTestType(ctx, created.ID, &goclient.TestTypeRequest{Text: "bar"}, nil)
+	_, err = c.UpdateTestType(ctx, created.ID, &goclient.TestType{Text: "bar"}, nil)
 	require.NoError(t, err)
 
 	err = c.DeleteTestType(ctx, created.ID, &goclient.UpdateOpts{Prev: created})

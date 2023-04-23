@@ -16,7 +16,7 @@ func TestCreate(t *testing.T) {
 	c := getClient(t)
 	ctx := context.Background()
 
-	created, err := c.CreateTestType(ctx, &goclient.TestTypeRequest{Text: "foo"})
+	created, err := c.CreateTestType(ctx, &goclient.TestType{Text: "foo"})
 	require.NoError(t, err)
 	require.NotNil(t, created)
 	require.Equal(t, "foo", created.Text)

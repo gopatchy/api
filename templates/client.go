@@ -32,18 +32,10 @@ type (
 {{- range $type := .Types }}
 {{- if $type.NameLower }}
 
-// TODO: Combine these two -- split goesn't make sense in Go
-// TODO: Get -> Replace cycle test
 // TODO: Less pointers throughout
 
-type {{ $type.TypeUpperCamel }}Response struct {
+type {{ $type.TypeUpperCamel }} struct {
 	metadata.Metadata
-	{{- range $field := .Fields }}
-	{{ padRight $field.NameUpperCamel $type.FieldNameMaxLen }} {{ padRight $field.GoType $type.FieldGoTypeMaxLen }} `json:"{{ $field.NameLower }}"`
-	{{- end }}
-}
-
-type {{ $type.TypeUpperCamel }}Request struct {
 	{{- range $field := .Fields }}
 	{{ padRight $field.NameUpperCamel $type.FieldNameMaxLen }} {{ padRight $field.GoType $type.FieldGoTypeMaxLen }} `json:"{{ $field.NameLower }},omitempty"`
 	{{- end }}
@@ -53,11 +45,7 @@ type {{ $type.TypeUpperCamel }}Request struct {
 
 type {{ $type.TypeUpperCamel }} struct {
 	{{- range $field := .Fields }}
-	{{- if $field.Optional }}
-	{{ padRight $field.NameUpperCamel $type.FieldNameMaxLen }} {{ padRight (printf "*%s" $field.GoType) (add $type.FieldGoTypeMaxLen 2) }} `json:"{{ $field.NameLower }},omitempty"`
-	{{- else }}
-	{{ padRight $field.NameUpperCamel $type.FieldNameMaxLen }} {{ padRight $field.GoType (add $type.FieldGoTypeMaxLen 2) }} `json:"{{ $field.NameLower }}"`
-	{{- end }}
+	{{ padRight $field.NameUpperCamel $type.FieldNameMaxLen }} {{ padRight $field.GoType $type.FieldGoTypeMaxLen }} `json:"{{ $field.NameLower }},omitempty"`
 	{{- end }}
 }
 
@@ -125,40 +113,40 @@ func (c *Client) SetAuthToken(token string) *Client {
 
 //// {{ $type.NameUpperCamel }}
 
-func (c *Client) Create{{ $type.NameUpperCamel }}(ctx context.Context, obj *{{ $type.TypeUpperCamel }}Request) (*{{ $type.TypeUpperCamel }}Response, error) {
-	return CreateName[{{ $type.TypeUpperCamel }}Response, {{ $type.TypeUpperCamel }}Request](ctx, c, "{{ $type.NameLower }}", obj)
+func (c *Client) Create{{ $type.NameUpperCamel }}(ctx context.Context, obj *{{ $type.TypeUpperCamel }}) (*{{ $type.TypeUpperCamel }}, error) {
+	return CreateName[{{ $type.TypeUpperCamel }}, {{ $type.TypeUpperCamel }}](ctx, c, "{{ $type.NameLower }}", obj)
 }
 
 func (c *Client) Delete{{ $type.NameUpperCamel }}(ctx context.Context, id string, opts *UpdateOpts) error {
-	return DeleteName[{{ $type.TypeUpperCamel }}Response](ctx, c, "{{ $type.NameLower }}", id, opts)
+	return DeleteName[{{ $type.TypeUpperCamel }}](ctx, c, "{{ $type.NameLower }}", id, opts)
 }
 
-func (c *Client) Find{{ $type.NameUpperCamel }}(ctx context.Context, shortID string) (*{{ $type.TypeUpperCamel }}Response, error) {
-	return FindName[{{ $type.TypeUpperCamel }}Response](ctx, c, "{{ $type.NameLower }}", shortID)
+func (c *Client) Find{{ $type.NameUpperCamel }}(ctx context.Context, shortID string) (*{{ $type.TypeUpperCamel }}, error) {
+	return FindName[{{ $type.TypeUpperCamel }}](ctx, c, "{{ $type.NameLower }}", shortID)
 }
 
-func (c *Client) Get{{ $type.NameUpperCamel }}(ctx context.Context, id string, opts *GetOpts) (*{{ $type.TypeUpperCamel }}Response, error) {
-	return GetName[{{ $type.TypeUpperCamel }}Response](ctx, c, "{{ $type.NameLower }}", id, opts)
+func (c *Client) Get{{ $type.NameUpperCamel }}(ctx context.Context, id string, opts *GetOpts) (*{{ $type.TypeUpperCamel }}, error) {
+	return GetName[{{ $type.TypeUpperCamel }}](ctx, c, "{{ $type.NameLower }}", id, opts)
 }
 
-func (c *Client) List{{ $type.NameUpperCamel }}(ctx context.Context, opts *ListOpts) ([]*{{ $type.TypeUpperCamel }}Response, error) {
-	return ListName[{{ $type.TypeUpperCamel }}Response](ctx, c, "{{ $type.NameLower }}", opts)
+func (c *Client) List{{ $type.NameUpperCamel }}(ctx context.Context, opts *ListOpts) ([]*{{ $type.TypeUpperCamel }}, error) {
+	return ListName[{{ $type.TypeUpperCamel }}](ctx, c, "{{ $type.NameLower }}", opts)
 }
 
-func (c *Client) Replace{{ $type.NameUpperCamel }}(ctx context.Context, id string, obj *{{ $type.TypeUpperCamel }}Request, opts *UpdateOpts) (*{{ $type.TypeUpperCamel }}Response, error) {
-	return ReplaceName[{{ $type.TypeUpperCamel }}Response, {{ $type.TypeUpperCamel }}Request](ctx, c, "{{ $type.NameLower }}", id, obj, opts)
+func (c *Client) Replace{{ $type.NameUpperCamel }}(ctx context.Context, id string, obj *{{ $type.TypeUpperCamel }}, opts *UpdateOpts) (*{{ $type.TypeUpperCamel }}, error) {
+	return ReplaceName[{{ $type.TypeUpperCamel }}, {{ $type.TypeUpperCamel }}](ctx, c, "{{ $type.NameLower }}", id, obj, opts)
 }
 
-func (c *Client) Update{{ $type.NameUpperCamel }}(ctx context.Context, id string, obj *{{ $type.TypeUpperCamel }}Request, opts *UpdateOpts) (*{{ $type.TypeUpperCamel }}Response, error) {
-	return UpdateName[{{ $type.TypeUpperCamel }}Response, {{ $type.TypeUpperCamel }}Request](ctx, c, "{{ $type.NameLower }}", id, obj, opts)
+func (c *Client) Update{{ $type.NameUpperCamel }}(ctx context.Context, id string, obj *{{ $type.TypeUpperCamel }}, opts *UpdateOpts) (*{{ $type.TypeUpperCamel }}, error) {
+	return UpdateName[{{ $type.TypeUpperCamel }}, {{ $type.TypeUpperCamel }}](ctx, c, "{{ $type.NameLower }}", id, obj, opts)
 }
 
-func (c *Client) StreamGet{{ $type.NameUpperCamel }}(ctx context.Context, id string, opts *GetOpts) (*patchyc.GetStream[{{ $type.TypeUpperCamel }}Response], error) {
-	return StreamGetName[{{ $type.TypeUpperCamel }}Response](ctx, c, "{{ $type.NameLower }}", id, opts)
+func (c *Client) StreamGet{{ $type.NameUpperCamel }}(ctx context.Context, id string, opts *GetOpts) (*patchyc.GetStream[{{ $type.TypeUpperCamel }}], error) {
+	return StreamGetName[{{ $type.TypeUpperCamel }}](ctx, c, "{{ $type.NameLower }}", id, opts)
 }
 
-func (c *Client) StreamList{{ $type.NameUpperCamel }}(ctx context.Context, opts *ListOpts) (*patchyc.ListStream[{{ $type.TypeUpperCamel }}Response], error) {
-	return StreamListName[{{ $type.TypeUpperCamel }}Response](ctx, c, "{{ $type.NameLower }}", opts)
+func (c *Client) StreamList{{ $type.NameUpperCamel }}(ctx context.Context, opts *ListOpts) (*patchyc.ListStream[{{ $type.TypeUpperCamel }}], error) {
+	return StreamListName[{{ $type.TypeUpperCamel }}](ctx, c, "{{ $type.NameLower }}", opts)
 }
 {{- end }}
 

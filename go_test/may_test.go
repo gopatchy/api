@@ -16,7 +16,7 @@ func TestMayWriteCreateSuccess(t *testing.T) {
 	c := getClient(t)
 	ctx := context.Background()
 
-	_, err := c.CreateMayType(ctx, &goclient.MayTypeRequest{})
+	_, err := c.CreateMayType(ctx, &goclient.MayType{})
 	require.NoError(t, err)
 }
 
@@ -29,7 +29,7 @@ func TestMayWriteCreateRefuse(t *testing.T) {
 
 	c.SetHeader("X-Refuse-Write", "x")
 
-	created, err := c.CreateMayType(ctx, &goclient.MayTypeRequest{})
+	created, err := c.CreateMayType(ctx, &goclient.MayType{})
 	require.Error(t, err)
 	require.Nil(t, created)
 }
@@ -41,10 +41,10 @@ func TestMayWriteReplaceSuccess(t *testing.T) {
 	c := getClient(t)
 	ctx := context.Background()
 
-	created, err := c.CreateMayType(ctx, &goclient.MayTypeRequest{})
+	created, err := c.CreateMayType(ctx, &goclient.MayType{})
 	require.NoError(t, err)
 
-	_, err = c.ReplaceMayType(ctx, created.ID, &goclient.MayTypeRequest{}, nil)
+	_, err = c.ReplaceMayType(ctx, created.ID, &goclient.MayType{}, nil)
 	require.NoError(t, err)
 }
 
@@ -55,12 +55,12 @@ func TestMayWriteReplaceRefuse(t *testing.T) {
 	c := getClient(t)
 	ctx := context.Background()
 
-	created, err := c.CreateMayType(ctx, &goclient.MayTypeRequest{})
+	created, err := c.CreateMayType(ctx, &goclient.MayType{})
 	require.NoError(t, err)
 
 	c.SetHeader("X-Refuse-Write", "x")
 
-	_, err = c.ReplaceMayType(ctx, created.ID, &goclient.MayTypeRequest{}, nil)
+	_, err = c.ReplaceMayType(ctx, created.ID, &goclient.MayType{}, nil)
 	require.Error(t, err)
 }
 
@@ -71,10 +71,10 @@ func TestMayWriteUpdateSuccess(t *testing.T) {
 	c := getClient(t)
 	ctx := context.Background()
 
-	created, err := c.CreateMayType(ctx, &goclient.MayTypeRequest{})
+	created, err := c.CreateMayType(ctx, &goclient.MayType{})
 	require.NoError(t, err)
 
-	_, err = c.UpdateMayType(ctx, created.ID, &goclient.MayTypeRequest{}, nil)
+	_, err = c.UpdateMayType(ctx, created.ID, &goclient.MayType{}, nil)
 	require.NoError(t, err)
 }
 
@@ -85,12 +85,12 @@ func TestMayWriteUpdateRefuse(t *testing.T) {
 	c := getClient(t)
 	ctx := context.Background()
 
-	created, err := c.CreateMayType(ctx, &goclient.MayTypeRequest{})
+	created, err := c.CreateMayType(ctx, &goclient.MayType{})
 	require.NoError(t, err)
 
 	c.SetHeader("X-Refuse-Write", "x")
 
-	_, err = c.UpdateMayType(ctx, created.ID, &goclient.MayTypeRequest{}, nil)
+	_, err = c.UpdateMayType(ctx, created.ID, &goclient.MayType{}, nil)
 	require.Error(t, err)
 }
 
@@ -101,7 +101,7 @@ func TestMayWriteDeleteSuccess(t *testing.T) {
 	c := getClient(t)
 	ctx := context.Background()
 
-	created, err := c.CreateMayType(ctx, &goclient.MayTypeRequest{})
+	created, err := c.CreateMayType(ctx, &goclient.MayType{})
 	require.NoError(t, err)
 
 	err = c.DeleteMayType(ctx, created.ID, nil)
@@ -115,7 +115,7 @@ func TestMayWriteDeleteRefuse(t *testing.T) {
 	c := getClient(t)
 	ctx := context.Background()
 
-	created, err := c.CreateMayType(ctx, &goclient.MayTypeRequest{})
+	created, err := c.CreateMayType(ctx, &goclient.MayType{})
 	require.NoError(t, err)
 
 	c.SetHeader("X-Refuse-Write", "x")
@@ -131,7 +131,7 @@ func TestMayReadGetSuccess(t *testing.T) {
 	c := getClient(t)
 	ctx := context.Background()
 
-	created, err := c.CreateMayType(ctx, &goclient.MayTypeRequest{})
+	created, err := c.CreateMayType(ctx, &goclient.MayType{})
 	require.NoError(t, err)
 
 	get, err := c.GetMayType(ctx, created.ID, nil)
@@ -146,7 +146,7 @@ func TestMayReadGetRefuse(t *testing.T) {
 	c := getClient(t)
 	ctx := context.Background()
 
-	created, err := c.CreateMayType(ctx, &goclient.MayTypeRequest{})
+	created, err := c.CreateMayType(ctx, &goclient.MayType{})
 	require.NoError(t, err)
 
 	c.SetHeader("X-Refuse-Read", "x")
@@ -163,7 +163,7 @@ func TestMayReadStreamGetSuccess(t *testing.T) {
 	c := getClient(t)
 	ctx := context.Background()
 
-	created, err := c.CreateMayType(ctx, &goclient.MayTypeRequest{})
+	created, err := c.CreateMayType(ctx, &goclient.MayType{})
 	require.NoError(t, err)
 
 	stream, err := c.StreamGetMayType(ctx, created.ID, nil)
@@ -183,7 +183,7 @@ func TestMayReadStreamGetRefuse(t *testing.T) {
 	c := getClient(t)
 	ctx := context.Background()
 
-	created, err := c.CreateMayType(ctx, &goclient.MayTypeRequest{})
+	created, err := c.CreateMayType(ctx, &goclient.MayType{})
 	require.NoError(t, err)
 
 	c.SetHeader("X-Refuse-Read", "x")
@@ -205,7 +205,7 @@ func TestMayReadListSuccess(t *testing.T) {
 	c := getClient(t)
 	ctx := context.Background()
 
-	_, err := c.CreateMayType(ctx, &goclient.MayTypeRequest{})
+	_, err := c.CreateMayType(ctx, &goclient.MayType{})
 	require.NoError(t, err)
 
 	list, err := c.ListMayType(ctx, nil)
@@ -220,7 +220,7 @@ func TestMayReadListRefuse(t *testing.T) {
 	c := getClient(t)
 	ctx := context.Background()
 
-	_, err := c.CreateMayType(ctx, &goclient.MayTypeRequest{})
+	_, err := c.CreateMayType(ctx, &goclient.MayType{})
 	require.NoError(t, err)
 
 	c.SetHeader("X-Refuse-Read", "x")
@@ -237,7 +237,7 @@ func TestMayReadStreamListSuccess(t *testing.T) {
 	c := getClient(t)
 	ctx := context.Background()
 
-	_, err := c.CreateMayType(ctx, &goclient.MayTypeRequest{})
+	_, err := c.CreateMayType(ctx, &goclient.MayType{})
 	require.NoError(t, err)
 
 	stream, err := c.StreamListMayType(ctx, nil)
@@ -258,7 +258,7 @@ func TestMayReadStreamListRefuse(t *testing.T) {
 	c := getClient(t)
 	ctx := context.Background()
 
-	_, err := c.CreateMayType(ctx, &goclient.MayTypeRequest{})
+	_, err := c.CreateMayType(ctx, &goclient.MayType{})
 	require.NoError(t, err)
 
 	c.SetHeader("X-Refuse-Read", "x")
@@ -281,7 +281,7 @@ func TestMayReadCreateSuccess(t *testing.T) {
 	c := getClient(t)
 	ctx := context.Background()
 
-	_, err := c.CreateMayType(ctx, &goclient.MayTypeRequest{})
+	_, err := c.CreateMayType(ctx, &goclient.MayType{})
 	require.NoError(t, err)
 }
 
@@ -294,7 +294,7 @@ func TestMayReadCreateRefuse(t *testing.T) {
 
 	c.SetHeader("X-Refuse-Read", "x")
 
-	_, err := c.CreateMayType(ctx, &goclient.MayTypeRequest{})
+	_, err := c.CreateMayType(ctx, &goclient.MayType{})
 	require.Error(t, err)
 }
 
@@ -305,10 +305,10 @@ func TestMayReadReplaceSuccess(t *testing.T) {
 	c := getClient(t)
 	ctx := context.Background()
 
-	created, err := c.CreateMayType(ctx, &goclient.MayTypeRequest{})
+	created, err := c.CreateMayType(ctx, &goclient.MayType{})
 	require.NoError(t, err)
 
-	_, err = c.ReplaceMayType(ctx, created.ID, &goclient.MayTypeRequest{}, nil)
+	_, err = c.ReplaceMayType(ctx, created.ID, &goclient.MayType{}, nil)
 	require.NoError(t, err)
 }
 
@@ -319,12 +319,12 @@ func TestMayReadReplaceRefuse(t *testing.T) {
 	c := getClient(t)
 	ctx := context.Background()
 
-	created, err := c.CreateMayType(ctx, &goclient.MayTypeRequest{})
+	created, err := c.CreateMayType(ctx, &goclient.MayType{})
 	require.NoError(t, err)
 
 	c.SetHeader("X-Refuse-Read", "x")
 
-	_, err = c.ReplaceMayType(ctx, created.ID, &goclient.MayTypeRequest{}, nil)
+	_, err = c.ReplaceMayType(ctx, created.ID, &goclient.MayType{}, nil)
 	require.Error(t, err)
 }
 
@@ -335,10 +335,10 @@ func TestMayReadUpdateSuccess(t *testing.T) {
 	c := getClient(t)
 	ctx := context.Background()
 
-	created, err := c.CreateMayType(ctx, &goclient.MayTypeRequest{})
+	created, err := c.CreateMayType(ctx, &goclient.MayType{})
 	require.NoError(t, err)
 
-	_, err = c.UpdateMayType(ctx, created.ID, &goclient.MayTypeRequest{}, nil)
+	_, err = c.UpdateMayType(ctx, created.ID, &goclient.MayType{}, nil)
 	require.NoError(t, err)
 }
 
@@ -349,12 +349,12 @@ func TestMayReadUpdateRefuse(t *testing.T) {
 	c := getClient(t)
 	ctx := context.Background()
 
-	created, err := c.CreateMayType(ctx, &goclient.MayTypeRequest{})
+	created, err := c.CreateMayType(ctx, &goclient.MayType{})
 	require.NoError(t, err)
 
 	c.SetHeader("X-Refuse-Read", "x")
 
-	_, err = c.UpdateMayType(ctx, created.ID, &goclient.MayTypeRequest{}, nil)
+	_, err = c.UpdateMayType(ctx, created.ID, &goclient.MayType{}, nil)
 	require.Error(t, err)
 }
 
@@ -367,7 +367,7 @@ func TestMayWriteMutateCreate(t *testing.T) {
 
 	c.SetHeader("X-Text1-Write", "1234")
 
-	created, err := c.CreateMayType(ctx, &goclient.MayTypeRequest{Text1: "foo"})
+	created, err := c.CreateMayType(ctx, &goclient.MayType{Text1: "foo"})
 	require.NoError(t, err)
 
 	get, err := c.GetMayType(ctx, created.ID, nil)
@@ -382,12 +382,12 @@ func TestMayWriteMutateReplace(t *testing.T) {
 	c := getClient(t)
 	ctx := context.Background()
 
-	created, err := c.CreateMayType(ctx, &goclient.MayTypeRequest{Text1: "foo"})
+	created, err := c.CreateMayType(ctx, &goclient.MayType{Text1: "foo"})
 	require.NoError(t, err)
 
 	c.SetHeader("X-Text1-Write", "2345")
 
-	_, err = c.ReplaceMayType(ctx, created.ID, &goclient.MayTypeRequest{Text1: "bar"}, nil)
+	_, err = c.ReplaceMayType(ctx, created.ID, &goclient.MayType{Text1: "bar"}, nil)
 	require.NoError(t, err)
 
 	get, err := c.GetMayType(ctx, created.ID, nil)
@@ -402,12 +402,12 @@ func TestMayWriteMutateUpdate(t *testing.T) {
 	c := getClient(t)
 	ctx := context.Background()
 
-	created, err := c.CreateMayType(ctx, &goclient.MayTypeRequest{Text1: "foo"})
+	created, err := c.CreateMayType(ctx, &goclient.MayType{Text1: "foo"})
 	require.NoError(t, err)
 
 	c.SetHeader("X-Text1-Write", "3456")
 
-	_, err = c.UpdateMayType(ctx, created.ID, &goclient.MayTypeRequest{Text1: "bar"}, nil)
+	_, err = c.UpdateMayType(ctx, created.ID, &goclient.MayType{Text1: "bar"}, nil)
 	require.NoError(t, err)
 
 	get, err := c.GetMayType(ctx, created.ID, nil)
@@ -422,7 +422,7 @@ func TestMayReadMutateGet(t *testing.T) {
 	c := getClient(t)
 	ctx := context.Background()
 
-	created, err := c.CreateMayType(ctx, &goclient.MayTypeRequest{Text1: "foo"})
+	created, err := c.CreateMayType(ctx, &goclient.MayType{Text1: "foo"})
 	require.NoError(t, err)
 
 	c.SetHeader("X-Text1-Read", "1234")
@@ -441,7 +441,7 @@ func TestMayReadMutateCreate(t *testing.T) {
 
 	c.SetHeader("X-Text1-Read", "2345")
 
-	created, err := c.CreateMayType(ctx, &goclient.MayTypeRequest{Text1: "foo"})
+	created, err := c.CreateMayType(ctx, &goclient.MayType{Text1: "foo"})
 	require.NoError(t, err)
 	require.Equal(t, "2345", created.Text1)
 
@@ -459,12 +459,12 @@ func TestMayReadMutateReplace(t *testing.T) {
 	c := getClient(t)
 	ctx := context.Background()
 
-	created, err := c.CreateMayType(ctx, &goclient.MayTypeRequest{Text1: "foo"})
+	created, err := c.CreateMayType(ctx, &goclient.MayType{Text1: "foo"})
 	require.NoError(t, err)
 
 	c.SetHeader("X-Text1-Read", "3456")
 
-	replaced, err := c.ReplaceMayType(ctx, created.ID, &goclient.MayTypeRequest{Text1: "bar"}, nil)
+	replaced, err := c.ReplaceMayType(ctx, created.ID, &goclient.MayType{Text1: "bar"}, nil)
 	require.NoError(t, err)
 	require.Equal(t, "3456", replaced.Text1)
 
@@ -482,12 +482,12 @@ func TestMayReadMutateUpdate(t *testing.T) {
 	c := getClient(t)
 	ctx := context.Background()
 
-	created, err := c.CreateMayType(ctx, &goclient.MayTypeRequest{Text1: "foo"})
+	created, err := c.CreateMayType(ctx, &goclient.MayType{Text1: "foo"})
 	require.NoError(t, err)
 
 	c.SetHeader("X-Text1-Read", "4567")
 
-	updated, err := c.UpdateMayType(ctx, created.ID, &goclient.MayTypeRequest{Text1: "bar"}, nil)
+	updated, err := c.UpdateMayType(ctx, created.ID, &goclient.MayType{Text1: "bar"}, nil)
 	require.NoError(t, err)
 	require.Equal(t, "4567", updated.Text1)
 
@@ -505,7 +505,7 @@ func TestMayReadMutateStreamGet(t *testing.T) {
 	c := getClient(t)
 	ctx := context.Background()
 
-	created, err := c.CreateMayType(ctx, &goclient.MayTypeRequest{Text1: "foo"})
+	created, err := c.CreateMayType(ctx, &goclient.MayType{Text1: "foo"})
 	require.NoError(t, err)
 
 	c.SetHeader("X-Text1-Read", "5678")
@@ -527,7 +527,7 @@ func TestMayReadMutateList(t *testing.T) {
 	c := getClient(t)
 	ctx := context.Background()
 
-	_, err := c.CreateMayType(ctx, &goclient.MayTypeRequest{Text1: "foo"})
+	_, err := c.CreateMayType(ctx, &goclient.MayType{Text1: "foo"})
 	require.NoError(t, err)
 
 	c.SetHeader("X-Text1-Read", "6789")
@@ -545,7 +545,7 @@ func TestMayReadMutateStreamList(t *testing.T) {
 	c := getClient(t)
 	ctx := context.Background()
 
-	_, err := c.CreateMayType(ctx, &goclient.MayTypeRequest{Text1: "foo"})
+	_, err := c.CreateMayType(ctx, &goclient.MayType{Text1: "foo"})
 	require.NoError(t, err)
 
 	c.SetHeader("X-Text1-Read", "789a")
@@ -567,7 +567,7 @@ func TestMayReadSideEffect(t *testing.T) {
 	c := getClient(t)
 	ctx := context.Background()
 
-	created, err := c.CreateMayType(ctx, &goclient.MayTypeRequest{Text1: "foo"})
+	created, err := c.CreateMayType(ctx, &goclient.MayType{Text1: "foo"})
 	require.NoError(t, err)
 
 	c.SetHeader("X-NewText1", "abcd")

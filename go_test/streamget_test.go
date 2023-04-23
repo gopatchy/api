@@ -17,7 +17,7 @@ func TestStreamGetHeartbeat(t *testing.T) {
 	c := getClient(t)
 	ctx := context.Background()
 
-	created, err := c.CreateTestType(ctx, &goclient.TestTypeRequest{Text: "foo"})
+	created, err := c.CreateTestType(ctx, &goclient.TestType{Text: "foo"})
 	require.NoError(t, err)
 
 	stream, err := c.StreamGetTestType(ctx, created.ID, nil)
@@ -52,7 +52,7 @@ func TestStreamGet(t *testing.T) {
 	c := getClient(t)
 	ctx := context.Background()
 
-	created, err := c.CreateTestType(ctx, &goclient.TestTypeRequest{Text: "foo"})
+	created, err := c.CreateTestType(ctx, &goclient.TestType{Text: "foo"})
 	require.NoError(t, err)
 
 	stream, err := c.StreamGetTestType(ctx, created.ID, nil)
@@ -72,7 +72,7 @@ func TestStreamGetUpdate(t *testing.T) {
 	c := getClient(t)
 	ctx := context.Background()
 
-	created, err := c.CreateTestType(ctx, &goclient.TestTypeRequest{Text: "foo"})
+	created, err := c.CreateTestType(ctx, &goclient.TestType{Text: "foo"})
 	require.NoError(t, err)
 
 	stream, err := c.StreamGetTestType(ctx, created.ID, nil)
@@ -84,7 +84,7 @@ func TestStreamGetUpdate(t *testing.T) {
 	require.NotNil(t, s1, stream.Error())
 	require.Equal(t, "foo", s1.Text)
 
-	_, err = c.UpdateTestType(ctx, created.ID, &goclient.TestTypeRequest{Text: "bar"}, nil)
+	_, err = c.UpdateTestType(ctx, created.ID, &goclient.TestType{Text: "bar"}, nil)
 	require.NoError(t, err)
 
 	s2 := stream.Read()
@@ -99,7 +99,7 @@ func TestStreamGetPrev(t *testing.T) {
 	c := getClient(t)
 	ctx := context.Background()
 
-	created, err := c.CreateTestType(ctx, &goclient.TestTypeRequest{Text: "foo"})
+	created, err := c.CreateTestType(ctx, &goclient.TestType{Text: "foo"})
 	require.NoError(t, err)
 
 	stream1, err := c.StreamGetTestType(ctx, created.ID, nil)
