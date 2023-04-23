@@ -143,6 +143,11 @@ func requestHook(w http.ResponseWriter, r *http.Request, _ *patchy.API) (*http.R
 		ctx = context.WithValue(ctx, newText1, nt1)
 	}
 
+	fs := r.Header.Get("Force-Stream")
+	if fs != "" {
+		r.Form.Set("_stream", fs)
+	}
+
 	return r.WithContext(ctx), nil
 }
 

@@ -537,29 +537,19 @@ func TestStreamListDiffPrevMiss(t *testing.T) {
 	require.Len(t, s4, 2)
 }
 
-/*
-// TODO: Build a header-based means to do this into the test API server
 func TestStreamListForceDiff(t *testing.T) {
 	t.Parallel()
 
 	defer registerTest(t)()
-	c := getClient(t)
-	ctx := context.Background()
 
-	ta.api.SetRequestHook(func(r *http.Request, _ *patchy.API) (*http.Request, error) {
-		r.Form.Set("_stream", "diff")
-		return r, nil
-	})
-
-	resp, err := ta.r().
+	resp, err := getResty(t).
 		SetDoNotParseResponse(true).
+		SetHeader("Force-Stream", "diff").
 		SetHeader("Accept", "text/event-stream").
 		SetQueryParam("_stream", "full").
-		Get("testtype")
+		Get("api/testtype")
 	require.NoError(t, err)
 	require.False(t, resp.IsError())
 	require.Equal(t, "text/event-stream", resp.Header().Get("Content-Type"))
 	require.Equal(t, "diff", resp.Header().Get("Stream-Format"))
-	resp.RawBody().Close()
 }
-*/

@@ -24,11 +24,15 @@ func getClient(t *testing.T) *goclient.Client {
 		SetTLSClientConfig(&tls.Config{InsecureSkipVerify: true}) //nolint:gosec
 }
 
-func logEvent(t *testing.T, event string) {
-	resp, err := resty.New().
+func getResty(t *testing.T) *resty.Request {
+	return resty.New().
 		SetTLSClientConfig(&tls.Config{InsecureSkipVerify: true}).
 		SetBaseURL(getBaseURL(t)).
-		R().
+		R()
+}
+
+func logEvent(t *testing.T, event string) {
+	resp, err := getResty(t).
 		SetQueryParam("event", event).
 		SetQueryParam("name", t.Name()).
 		Get("api/_logEvent")
