@@ -28,7 +28,6 @@ func TestCreate(t *testing.T) {
 	require.Equal(t, created.ID, get.ID)
 }
 
-/*
 func TestCreateB(t *testing.T) {
 	t.Parallel()
 
@@ -39,12 +38,16 @@ func TestCreateB(t *testing.T) {
 	_, err := c.CreateTestType(ctx, &goclient.TestType{Text: "foo"})
 	require.NoError(t, err)
 
-	_, err := c.CreateTestTypeB(ctx, &goclient.TestType{Text: "bar"})
+	_, err = c.CreateTestTypeB(ctx, &goclient.TestType{Text: "bar"})
 	require.NoError(t, err)
 
-	list, err := c.ListTestTypeB(ctx, created.ID, nil)
+	list1, err := c.ListTestType(ctx, nil)
 	require.NoError(t, err)
-	require.Len(t, list, 1)
-	require.Equal(t, "bar", list[0].Name)
+	require.Len(t, list1, 1)
+	require.Equal(t, "foo", list1[0].Text)
+
+	list2, err := c.ListTestTypeB(ctx, nil)
+	require.NoError(t, err)
+	require.Len(t, list2, 1)
+	require.Equal(t, "bar", list2[0].Text)
 }
-*/

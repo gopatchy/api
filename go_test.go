@@ -88,7 +88,7 @@ func buildGo(t *testing.T) (string, string, map[string]string, []string) {
 
 	resp, err := ta.r().Get("_client.go")
 	require.NoError(t, err)
-	require.True(t, resp.IsSuccess())
+	require.True(t, resp.IsSuccess(), resp.String())
 
 	gc := resp.String()
 	require.NotEmpty(t, gc)

@@ -143,7 +143,7 @@ func buildTS(t *testing.T, env string) string {
 
 	resp, err := ta.r().Get("_client.ts")
 	require.NoError(t, err)
-	require.True(t, resp.IsSuccess())
+	require.True(t, resp.IsSuccess(), resp.String())
 
 	tc := resp.String()
 	require.NotEmpty(t, tc)

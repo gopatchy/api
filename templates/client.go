@@ -30,26 +30,17 @@ type (
 )
 
 {{- range $type := .Types }}
-{{- if $type.NameLower }}
-
-// TODO: Less pointers throughout
 
 type {{ $type.TypeUpperCamel }} struct {
+	{{- if $type.TopLevel }}
 	metadata.Metadata
+	{{- end }}
+
 	{{- range $field := .Fields }}
 	{{ padRight $field.NameUpperCamel $type.FieldNameMaxLen }} {{ padRight $field.GoType $type.FieldGoTypeMaxLen }} `json:"{{ $field.NameLower }},omitempty"`
 	{{- end }}
 }
 
-{{- else }}
-
-type {{ $type.TypeUpperCamel }} struct {
-	{{- range $field := .Fields }}
-	{{ padRight $field.NameUpperCamel $type.FieldNameMaxLen }} {{ padRight $field.GoType $type.FieldGoTypeMaxLen }} `json:"{{ $field.NameLower }},omitempty"`
-	{{- end }}
-}
-
-{{- end }}
 {{- end }}
 
 type Client struct {
@@ -108,45 +99,44 @@ func (c *Client) SetAuthToken(token string) *Client {
 }
 {{- end }}
 
-{{- range $type := .Types }}
-{{- if not $type.NameLower }} {{- continue }} {{- end }}
+{{- range $api := .APIs }}
 
-//// {{ $type.NameUpperCamel }}
+//// {{ $api.NameUpperCamel }}
 
-func (c *Client) Create{{ $type.NameUpperCamel }}(ctx context.Context, obj *{{ $type.TypeUpperCamel }}) (*{{ $type.TypeUpperCamel }}, error) {
-	return CreateName[{{ $type.TypeUpperCamel }}](ctx, c, "{{ $type.NameLower }}", obj)
+func (c *Client) Create{{ $api.NameUpperCamel }}(ctx context.Context, obj *{{ $api.TypeUpperCamel }}) (*{{ $api.TypeUpperCamel }}, error) {
+	return CreateName[{{ $api.TypeUpperCamel }}](ctx, c, "{{ $api.NameLower }}", obj)
 }
 
-func (c *Client) Delete{{ $type.NameUpperCamel }}(ctx context.Context, id string, opts *UpdateOpts) error {
-	return DeleteName[{{ $type.TypeUpperCamel }}](ctx, c, "{{ $type.NameLower }}", id, opts)
+func (c *Client) Delete{{ $api.NameUpperCamel }}(ctx context.Context, id string, opts *UpdateOpts) error {
+	return DeleteName[{{ $api.TypeUpperCamel }}](ctx, c, "{{ $api.NameLower }}", id, opts)
 }
 
-func (c *Client) Find{{ $type.NameUpperCamel }}(ctx context.Context, shortID string) (*{{ $type.TypeUpperCamel }}, error) {
-	return FindName[{{ $type.TypeUpperCamel }}](ctx, c, "{{ $type.NameLower }}", shortID)
+func (c *Client) Find{{ $api.NameUpperCamel }}(ctx context.Context, shortID string) (*{{ $api.TypeUpperCamel }}, error) {
+	return FindName[{{ $api.TypeUpperCamel }}](ctx, c, "{{ $api.NameLower }}", shortID)
 }
 
-func (c *Client) Get{{ $type.NameUpperCamel }}(ctx context.Context, id string, opts *GetOpts) (*{{ $type.TypeUpperCamel }}, error) {
-	return GetName[{{ $type.TypeUpperCamel }}](ctx, c, "{{ $type.NameLower }}", id, opts)
+func (c *Client) Get{{ $api.NameUpperCamel }}(ctx context.Context, id string, opts *GetOpts) (*{{ $api.TypeUpperCamel }}, error) {
+	return GetName[{{ $api.TypeUpperCamel }}](ctx, c, "{{ $api.NameLower }}", id, opts)
 }
 
-func (c *Client) List{{ $type.NameUpperCamel }}(ctx context.Context, opts *ListOpts) ([]*{{ $type.TypeUpperCamel }}, error) {
-	return ListName[{{ $type.TypeUpperCamel }}](ctx, c, "{{ $type.NameLower }}", opts)
+func (c *Client) List{{ $api.NameUpperCamel }}(ctx context.Context, opts *ListOpts) ([]*{{ $api.TypeUpperCamel }}, error) {
+	return ListName[{{ $api.TypeUpperCamel }}](ctx, c, "{{ $api.NameLower }}", opts)
 }
 
-func (c *Client) Replace{{ $type.NameUpperCamel }}(ctx context.Context, id string, obj *{{ $type.TypeUpperCamel }}, opts *UpdateOpts) (*{{ $type.TypeUpperCamel }}, error) {
-	return ReplaceName[{{ $type.TypeUpperCamel }}](ctx, c, "{{ $type.NameLower }}", id, obj, opts)
+func (c *Client) Replace{{ $api.NameUpperCamel }}(ctx context.Context, id string, obj *{{ $api.TypeUpperCamel }}, opts *UpdateOpts) (*{{ $api.TypeUpperCamel }}, error) {
+	return ReplaceName[{{ $api.TypeUpperCamel }}](ctx, c, "{{ $api.NameLower }}", id, obj, opts)
 }
 
-func (c *Client) Update{{ $type.NameUpperCamel }}(ctx context.Context, id string, obj *{{ $type.TypeUpperCamel }}, opts *UpdateOpts) (*{{ $type.TypeUpperCamel }}, error) {
-	return UpdateName[{{ $type.TypeUpperCamel }}](ctx, c, "{{ $type.NameLower }}", id, obj, opts)
+func (c *Client) Update{{ $api.NameUpperCamel }}(ctx context.Context, id string, obj *{{ $api.TypeUpperCamel }}, opts *UpdateOpts) (*{{ $api.TypeUpperCamel }}, error) {
+	return UpdateName[{{ $api.TypeUpperCamel }}](ctx, c, "{{ $api.NameLower }}", id, obj, opts)
 }
 
-func (c *Client) StreamGet{{ $type.NameUpperCamel }}(ctx context.Context, id string, opts *GetOpts) (*patchyc.GetStream[{{ $type.TypeUpperCamel }}], error) {
-	return StreamGetName[{{ $type.TypeUpperCamel }}](ctx, c, "{{ $type.NameLower }}", id, opts)
+func (c *Client) StreamGet{{ $api.NameUpperCamel }}(ctx context.Context, id string, opts *GetOpts) (*patchyc.GetStream[{{ $api.TypeUpperCamel }}], error) {
+	return StreamGetName[{{ $api.TypeUpperCamel }}](ctx, c, "{{ $api.NameLower }}", id, opts)
 }
 
-func (c *Client) StreamList{{ $type.NameUpperCamel }}(ctx context.Context, opts *ListOpts) (*patchyc.ListStream[{{ $type.TypeUpperCamel }}], error) {
-	return StreamListName[{{ $type.TypeUpperCamel }}](ctx, c, "{{ $type.NameLower }}", opts)
+func (c *Client) StreamList{{ $api.NameUpperCamel }}(ctx context.Context, opts *ListOpts) (*patchyc.ListStream[{{ $api.TypeUpperCamel }}], error) {
+	return StreamListName[{{ $api.TypeUpperCamel }}](ctx, c, "{{ $api.NameLower }}", opts)
 }
 {{- end }}
 

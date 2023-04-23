@@ -668,45 +668,44 @@ export class Client extends ClientCore {
 	}
 	{{- end }}
 
-	{{- range $type := .Types }}
-	{{- if not $type.NameLower }} {{- continue }} {{- end }}
+	{{- range $api := .APIs }}
 
-	//// {{ $type.NameUpperCamel }}
+	//// {{ $api.NameUpperCamel }}
 
-	async create{{ $type.NameUpperCamel }}(obj: {{ $type.TypeUpperCamel }}): Promise<{{ $type.TypeUpperCamel }} & Metadata> {
-		return this.createName<{{ $type.TypeUpperCamel }}>('{{ $type.NameLower }}', obj);
+	async create{{ $api.NameUpperCamel }}(obj: {{ $api.TypeUpperCamel }}): Promise<{{ $api.TypeUpperCamel }} & Metadata> {
+		return this.createName<{{ $api.TypeUpperCamel }}>('{{ $api.NameLower }}', obj);
 	}
 
-	async delete{{ $type.NameUpperCamel }}(id: string, opts?: UpdateOpts<{{ $type.TypeUpperCamel }}> | null): Promise<void> {
-		return this.deleteName('{{ $type.NameLower }}', id, opts);
+	async delete{{ $api.NameUpperCamel }}(id: string, opts?: UpdateOpts<{{ $api.TypeUpperCamel }}> | null): Promise<void> {
+		return this.deleteName('{{ $api.NameLower }}', id, opts);
 	}
 
-	async find{{ $type.NameUpperCamel }}(shortID: string): Promise<{{ $type.TypeUpperCamel }} & Metadata> {
-		return this.findName<{{ $type.TypeUpperCamel }}>('{{ $type.NameLower }}', shortID);
+	async find{{ $api.NameUpperCamel }}(shortID: string): Promise<{{ $api.TypeUpperCamel }} & Metadata> {
+		return this.findName<{{ $api.TypeUpperCamel }}>('{{ $api.NameLower }}', shortID);
 	}
 
-	async get{{ $type.NameUpperCamel }}(id: string, opts?: GetOpts<{{ $type.TypeUpperCamel }}> | null): Promise<{{ $type.TypeUpperCamel }} & Metadata> {
-		return this.getName<{{ $type.TypeUpperCamel }}>('{{ $type.NameLower }}', id, opts);
+	async get{{ $api.NameUpperCamel }}(id: string, opts?: GetOpts<{{ $api.TypeUpperCamel }}> | null): Promise<{{ $api.TypeUpperCamel }} & Metadata> {
+		return this.getName<{{ $api.TypeUpperCamel }}>('{{ $api.NameLower }}', id, opts);
 	}
 
-	async list{{ $type.NameUpperCamel }}(opts?: ListOpts<{{ $type.TypeUpperCamel }}> | null): Promise<({{ $type.TypeUpperCamel }} & Metadata)[]> {
-		return this.listName<{{ $type.TypeUpperCamel }}>('{{ $type.NameLower }}', opts);
+	async list{{ $api.NameUpperCamel }}(opts?: ListOpts<{{ $api.TypeUpperCamel }}> | null): Promise<({{ $api.TypeUpperCamel }} & Metadata)[]> {
+		return this.listName<{{ $api.TypeUpperCamel }}>('{{ $api.NameLower }}', opts);
 	}
 
-	async replace{{ $type.NameUpperCamel }}(id: string, obj: {{ $type.TypeUpperCamel }}, opts?: UpdateOpts<{{ $type.TypeUpperCamel }}> | null): Promise<{{ $type.TypeUpperCamel }} & Metadata> {
-		return this.replaceName<{{ $type.TypeUpperCamel }}>('{{ $type.NameLower }}', id, obj, opts);
+	async replace{{ $api.NameUpperCamel }}(id: string, obj: {{ $api.TypeUpperCamel }}, opts?: UpdateOpts<{{ $api.TypeUpperCamel }}> | null): Promise<{{ $api.TypeUpperCamel }} & Metadata> {
+		return this.replaceName<{{ $api.TypeUpperCamel }}>('{{ $api.NameLower }}', id, obj, opts);
 	}
 
-	async update{{ $type.NameUpperCamel }}(id: string, obj: {{ $type.TypeUpperCamel }}, opts?: UpdateOpts<{{ $type.TypeUpperCamel }}> | null): Promise<{{ $type.TypeUpperCamel }} & Metadata> {
-		return this.updateName<{{ $type.TypeUpperCamel }}>('{{ $type.NameLower }}', id, obj, opts);
+	async update{{ $api.NameUpperCamel }}(id: string, obj: {{ $api.TypeUpperCamel }}, opts?: UpdateOpts<{{ $api.TypeUpperCamel }}> | null): Promise<{{ $api.TypeUpperCamel }} & Metadata> {
+		return this.updateName<{{ $api.TypeUpperCamel }}>('{{ $api.NameLower }}', id, obj, opts);
 	}
 
-	async streamGet{{ $type.NameUpperCamel }}(id: string, opts?: GetOpts<{{ $type.TypeUpperCamel }}> | null): Promise<GetStream<{{ $type.TypeUpperCamel }}>> {
-		return this.streamGetName<{{ $type.TypeUpperCamel }}>('{{ $type.NameLower }}', id, opts);
+	async streamGet{{ $api.NameUpperCamel }}(id: string, opts?: GetOpts<{{ $api.TypeUpperCamel }}> | null): Promise<GetStream<{{ $api.TypeUpperCamel }}>> {
+		return this.streamGetName<{{ $api.TypeUpperCamel }}>('{{ $api.NameLower }}', id, opts);
 	}
 
-	async streamList{{ $type.NameUpperCamel }}(opts?: ListOpts<{{ $type.TypeUpperCamel }}> | null): Promise<ListStream<{{ $type.TypeUpperCamel }}>> {
-		return this.streamListName<{{ $type.TypeUpperCamel }}>('{{ $type.NameLower }}', opts);
+	async streamList{{ $api.NameUpperCamel }}(opts?: ListOpts<{{ $api.TypeUpperCamel }}> | null): Promise<ListStream<{{ $api.TypeUpperCamel }}>> {
+		return this.streamListName<{{ $api.TypeUpperCamel }}>('{{ $api.NameLower }}', opts);
 	}
 
 	{{- end }}

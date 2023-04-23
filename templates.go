@@ -32,6 +32,7 @@ type templateInput struct {
 	Info       *OpenAPIInfo
 	Form       url.Values
 	Types      []*templateType
+	APIs       []*apiType
 	UsesTime   bool
 	UsesCivil  bool
 	URLPrefix  string
@@ -41,16 +42,24 @@ type templateInput struct {
 
 // TODO: Split list of types and list of API objects
 
-type templateType struct {
+type apiType struct {
 	NameLower      string // "homeaddress"
 	NameUpperCamel string // "HomeAddress"
+	TypeUpperCamel string // "AddressType"
+
+	typeOf reflect.Type
+}
+
+type templateType struct {
+	TopLevel bool
+
 	TypeUpperCamel string // "AddressType"
 
 	Fields            []*templateField
 	FieldNameMaxLen   int
 	FieldGoTypeMaxLen int
 
-	typeOf reflect.Type
+	typeOf   reflect.Type
 }
 
 type templateField struct {
@@ -80,12 +89,19 @@ func (api *API) writeTemplate(name string) func(http.ResponseWriter, *http.Reque
 		typeQueue := []*templateType{}
 		typesDone := map[reflect.Type]bool{}
 
-		for _, name := range api.names() {
-			cfg := api.registry[name]
+		for _, apiName := range api.names() {
+			cfg := api.registry[apiName]
 
 			typeQueue = append(typeQueue, &templateType{
-				NameLower: name,
-				typeOf:    cfg.typeOf,
+				TopLevel: true,
+				typeOf:   cfg.typeOf,
+			})
+
+			input.APIs = append(input.APIs, &apiType{
+				NameLower:      cfg.apiName,
+				NameUpperCamel: cfg.camelName,
+				TypeUpperCamel: upperFirst(cfg.typeOf.Name()),
+				typeOf:         cfg.typeOf,
 			})
 		}
 
@@ -101,14 +117,6 @@ func (api *API) writeTemplate(name string) func(http.ResponseWriter, *http.Reque
 
 			tt.TypeUpperCamel = upperFirst(tt.typeOf.Name())
 
-			if tt.NameLower != "" {
-				tt.NameUpperCamel = upperFirst(tt.NameLower)
-
-				if strings.EqualFold(tt.NameUpperCamel, tt.TypeUpperCamel) {
-					tt.NameUpperCamel = tt.TypeUpperCamel
-				}
-			}
-
 			path.WalkType(tt.typeOf, func(_ string, parts []string, field reflect.StructField) {
 				typeOf := path.MaybeIndirectType(field.Type)
 
@@ -121,7 +129,7 @@ func (api *API) writeTemplate(name string) func(http.ResponseWriter, *http.Reque
 					return
 				}
 
-				if tt.NameLower != "" && (parts[0] == "id" ||
+				if tt.TopLevel && (parts[0] == "id" ||
 					parts[0] == "etag" ||
 					parts[0] == "generation") {
 					return

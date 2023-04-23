@@ -17,9 +17,9 @@ var ErrMissingAuthCheck = errors.New("missing auth check")
 type ListHook func(context.Context, *ListOpts, *API) error
 
 type config struct {
-	apiName  string
-	typeName string
-	typeOf   reflect.Type
+	apiName   string
+	camelName string
+	typeOf    reflect.Type
 
 	factory func() any
 
@@ -46,13 +46,13 @@ type mayWrite[T any] interface {
 	MayWrite(context.Context, *T, *API) error
 }
 
-func newConfig[T any](apiName, typeName string) *config {
+func newConfig[T any](apiName, camelName string) *config {
 	cfg := &config{
-		apiName:  apiName,
-		typeName: typeName,
-		typeOf:   reflect.TypeOf(new(T)).Elem(),
-		factory:  func() any { return new(T) },
-		locks:    map[string]*lock{},
+		apiName:   apiName,
+		camelName: camelName,
+		typeOf:    reflect.TypeOf(new(T)).Elem(),
+		factory:   func() any { return new(T) },
+		locks:     map[string]*lock{},
 	}
 
 	typ := cfg.factory()
