@@ -242,7 +242,7 @@ func DeleteName[T any](ctx context.Context, c *Client, name, id string, opts *Up
 		SetPathParam("name", name).
 		SetPathParam("id", id)
 
-	applyUpdateOpts(opts, r)
+	opts.apply(r)
 
 	resp, err := r.Delete("{name}/{id}")
 	if err != nil {
@@ -322,7 +322,7 @@ func ListName[T any](ctx context.Context, c *Client, name string, opts *ListOpts
 		SetPathParam("name", name).
 		SetResult(&objs)
 
-	err := applyListOpts(opts, r)
+	err := opts.apply(r)
 	if err != nil {
 		return nil, err
 	}
@@ -355,7 +355,7 @@ func ReplaceName[T any](ctx context.Context, c *Client, name, id string, obj *T,
 		SetBody(obj).
 		SetResult(replaced)
 
-	applyUpdateOpts(opts, r)
+	opts.apply(r)
 
 	resp, err := r.Put("{name}/{id}")
 	if err != nil {
@@ -379,7 +379,7 @@ func UpdateName[T any](ctx context.Context, c *Client, name, id string, obj *T, 
 		SetBody(obj).
 		SetResult(updated)
 
-	applyUpdateOpts(opts, r)
+	opts.apply(r)
 
 	resp, err := r.Patch("{name}/{id}")
 	if err != nil {
@@ -468,7 +468,7 @@ func StreamListName[T any](ctx context.Context, c *Client, name string, opts *Li
 		opts = &ListOpts[T]{}
 	}
 
-	err := applyListOpts(opts, r)
+	err := opts.apply(r)
 	if err != nil {
 		return nil, err
 	}
@@ -821,7 +821,7 @@ func (opts *GetOpts[T]) apply(req *resty.Request) {
 	}
 }
 
-func applyListOpts[T any](opts *ListOpts[T], req *resty.Request) error {
+func (opts *ListOpts[T]) apply(req *resty.Request) error {
 	if opts == nil {
 		return nil
 	}
@@ -862,7 +862,7 @@ func applyListOpts[T any](opts *ListOpts[T], req *resty.Request) error {
 	return nil
 }
 
-func applyUpdateOpts[T any](opts *UpdateOpts[T], req *resty.Request) {
+func (opts *UpdateOpts[T]) apply(req *resty.Request) {
 	if opts == nil {
 		return
 	}
