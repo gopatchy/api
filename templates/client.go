@@ -32,6 +32,21 @@ import (
 	"golang.org/x/exp/slices"
 )
 
+{{- range $type := .Types }}
+
+type {{ $type.TypeUpperCamel }} struct {
+	{{- if $type.TopLevel }}
+	metadata.Metadata
+	listETag string
+	{{- end }}
+
+	{{- range $field := .Fields }}
+	{{ padRight $field.NameUpperCamel $type.FieldNameMaxLen }} {{ padRight $field.GoType $type.FieldGoTypeMaxLen }} `json:"{{ $field.NameLower }},omitempty"`
+	{{- end }}
+}
+
+{{- end }}
+
 type GetOpts[T any] struct {
 	Prev *T
 }
@@ -62,21 +77,6 @@ type streamEvent struct {
 	params    map[string]string
 	data      []byte
 }
-
-{{- range $type := .Types }}
-
-type {{ $type.TypeUpperCamel }} struct {
-	{{- if $type.TopLevel }}
-	metadata.Metadata
-	listETag string
-	{{- end }}
-
-	{{- range $field := .Fields }}
-	{{ padRight $field.NameUpperCamel $type.FieldNameMaxLen }} {{ padRight $field.GoType $type.FieldGoTypeMaxLen }} `json:"{{ $field.NameLower }},omitempty"`
-	{{- end }}
-}
-
-{{- end }}
 
 type Client struct {
 	rst *resty.Client
@@ -121,32 +121,16 @@ func (c *Client) SetDebug(debug bool) *Client {
 	return c
 }
 
-func (c *Client) ResetAuth() *Client {
-	c.rst.Token = ""
-	c.rst.UserInfo = nil
-
-	return c
-}
-
 func (c *Client) SetHeader(name, value string) *Client {
 	c.rst.SetHeader(name, value)
 	return c
 }
 
-func (c *Client) DebugInfo(ctx context.Context) (map[string]any, error) {
-	return c.fetchMap(ctx, "_debug")
-}
+func (c *Client) ResetAuth() *Client {
+	c.rst.Token = ""
+	c.rst.UserInfo = nil
 
-func (c *Client) OpenAPI(ctx context.Context) (map[string]any, error) {
-	return c.fetchMap(ctx, "_openapi")
-}
-
-func (c *Client) GoClient(ctx context.Context) (string, error) {
-	return c.fetchString(ctx, "_client.go")
-}
-
-func (c *Client) TSClient(ctx context.Context) (string, error) {
-	return c.fetchString(ctx, "_client.ts")
+	return c
 }
 
 {{- if .AuthBasic }}
@@ -168,6 +152,23 @@ func (c *Client) SetAuthToken(token string) *Client {
 	return c
 }
 {{- end }}
+
+func (c *Client) DebugInfo(ctx context.Context) (map[string]any, error) {
+	return c.fetchMap(ctx, "_debug")
+}
+
+func (c *Client) OpenAPI(ctx context.Context) (map[string]any, error) {
+	return c.fetchMap(ctx, "_openapi")
+}
+
+func (c *Client) GoClient(ctx context.Context) (string, error) {
+	return c.fetchString(ctx, "_client.go")
+}
+
+func (c *Client) TSClient(ctx context.Context) (string, error) {
+	return c.fetchString(ctx, "_client.ts")
+}
+
 
 {{- range $api := .APIs }}
 

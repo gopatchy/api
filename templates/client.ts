@@ -46,6 +46,12 @@ export interface JSONError {
 	messages:  string[];
 }
 
+interface StreamEvent {
+	eventType: string;
+	params:    Map<string, string>;
+	data:      string;
+}
+
 interface FetchOptions {
 	params?:  URLSearchParams;
 	headers?: Headers;
@@ -53,15 +59,398 @@ interface FetchOptions {
 	body?:    any;
 	signal?:  AbortSignal;
 	stream?:  boolean;
-}
-
-interface StreamEvent {
-	eventType: string;
-	params:    Map<string, string>;
-	data:      string;
+	text?:    boolean;
 }
 
 const ETagKey = Symbol('etag');
+
+export class Client {
+	private baseURL: URL;
+	private headers: Headers = new Headers();
+	private debug: boolean = false;
+
+	constructor(baseURL: string) {
+		this.baseURL = new URL(baseURL, globalThis?.location?.href);
+	}
+
+	setDebug(debug: boolean) {
+		this.debug = debug;
+	}
+
+	setHeader(name: string, value: string) {
+		this.headers.set(name, value)
+	}
+
+	resetAuth() {
+		this.headers.delete('Authorization');
+	}
+
+	{{- if .AuthBasic }}
+
+	setBasicAuth(user: string, pass: string) {
+		const enc = btoa(`${user}:${pass}`);
+		this.headers.set('Authorization', `Basic ${enc}`);
+	}
+	{{- end }}
+
+	{{- if .AuthBearer }}
+
+	setAuthToken(token: string) {
+		this.headers.set('Authorization', `Bearer ${token}`);
+	}
+	{{- end }}
+
+	async debugInfo(): Promise<Object> {
+		return this.fetch('GET', '_debug');
+	}
+
+	async openAPI(): Promise<Object> {
+		return this.fetch('GET', '_openapi');
+	}
+
+	async goClient(): Promise<string> {
+		return this.fetch('GET', '_client.go', {text: true});
+	}
+
+	async tsClient(): Promise<string> {
+		return this.fetch('GET', '_client.ts', {text: true});
+	}
+
+	{{- range $api := .APIs }}
+
+	//// {{ $api.NameUpperCamel }}
+
+	async create{{ $api.NameUpperCamel }}(obj: {{ $api.TypeUpperCamel }}): Promise<{{ $api.TypeUpperCamel }} & Metadata> {
+		return this.createName<{{ $api.TypeUpperCamel }}>('{{ $api.NameLower }}', obj);
+	}
+
+	async delete{{ $api.NameUpperCamel }}(id: string, opts?: UpdateOpts<{{ $api.TypeUpperCamel }}> | null): Promise<void> {
+		return this.deleteName('{{ $api.NameLower }}', id, opts);
+	}
+
+	async find{{ $api.NameUpperCamel }}(shortID: string): Promise<{{ $api.TypeUpperCamel }} & Metadata> {
+		return this.findName<{{ $api.TypeUpperCamel }}>('{{ $api.NameLower }}', shortID);
+	}
+
+	async get{{ $api.NameUpperCamel }}(id: string, opts?: GetOpts<{{ $api.TypeUpperCamel }}> | null): Promise<{{ $api.TypeUpperCamel }} & Metadata> {
+		return this.getName<{{ $api.TypeUpperCamel }}>('{{ $api.NameLower }}', id, opts);
+	}
+
+	async list{{ $api.NameUpperCamel }}(opts?: ListOpts<{{ $api.TypeUpperCamel }}> | null): Promise<({{ $api.TypeUpperCamel }} & Metadata)[]> {
+		return this.listName<{{ $api.TypeUpperCamel }}>('{{ $api.NameLower }}', opts);
+	}
+
+	async replace{{ $api.NameUpperCamel }}(id: string, obj: {{ $api.TypeUpperCamel }}, opts?: UpdateOpts<{{ $api.TypeUpperCamel }}> | null): Promise<{{ $api.TypeUpperCamel }} & Metadata> {
+		return this.replaceName<{{ $api.TypeUpperCamel }}>('{{ $api.NameLower }}', id, obj, opts);
+	}
+
+	async update{{ $api.NameUpperCamel }}(id: string, obj: {{ $api.TypeUpperCamel }}, opts?: UpdateOpts<{{ $api.TypeUpperCamel }}> | null): Promise<{{ $api.TypeUpperCamel }} & Metadata> {
+		return this.updateName<{{ $api.TypeUpperCamel }}>('{{ $api.NameLower }}', id, obj, opts);
+	}
+
+	async streamGet{{ $api.NameUpperCamel }}(id: string, opts?: GetOpts<{{ $api.TypeUpperCamel }}> | null): Promise<GetStream<{{ $api.TypeUpperCamel }}>> {
+		return this.streamGetName<{{ $api.TypeUpperCamel }}>('{{ $api.NameLower }}', id, opts);
+	}
+
+	async streamList{{ $api.NameUpperCamel }}(opts?: ListOpts<{{ $api.TypeUpperCamel }}> | null): Promise<ListStream<{{ $api.TypeUpperCamel }}>> {
+		return this.streamListName<{{ $api.TypeUpperCamel }}>('{{ $api.NameLower }}', opts);
+	}
+
+	{{- end }}
+
+	//// Generic
+
+	async createName<T>(name: string, obj: T): Promise<T & Metadata> {
+		return this.fetch(
+			'POST',
+			encodeURIComponent(name),
+			{
+				body: obj,
+			},
+		);
+	}
+
+	async deleteName<T>(name: string, id: string, opts?: UpdateOpts<T> | null): Promise<void> {
+		return this.fetch(
+			'DELETE',
+			`${encodeURIComponent(name)}/${encodeURIComponent(id)}`,
+			{
+				headers: this.buildUpdateHeaders(opts),
+			},
+		);
+	}
+
+	async findName<T>(name: string, shortID: string): Promise<T & Metadata> {
+		const opts: ListOpts<T> = {
+			filters: [
+				{
+					path: 'id',
+					op: 'hp',
+					value: shortID,
+				},
+			],
+		};
+
+		const list = await this.listName<T>(name, opts);
+
+		if (list.length != 1) {
+			throw new Error({
+				messages: [
+					'not found',
+				],
+			});
+		}
+
+		return list[0]!;
+	}
+
+	async getName<T>(name: string, id: string, opts?: GetOpts<T> | null): Promise<T & Metadata> {
+		return this.fetch(
+			'GET',
+			`${encodeURIComponent(name)}/${encodeURIComponent(id)}`,
+			{
+				headers: this.buildGetHeaders(opts),
+				prev: opts?.prev,
+			},
+		);
+	}
+
+	async listName<T>(name: string, opts?: ListOpts<T> | null): Promise<(T & Metadata)[]> {
+		return this.fetch(
+			'GET',
+			`${encodeURIComponent(name)}`,
+			{
+				params: this.buildListParams(opts),
+				headers: this.buildListHeaders(opts),
+				prev: opts?.prev,
+			},
+		);
+	}
+
+	async replaceName<T>(name: string, id: string, obj: T, opts?: UpdateOpts<T> | null): Promise<T & Metadata> {
+		return this.fetch(
+			'PUT',
+			`${encodeURIComponent(name)}/${encodeURIComponent(id)}`,
+			{
+				headers: this.buildUpdateHeaders(opts),
+				body: obj,
+			},
+		);
+	}
+
+	async updateName<T>(name: string, id: string, obj: T, opts?: UpdateOpts<T> | null): Promise<T & Metadata> {
+		return this.fetch(
+			'PATCH',
+			`${encodeURIComponent(name)}/${encodeURIComponent(id)}`,
+			{
+				headers: this.buildUpdateHeaders(opts),
+				body: obj,
+			},
+		);
+	}
+
+	async streamGetName<T>(name: string, id: string, opts?: GetOpts<T> | null): Promise<GetStream<T>> {
+		const controller = new AbortController();
+
+		const resp = await this.fetch(
+			'GET',
+			`${encodeURIComponent(name)}/${encodeURIComponent(id)}`,
+			{
+				headers: this.buildGetHeaders(opts),
+				stream: true,
+				signal: controller.signal,
+			},
+		);
+
+		return new GetStream<T>(resp, controller, opts?.prev);
+	}
+
+	async streamListName<T>(name: string, opts?: ListOpts<T> | null): Promise<ListStream<T>> {
+		const controller = new AbortController();
+
+		const resp = await this.fetch(
+			'GET',
+			`${encodeURIComponent(name)}`,
+			{
+				params: this.buildListParams(opts),
+				headers: this.buildListHeaders(opts),
+				stream: true,
+				signal: controller.signal,
+			},
+		);
+
+		try {
+			switch (resp.headers.get('Stream-Format')) {
+			case 'full':
+				return new ListStreamFull<T>(resp, controller, opts?.prev);
+
+			case 'diff':
+				return new ListStreamDiff<T>(resp, controller, opts?.prev);
+
+			default:
+				throw new Error({
+					messages: [
+						`invalid Stream-Format: ${resp.headers.get('Stream-Format')}`,
+					],
+				});
+			}
+		} catch (e) {
+			controller.abort();
+			throw e;
+		}
+	}
+
+	// XXX Start here
+
+	private buildListParams<T>(opts: ListOpts<T> | null | undefined): URLSearchParams {
+		const params = new URLSearchParams();
+
+		if (!opts) {
+			return params;
+		}
+
+		if (opts.stream) {
+			params.set('_stream', opts.stream);
+		}
+
+		if (opts.limit) {
+			params.set('_limit', `${opts.limit}`);
+		}
+
+		if (opts.offset) {
+			params.set('_offset', `${opts.offset}`);
+		}
+
+		if (opts.after) {
+			params.set('_after', `${opts.after}`);
+		}
+
+		for (const filter of opts.filters || []) {
+			params.set(`${filter.path}[${filter.op}]`, filter.value);
+		}
+
+		for (const sort of opts.sorts || []) {
+			params.append('_sort', sort);
+		}
+
+		return params;
+	}
+
+	private buildListHeaders<T>(opts: ListOpts<T> | null | undefined): Headers {
+		const headers = new Headers();
+
+		this.addETagHeader(headers, 'If-None-Match', opts?.prev);
+
+		return headers;
+	}
+
+	private buildGetHeaders<T>(opts: GetOpts<T> | null | undefined): Headers {
+		const headers = new Headers();
+
+		this.addETagHeader(headers, 'If-None-Match', opts?.prev);
+
+		return headers;
+	}
+
+	private buildUpdateHeaders<T>(opts: UpdateOpts<T> | null | undefined): Headers {
+		const headers = new Headers();
+
+		this.addETagHeader(headers, 'If-Match', opts?.prev);
+
+		return headers;
+	}
+
+	private addETagHeader(headers: Headers, name: string, obj: any | undefined) {
+		if (!obj) {
+			return;
+		}
+
+		const etag = Object.getOwnPropertyDescriptor(obj, ETagKey)?.value;
+
+		if (!etag) {
+			throw(new Error({
+				messages: [
+					`missing ETagKey in ${obj}`,
+				],
+			}));
+		}
+
+		headers.set(name, etag);
+	}
+
+	private async fetch(method: string, path: string, opts?: FetchOptions): Promise<any> {
+		const url = new URL(path, this.baseURL);
+
+		if (opts?.params) {
+			url.search = `?${opts.params}`;
+		}
+
+		// TODO: Add timeout
+		// TODO: Add retry strategy
+		// TODO: Add Idempotency-Key support
+
+		const reqOpts: RequestInit = {
+			method: method,
+			headers: new Headers(this.headers),
+			mode: 'cors',
+			credentials: 'omit',
+			referrerPolicy: 'no-referrer',
+			keepalive: true,
+			signal: opts?.signal ?? null,
+		}
+
+		if (opts?.headers) {
+			for (const [k, v] of opts.headers) {
+				(<Headers>reqOpts.headers).append(k, v);
+			}
+		}
+
+		if (opts?.body) {
+			reqOpts.body = JSON.stringify(opts.body);
+			(<Headers>reqOpts.headers).set('Content-Type', 'application/json');
+		}
+
+		if (opts?.stream) {
+			(<Headers>reqOpts.headers).set('Accept', 'text/event-stream');
+		}
+
+		const req = new Request(url, reqOpts);
+
+		const resp = await fetch(req);
+
+		if (this.debug) {
+			console.log(req, resp);
+		}
+
+		if (opts?.prev && resp.status == 304) {
+			return opts.prev;
+		}
+
+		if (!resp.ok) {
+			throw new Error(await resp.json());
+		}
+
+		if (resp.status == 200) {
+			if (opts?.stream) {
+				return resp;
+			}
+
+			if (opts?.text) {
+				return resp.text();
+			}
+
+			const js = await resp.json();
+
+			if (resp.headers.has('ETag')) {
+				Object.defineProperty(js, ETagKey, {
+					value: resp.headers.get('ETag'),
+				});
+			}
+
+			return js;
+		}
+	}
+}
 
 class StreamCore {
 	private reader: ReadableStreamDefaultReader;
@@ -320,365 +709,6 @@ export class ListStreamDiff<T> extends ListStream<T> {
 			}
 		}
 	}
-}
-
-class ClientCore {
-	protected baseURL: URL;
-	protected headers: Headers = new Headers();
-
-	constructor(baseURL: string) {
-		this.baseURL = new URL(baseURL, globalThis?.location?.href);
-	}
-
-	async debugInfo(): Promise<Object> {
-		return this.fetch('GET', '_debug');
-	}
-
-	//// Generic
-
-	async createName<T>(name: string, obj: T): Promise<T & Metadata> {
-		return this.fetch(
-			'POST',
-			encodeURIComponent(name),
-			{
-				body: obj,
-			},
-		);
-	}
-
-	async deleteName<T>(name: string, id: string, opts?: UpdateOpts<T> | null): Promise<void> {
-		return this.fetch(
-			'DELETE',
-			`${encodeURIComponent(name)}/${encodeURIComponent(id)}`,
-			{
-				headers: this.buildUpdateHeaders(opts),
-			},
-		);
-	}
-
-	async findName<T>(name: string, shortID: string): Promise<T & Metadata> {
-		const opts: ListOpts<T> = {
-			filters: [
-				{
-					path: 'id',
-					op: 'hp',
-					value: shortID,
-				},
-			],
-		};
-
-		const list = await this.listName<T>(name, opts);
-
-		if (list.length != 1) {
-			throw new Error({
-				messages: [
-					'not found',
-				],
-			});
-		}
-
-		return list[0]!;
-	}
-
-	async getName<T>(name: string, id: string, opts?: GetOpts<T> | null): Promise<T & Metadata> {
-		return this.fetch(
-			'GET',
-			`${encodeURIComponent(name)}/${encodeURIComponent(id)}`,
-			{
-				headers: this.buildGetHeaders(opts),
-				prev: opts?.prev,
-			},
-		);
-	}
-
-	async listName<T>(name: string, opts?: ListOpts<T> | null): Promise<(T & Metadata)[]> {
-		return this.fetch(
-			'GET',
-			`${encodeURIComponent(name)}`,
-			{
-				params: this.buildListParams(opts),
-				headers: this.buildListHeaders(opts),
-				prev: opts?.prev,
-			},
-		);
-	}
-
-	async replaceName<T>(name: string, id: string, obj: T, opts?: UpdateOpts<T> | null): Promise<T & Metadata> {
-		return this.fetch(
-			'PUT',
-			`${encodeURIComponent(name)}/${encodeURIComponent(id)}`,
-			{
-				headers: this.buildUpdateHeaders(opts),
-				body: obj,
-			},
-		);
-	}
-
-	async updateName<T>(name: string, id: string, obj: T, opts?: UpdateOpts<T> | null): Promise<T & Metadata> {
-		return this.fetch(
-			'PATCH',
-			`${encodeURIComponent(name)}/${encodeURIComponent(id)}`,
-			{
-				headers: this.buildUpdateHeaders(opts),
-				body: obj,
-			},
-		);
-	}
-
-	async streamGetName<T>(name: string, id: string, opts?: GetOpts<T> | null): Promise<GetStream<T>> {
-		const controller = new AbortController();
-
-		const resp = await this.fetch(
-			'GET',
-			`${encodeURIComponent(name)}/${encodeURIComponent(id)}`,
-			{
-				headers: this.buildGetHeaders(opts),
-				stream: true,
-				signal: controller.signal,
-			},
-		);
-
-		return new GetStream<T>(resp, controller, opts?.prev);
-	}
-
-	async streamListName<T>(name: string, opts?: ListOpts<T> | null): Promise<ListStream<T>> {
-		const controller = new AbortController();
-
-		const resp = await this.fetch(
-			'GET',
-			`${encodeURIComponent(name)}`,
-			{
-				params: this.buildListParams(opts),
-				headers: this.buildListHeaders(opts),
-				stream: true,
-				signal: controller.signal,
-			},
-		);
-
-		try {
-			switch (resp.headers.get('Stream-Format')) {
-			case 'full':
-				return new ListStreamFull<T>(resp, controller, opts?.prev);
-
-			case 'diff':
-				return new ListStreamDiff<T>(resp, controller, opts?.prev);
-
-			default:
-				throw new Error({
-					messages: [
-						`invalid Stream-Format: ${resp.headers.get('Stream-Format')}`,
-					],
-				});
-			}
-		} catch (e) {
-			controller.abort();
-			throw e;
-		}
-	}
-
-	private buildListParams<T>(opts: ListOpts<T> | null | undefined): URLSearchParams {
-		const params = new URLSearchParams();
-
-		if (!opts) {
-			return params;
-		}
-
-		if (opts.stream) {
-			params.set('_stream', opts.stream);
-		}
-
-		if (opts.limit) {
-			params.set('_limit', `${opts.limit}`);
-		}
-
-		if (opts.offset) {
-			params.set('_offset', `${opts.offset}`);
-		}
-
-		if (opts.after) {
-			params.set('_after', `${opts.after}`);
-		}
-
-		for (const filter of opts.filters || []) {
-			params.set(`${filter.path}[${filter.op}]`, filter.value);
-		}
-
-		for (const sort of opts.sorts || []) {
-			params.append('_sort', sort);
-		}
-
-		return params;
-	}
-
-	private buildListHeaders<T>(opts: ListOpts<T> | null | undefined): Headers {
-		const headers = new Headers();
-
-		this.addETagHeader(headers, 'If-None-Match', opts?.prev);
-
-		return headers;
-	}
-
-	private buildGetHeaders<T>(opts: GetOpts<T> | null | undefined): Headers {
-		const headers = new Headers();
-
-		this.addETagHeader(headers, 'If-None-Match', opts?.prev);
-
-		return headers;
-	}
-
-	private buildUpdateHeaders<T>(opts: UpdateOpts<T> | null | undefined): Headers {
-		const headers = new Headers();
-
-		this.addETagHeader(headers, 'If-Match', opts?.prev);
-
-		return headers;
-	}
-
-	private addETagHeader(headers: Headers, name: string, obj: any | undefined) {
-		if (!obj) {
-			return;
-		}
-
-		const etag = Object.getOwnPropertyDescriptor(obj, ETagKey)?.value;
-
-		if (!etag) {
-			throw(new Error({
-				messages: [
-					`missing ETagKey in ${obj}`,
-				],
-			}));
-		}
-
-		headers.set(name, etag);
-	}
-
-	protected async fetch(method: string, path: string, opts?: FetchOptions): Promise<any> {
-		const url = new URL(path, this.baseURL);
-
-		if (opts?.params) {
-			url.search = `?${opts.params}`;
-		}
-
-		// TODO: Add timeout
-		// TODO: Add retry strategy
-		// TODO: Add Idempotency-Key support
-
-		const reqOpts: RequestInit = {
-			method: method,
-			headers: new Headers(this.headers),
-			mode: 'cors',
-			credentials: 'omit',
-			referrerPolicy: 'no-referrer',
-			keepalive: true,
-			signal: opts?.signal ?? null,
-		}
-
-		if (opts?.headers) {
-			for (const [k, v] of opts.headers) {
-				(<Headers>reqOpts.headers).append(k, v);
-			}
-		}
-
-		if (opts?.body) {
-			reqOpts.body = JSON.stringify(opts.body);
-			(<Headers>reqOpts.headers).set('Content-Type', 'application/json');
-		}
-
-		if (opts?.stream) {
-			(<Headers>reqOpts.headers).set('Accept', 'text/event-stream');
-		}
-
-		const req = new Request(url, reqOpts);
-
-		const resp = await fetch(req);
-
-		if (opts?.prev && resp.status == 304) {
-			return opts.prev;
-		}
-
-		if (!resp.ok) {
-			throw new Error(await resp.json());
-		}
-
-		if (resp.status == 200) {
-			if (opts?.stream) {
-				return resp;
-			}
-
-			const js = await resp.json();
-
-			if (resp.headers.has('ETag')) {
-				Object.defineProperty(js, ETagKey, {
-					value: resp.headers.get('ETag'),
-				});
-			}
-
-			return js;
-		}
-	}
-}
-
-export class Client extends ClientCore {
-	constructor(baseURL: string) {
-		super(baseURL);
-	}
-
-	{{- if .AuthBasic }}
-
-	setBasicAuth(user: string, pass: string) {
-		const enc = btoa(`${user}:${pass}`);
-		this.headers.set('Authorization', `Basic ${enc}`);
-	}
-	{{- end }}
-
-	{{- if .AuthBearer }}
-
-	setAuthToken(token: string) {
-		this.headers.set('Authorization', `Bearer ${token}`);
-	}
-	{{- end }}
-
-	{{- range $api := .APIs }}
-
-	//// {{ $api.NameUpperCamel }}
-
-	async create{{ $api.NameUpperCamel }}(obj: {{ $api.TypeUpperCamel }}): Promise<{{ $api.TypeUpperCamel }} & Metadata> {
-		return this.createName<{{ $api.TypeUpperCamel }}>('{{ $api.NameLower }}', obj);
-	}
-
-	async delete{{ $api.NameUpperCamel }}(id: string, opts?: UpdateOpts<{{ $api.TypeUpperCamel }}> | null): Promise<void> {
-		return this.deleteName('{{ $api.NameLower }}', id, opts);
-	}
-
-	async find{{ $api.NameUpperCamel }}(shortID: string): Promise<{{ $api.TypeUpperCamel }} & Metadata> {
-		return this.findName<{{ $api.TypeUpperCamel }}>('{{ $api.NameLower }}', shortID);
-	}
-
-	async get{{ $api.NameUpperCamel }}(id: string, opts?: GetOpts<{{ $api.TypeUpperCamel }}> | null): Promise<{{ $api.TypeUpperCamel }} & Metadata> {
-		return this.getName<{{ $api.TypeUpperCamel }}>('{{ $api.NameLower }}', id, opts);
-	}
-
-	async list{{ $api.NameUpperCamel }}(opts?: ListOpts<{{ $api.TypeUpperCamel }}> | null): Promise<({{ $api.TypeUpperCamel }} & Metadata)[]> {
-		return this.listName<{{ $api.TypeUpperCamel }}>('{{ $api.NameLower }}', opts);
-	}
-
-	async replace{{ $api.NameUpperCamel }}(id: string, obj: {{ $api.TypeUpperCamel }}, opts?: UpdateOpts<{{ $api.TypeUpperCamel }}> | null): Promise<{{ $api.TypeUpperCamel }} & Metadata> {
-		return this.replaceName<{{ $api.TypeUpperCamel }}>('{{ $api.NameLower }}', id, obj, opts);
-	}
-
-	async update{{ $api.NameUpperCamel }}(id: string, obj: {{ $api.TypeUpperCamel }}, opts?: UpdateOpts<{{ $api.TypeUpperCamel }}> | null): Promise<{{ $api.TypeUpperCamel }} & Metadata> {
-		return this.updateName<{{ $api.TypeUpperCamel }}>('{{ $api.NameLower }}', id, obj, opts);
-	}
-
-	async streamGet{{ $api.NameUpperCamel }}(id: string, opts?: GetOpts<{{ $api.TypeUpperCamel }}> | null): Promise<GetStream<{{ $api.TypeUpperCamel }}>> {
-		return this.streamGetName<{{ $api.TypeUpperCamel }}>('{{ $api.NameLower }}', id, opts);
-	}
-
-	async streamList{{ $api.NameUpperCamel }}(opts?: ListOpts<{{ $api.TypeUpperCamel }}> | null): Promise<ListStream<{{ $api.TypeUpperCamel }}>> {
-		return this.streamListName<{{ $api.TypeUpperCamel }}>('{{ $api.NameLower }}', opts);
-	}
-
-	{{- end }}
 }
 
 export class Error {
