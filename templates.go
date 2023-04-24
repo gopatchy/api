@@ -40,8 +40,6 @@ type templateInput struct {
 	AuthBearer bool
 }
 
-// TODO: Split list of types and list of API objects
-
 type apiType struct {
 	NameLower      string // "homeaddress"
 	NameUpperCamel string // "HomeAddress"
@@ -226,8 +224,6 @@ func tsType(t reflect.Type) string {
 	if elemType == path.TimeTimeType || elemType == path.CivilDateType {
 		return "string"
 	}
-
-	// TODO: Handle http.Header (map[string][]string) for DebugInfo
 
 	switch elemType.Kind() { //nolint:exhaustive
 	case reflect.Slice:

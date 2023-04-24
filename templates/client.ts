@@ -343,6 +343,7 @@ export class GetStream<T> {
 	private eventStream: EventStream<T>;
 	private controller: AbortController;
 	private prev: (T & Metadata) | null;
+	// TODO: Add LastEventReceived
 
 	constructor(resp: Response, controller: AbortController, prev: (T & Metadata) | null | undefined) {
 		this.eventStream = new EventStream<T>(resp.body!);
@@ -365,18 +366,7 @@ export class GetStream<T> {
 				return ev.decodeObj();
 
 			} else if (ev.eventType == 'notModified') {
-				if (this.prev == null) {
-					throw new Error({
-						messages: [
-							'notModified without previous',
-						],
-					});
-				}
-
-				const prev = this.prev;
-				this.prev = null;
-
-				return prev;
+				return this.prev;
 
 			} else if (ev.eventType == 'heartbeat') {
 				continue;
@@ -407,6 +397,7 @@ export class GetStream<T> {
 export abstract class ListStream<T> {
 	protected eventStream: EventStream<T>;
 	private controller: AbortController;
+	// TODO: Add LastEventReceived
 
 	constructor(resp: Response, controller: AbortController) {
 		this.eventStream = new EventStream<T>(resp.body!);
@@ -457,18 +448,7 @@ export class ListStreamFull<T> extends ListStream<T> {
 				return ev.decodeList();
 
 			} else if (ev.eventType == 'notModified') {
-				if (this.prev == null) {
-					throw new Error({
-						messages: [
-							'notModified without previous',
-						],
-					});
-				}
-
-				const prev = this.prev;
-				this.prev = null;
-
-				return prev;
+				return this.prev;
 
 			} else if (ev.eventType == 'heartbeat') {
 				continue;
@@ -511,15 +491,7 @@ export class ListStreamDiff<T> extends ListStream<T> {
 				return this.objs;
 
 			} else if (ev.eventType == 'notModified') {
-				if (!this.prev) {
-					throw new Error({
-						messages: [
-							"notModified without prev",
-						],
-					});
-				}
-
-				this.objs = this.prev;
+				this.objs = this.prev!;
 				return this.objs;
 
 			} else if (ev.eventType == 'heartbeat') {

@@ -404,11 +404,9 @@ func StreamGetName[T any](ctx context.Context, c *Client, name, id string, opts 
 		return nil, jsrest.ReadError(resp.Body())
 	}
 
-	body := resp.RawBody()
-
 	stream := &GetStream[T]{
 		ch:   make(chan *T, 100),
-		body: body,
+		body: resp.RawBody(),
 	}
 
 	if opts != nil && opts.Prev != nil {
@@ -444,20 +442,21 @@ func StreamListName[T any](ctx context.Context, c *Client, name string, opts *Li
 		return nil, jsrest.ReadError(resp.Body())
 	}
 
-	body := resp.RawBody()
-	scan := bufio.NewScanner(body)
-
 	stream := &ListStream[T]{
 		ch:   make(chan []*T, 100),
-		body: body,
+		body: resp.RawBody(),
+	}
+
+	if opts != nil && opts.Prev != nil {
+		stream.prev = opts.Prev
 	}
 
 	switch resp.Header().Get("Stream-Format") {
 	case "full":
-		go streamListFull(scan, stream, opts)
+		go stream.processFull()
 
 	case "diff":
-		go streamListDiff(scan, stream, opts)
+		go stream.processDiff()
 
 	default:
 		stream.Close()
@@ -539,121 +538,6 @@ func (es *eventStream[T]) readEvent() (*streamEvent[T], error) {
 	}
 
 	return nil, io.EOF
-}
-
-func streamListFull[T any](scan *bufio.Scanner, stream *ListStream[T], opts *ListOpts[T]) {
-	es := newEventStream[T](scan)
-
-	for {
-		event, err := es.readEvent()
-		if err != nil {
-			stream.writeError(err)
-			return
-		}
-
-		switch event.eventType {
-		case "list":
-			list, err := event.decodeList()
-			if err != nil {
-				stream.writeError(err)
-				return
-			}
-
-			setListETag(list, fmt.Sprintf(`"%s"`, event.params["id"]))
-			stream.writeEvent(list)
-
-		case "notModified":
-			if opts != nil && opts.Prev != nil {
-				stream.writeEvent(opts.Prev)
-			} else {
-				stream.writeError(fmt.Errorf("notModified without If-None-Match (%w)", ErrInvalidStreamEvent))
-				return
-			}
-
-		case "heartbeat":
-			stream.writeHeartbeat()
-		}
-	}
-}
-
-func streamListDiff[T any](scan *bufio.Scanner, stream *ListStream[T], opts *ListOpts[T]) {
-	es := newEventStream[T](scan)
-	list := []*T{}
-
-	add := func(event *streamEvent[T]) error {
-		obj, err := event.decodeObj()
-		if err != nil {
-			return err
-		}
-
-		pos, err := strconv.Atoi(event.params["new-position"])
-		if err != nil {
-			return err
-		}
-
-		list = slices.Insert(list, pos, obj)
-
-		return nil
-	}
-
-	remove := func(event *streamEvent[T]) error {
-		pos, err := strconv.Atoi(event.params["old-position"])
-		if err != nil {
-			return err
-		}
-
-		list = slices.Delete(list, pos, pos+1)
-
-		return nil
-	}
-
-	for {
-		event, err := es.readEvent()
-		if err != nil {
-			stream.writeError(err)
-			return
-		}
-
-		switch event.eventType {
-		case "add":
-			err = add(event)
-			if err != nil {
-				stream.writeError(err)
-				return
-			}
-
-		case "update":
-			err = remove(event)
-			if err != nil {
-				stream.writeError(err)
-				return
-			}
-
-			err = add(event)
-			if err != nil {
-				stream.writeError(err)
-				return
-			}
-
-		case "remove":
-			err = remove(event)
-			if err != nil {
-				stream.writeError(err)
-				return
-			}
-
-		case "sync":
-			setListETag(list, fmt.Sprintf(`"%s"`, event.params["id"]))
-			stream.writeEvent(list)
-
-		case "notModified":
-			list = opts.Prev
-			stream.writeEvent(list)
-
-		case "heartbeat":
-			stream.writeHeartbeat()
-		}
-	}
 }
 
 type GetStream[T any] struct {
@@ -754,6 +638,7 @@ func (gs *GetStream[T]) writeError(err error) {
 type ListStream[T any] struct {
 	ch   chan []*T
 	body io.ReadCloser
+	prev []*T
 
 	lastEventReceived time.Time
 
@@ -788,6 +673,118 @@ func (ls *ListStream[T]) Error() error {
 	return ls.err
 }
 
+func (ls *ListStream[T]) processFull() {
+	scan := bufio.NewScanner(ls.body)
+	es := newEventStream[T](scan)
+
+	for {
+		event, err := es.readEvent()
+		if err != nil {
+			ls.writeError(err)
+			return
+		}
+
+		switch event.eventType {
+		case "list":
+			list, err := event.decodeList()
+			if err != nil {
+				ls.writeError(err)
+				return
+			}
+
+			setListETag(list, fmt.Sprintf(`"%s"`, event.params["id"]))
+			ls.writeEvent(list)
+
+		case "notModified":
+			ls.writeEvent(ls.prev)
+
+		case "heartbeat":
+			ls.writeHeartbeat()
+		}
+	}
+}
+
+func (ls *ListStream[T]) processDiff() {
+	scan := bufio.NewScanner(ls.body)
+	es := newEventStream[T](scan)
+	list := []*T{}
+
+	add := func(event *streamEvent[T]) error {
+		obj, err := event.decodeObj()
+		if err != nil {
+			return err
+		}
+
+		pos, err := strconv.Atoi(event.params["new-position"])
+		if err != nil {
+			return err
+		}
+
+		list = slices.Insert(list, pos, obj)
+
+		return nil
+	}
+
+	remove := func(event *streamEvent[T]) error {
+		pos, err := strconv.Atoi(event.params["old-position"])
+		if err != nil {
+			return err
+		}
+
+		list = slices.Delete(list, pos, pos+1)
+
+		return nil
+	}
+
+	for {
+		event, err := es.readEvent()
+		if err != nil {
+			ls.writeError(err)
+			return
+		}
+
+		switch event.eventType {
+		case "add":
+			err = add(event)
+			if err != nil {
+				ls.writeError(err)
+				return
+			}
+
+		case "update":
+			err = remove(event)
+			if err != nil {
+				ls.writeError(err)
+				return
+			}
+
+			err = add(event)
+			if err != nil {
+				ls.writeError(err)
+				return
+			}
+
+		case "remove":
+			err = remove(event)
+			if err != nil {
+				ls.writeError(err)
+				return
+			}
+
+		case "sync":
+			setListETag(list, fmt.Sprintf(`"%s"`, event.params["id"]))
+			ls.writeEvent(list)
+
+		case "notModified":
+			list = ls.prev
+			ls.writeEvent(list)
+
+		case "heartbeat":
+			ls.writeHeartbeat()
+		}
+	}
+}
+
 func (ls *ListStream[T]) writeHeartbeat() {
 	ls.mu.Lock()
 	ls.lastEventReceived = time.Now()
@@ -811,39 +808,6 @@ func (ls *ListStream[T]) writeError(err error) {
 }
 
 //// Internal
-
-func (c *Client) fetchMap(ctx context.Context, path string) (map[string]any, error) {
-	ret := map[string]any{}
-
-	resp, err := c.rst.R().
-		SetContext(ctx).
-		SetResult(&ret).
-		Get(path)
-	if err != nil {
-		return nil, err
-	}
-
-	if resp.IsError() {
-		return nil, jsrest.ReadError(resp.Body())
-	}
-
-	return ret, nil
-}
-
-func (c *Client) fetchString(ctx context.Context, path string) (string, error) {
-	resp, err := c.rst.R().
-		SetContext(ctx).
-		Get(path)
-	if err != nil {
-		return "", err
-	}
-
-	if resp.IsError() {
-		return "", jsrest.ReadError(resp.Body())
-	}
-
-	return resp.String(), nil
-}
 
 func (opts *GetOpts[T]) apply(req *resty.Request) {
 	if opts == nil {
@@ -906,6 +870,39 @@ func (opts *UpdateOpts[T]) apply(req *resty.Request) {
 		md := metadata.GetMetadata(opts.Prev)
 		req.SetHeader("If-Match", fmt.Sprintf(`"%s"`, md.ETag))
 	}
+}
+
+func (c *Client) fetchMap(ctx context.Context, path string) (map[string]any, error) {
+	ret := map[string]any{}
+
+	resp, err := c.rst.R().
+		SetContext(ctx).
+		SetResult(&ret).
+		Get(path)
+	if err != nil {
+		return nil, err
+	}
+
+	if resp.IsError() {
+		return nil, jsrest.ReadError(resp.Body())
+	}
+
+	return ret, nil
+}
+
+func (c *Client) fetchString(ctx context.Context, path string) (string, error) {
+	resp, err := c.rst.R().
+		SetContext(ctx).
+		Get(path)
+	if err != nil {
+		return "", err
+	}
+
+	if resp.IsError() {
+		return "", jsrest.ReadError(resp.Body())
+	}
+
+	return resp.String(), nil
 }
 
 func getListETag[T any](list []*T) string {
