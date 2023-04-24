@@ -141,6 +141,8 @@ func (api *API) SetStripPrefix(prefix string) {
 	})
 }
 
+// TODO: Provide a way for internal auth request hooks to always happen first
+
 func (api *API) AddRequestHook(hook RequestHook) {
 	api.requestHooks = append(api.requestHooks, hook)
 }
