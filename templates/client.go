@@ -16,6 +16,7 @@ import (
 	{{- if .URLPrefix }}
 	"net/url"
 	{{- end }}
+	"reflect"
 	"strconv"
 	"strings"
 	"sync"
@@ -28,7 +29,6 @@ import (
 	"github.com/go-resty/resty/v2"
 	"github.com/gopatchy/jsrest"
 	"github.com/gopatchy/metadata"
-	"github.com/gopatchy/path"
 	"golang.org/x/exp/slices"
 )
 
@@ -37,7 +37,9 @@ import (
 type {{ $type.TypeUpperCamel }} struct {
 	{{- if $type.TopLevel }}
 	metadata.Metadata
-	listETag string
+
+	ListETag string `json:"-"`
+
 	{{- end }}
 
 	{{- range $field := .Fields }}
@@ -72,6 +74,7 @@ type UpdateOpts[T any] struct {
 	Prev *T
 }
 
+// TODO: Move this down
 type streamEvent struct {
 	eventType string
 	params    map[string]string
@@ -289,7 +292,7 @@ func GetName[T any](ctx context.Context, c *Client, name, id string, opts *GetOp
 		SetPathParam("id", id).
 		SetResult(obj)
 
-	applyGetOpts(opts, r)
+	opts.apply(r)
 
 	resp, err := r.Get("{name}/{id}")
 	if err != nil {
@@ -337,12 +340,7 @@ func ListName[T any](ctx context.Context, c *Client, name string, opts *ListOpts
 		return nil, jsrest.ReadError(resp.Body())
 	}
 
-	if len(objs) > 0 && resp.Header().Get("ETag") != "" {
-		err = path.Set(objs[0], "listETag", resp.Header().Get("ETag"))
-		if err != nil {
-			return nil, err
-		}
-	}
+	setListETag(objs, resp.Header().Get("ETag"))
 
 	return objs, nil
 }
@@ -402,7 +400,7 @@ func StreamGetName[T any](ctx context.Context, c *Client, name, id string, opts 
 		SetPathParam("name", name).
 		SetPathParam("id", id)
 
-	applyGetOpts(opts, r)
+	opts.apply(r)
 
 	resp, err := r.Get("{name}/{id}")
 	if err != nil {
@@ -527,14 +525,7 @@ func streamListFull[T any](scan *bufio.Scanner, stream *ListStream[T], opts *Lis
 				return
 			}
 
-			if len(list) > 0 {
-				err = path.Set(list[0], "listETag", event.params["id"])
-				if err != nil {
-					stream.writeError(err)
-					return
-				}
-			}
-
+			setListETag(list, fmt.Sprintf(`"%s"`, event.params["id"]))
 			stream.writeEvent(list)
 
 		case "notModified":
@@ -619,14 +610,7 @@ func streamListDiff[T any](scan *bufio.Scanner, stream *ListStream[T], opts *Lis
 			}
 
 		case "sync":
-			if len(list) > 0 {
-				err = path.Set(list[0], "listETag", event.params["id"])
-				if err != nil {
-					stream.writeError(err)
-					return
-				}
-			}
-
+			setListETag(list, fmt.Sprintf(`"%s"`, event.params["id"]))
 			stream.writeEvent(list)
 
 		case "notModified":
@@ -791,12 +775,6 @@ func (event *streamEvent) decode(out any) error {
 	return json.Unmarshal(event.data, out)
 }
 
-//// Utility generic
-
-func P[T any](v T) *T {
-	return &v
-}
-
 //// Internal
 
 func (c *Client) fetchMap(ctx context.Context, path string) (map[string]any, error) {
@@ -832,7 +810,7 @@ func (c *Client) fetchString(ctx context.Context, path string) (string, error) {
 	return resp.String(), nil
 }
 
-func applyGetOpts[T any](opts *GetOpts[T], req *resty.Request) {
+func (opts *GetOpts[T]) apply(req *resty.Request) {
 	if opts == nil {
 		return
 	}
@@ -848,13 +826,9 @@ func applyListOpts[T any](opts *ListOpts[T], req *resty.Request) error {
 		return nil
 	}
 
-	if opts.Prev != nil && len(opts.Prev) > 0 {
-		etag, err := path.Get(opts.Prev[0], "listETag")
-		if err != nil {
-			return err
-		}
-
-		req.SetHeader("If-None-Match", etag.(string))
+	etag := getListETag(opts.Prev)
+	if etag != "" {
+		req.SetHeader("If-None-Match", etag)
 	}
 
 	if opts.Stream != "" {
@@ -897,4 +871,24 @@ func applyUpdateOpts[T any](opts *UpdateOpts[T], req *resty.Request) {
 		md := metadata.GetMetadata(opts.Prev)
 		req.SetHeader("If-Match", fmt.Sprintf(`"%s"`, md.ETag))
 	}
+}
+
+func getListETag[T any](list []*T) string {
+	if len(list) == 0 {
+		return ""
+	}
+
+	return getListETagField(list).String()
+}
+
+func setListETag[T any](list []*T, etag string) {
+	if len(list) == 0 {
+		return
+	}
+
+	getListETagField(list).Set(reflect.ValueOf(etag))
+}
+
+func getListETagField[T any](list []*T) reflect.Value {
+	return reflect.Indirect(reflect.ValueOf(list[0])).FieldByName("ListETag")
 }

@@ -46,6 +46,7 @@ export interface JSONError {
 	messages:  string[];
 }
 
+// TODO: Move this down
 interface StreamEvent {
 	eventType: string;
 	params:    Map<string, string>;
