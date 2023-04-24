@@ -239,9 +239,7 @@ func DeleteName[T any](ctx context.Context, c *Client, name, id string, opts *Up
 		SetPathParam("name", name).
 		SetPathParam("id", id)
 
-	if opts != nil {
-		applyUpdateOpts(opts, r)
-	}
+	applyUpdateOpts(opts, r)
 
 	resp, err := r.Delete("{name}/{id}")
 	if err != nil {
@@ -291,9 +289,7 @@ func GetName[T any](ctx context.Context, c *Client, name, id string, opts *GetOp
 		SetPathParam("id", id).
 		SetResult(obj)
 
-	if opts != nil {
-		applyGetOpts(opts, r)
-	}
+	applyGetOpts(opts, r)
 
 	resp, err := r.Get("{name}/{id}")
 	if err != nil {
@@ -323,11 +319,9 @@ func ListName[T any](ctx context.Context, c *Client, name string, opts *ListOpts
 		SetPathParam("name", name).
 		SetResult(&objs)
 
-	if opts != nil {
-		err := applyListOpts(opts, r)
-		if err != nil {
-			return nil, err
-		}
+	err := applyListOpts(opts, r)
+	if err != nil {
+		return nil, err
 	}
 
 	resp, err := r.Get("{name}")
@@ -363,9 +357,7 @@ func ReplaceName[T any](ctx context.Context, c *Client, name, id string, obj *T,
 		SetBody(obj).
 		SetResult(replaced)
 
-	if opts != nil {
-		applyUpdateOpts(opts, r)
-	}
+	applyUpdateOpts(opts, r)
 
 	resp, err := r.Put("{name}/{id}")
 	if err != nil {
@@ -389,9 +381,7 @@ func UpdateName[T any](ctx context.Context, c *Client, name, id string, obj *T, 
 		SetBody(obj).
 		SetResult(updated)
 
-	if opts != nil {
-		applyUpdateOpts(opts, r)
-	}
+	applyUpdateOpts(opts, r)
 
 	resp, err := r.Patch("{name}/{id}")
 	if err != nil {
@@ -412,9 +402,7 @@ func StreamGetName[T any](ctx context.Context, c *Client, name, id string, opts 
 		SetPathParam("name", name).
 		SetPathParam("id", id)
 
-	if opts != nil {
-		applyGetOpts(opts, r)
-	}
+	applyGetOpts(opts, r)
 
 	resp, err := r.Get("{name}/{id}")
 	if err != nil {
@@ -482,11 +470,9 @@ func StreamListName[T any](ctx context.Context, c *Client, name string, opts *Li
 		opts = &ListOpts[T]{}
 	}
 
-	if opts != nil {
-		err := applyListOpts(opts, r)
-		if err != nil {
-			return nil, err
-		}
+	err := applyListOpts(opts, r)
+	if err != nil {
+		return nil, err
 	}
 
 	resp, err := r.Get("{name}")
@@ -520,6 +506,8 @@ func StreamListName[T any](ctx context.Context, c *Client, name string, opts *Li
 
 	return stream, nil
 }
+
+// XXX Start here
 
 func streamListFull[T any](scan *bufio.Scanner, stream *ListStream[T], opts *ListOpts[T]) {
 	for {
@@ -845,6 +833,10 @@ func (c *Client) fetchString(ctx context.Context, path string) (string, error) {
 }
 
 func applyGetOpts[T any](opts *GetOpts[T], req *resty.Request) {
+	if opts == nil {
+		return
+	}
+
 	if opts.Prev != nil {
 		md := metadata.GetMetadata(opts.Prev)
 		req.SetHeader("If-None-Match", fmt.Sprintf(`"%s"`, md.ETag))
@@ -852,6 +844,10 @@ func applyGetOpts[T any](opts *GetOpts[T], req *resty.Request) {
 }
 
 func applyListOpts[T any](opts *ListOpts[T], req *resty.Request) error {
+	if opts == nil {
+		return nil
+	}
+
 	if opts.Prev != nil && len(opts.Prev) > 0 {
 		etag, err := path.Get(opts.Prev[0], "listETag")
 		if err != nil {
@@ -893,6 +889,10 @@ func applyListOpts[T any](opts *ListOpts[T], req *resty.Request) error {
 }
 
 func applyUpdateOpts[T any](opts *UpdateOpts[T], req *resty.Request) {
+	if opts == nil {
+		return
+	}
+
 	if opts.Prev != nil {
 		md := metadata.GetMetadata(opts.Prev)
 		req.SetHeader("If-Match", fmt.Sprintf(`"%s"`, md.ETag))

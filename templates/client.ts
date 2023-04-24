@@ -52,30 +52,17 @@ interface StreamEvent {
 	data:      string;
 }
 
-interface FetchOptions {
-	params?:  URLSearchParams;
-	headers?: Headers;
-	prev?:    any;
-	body?:    any;
-	signal?:  AbortSignal;
-	stream?:  boolean;
-	text?:    boolean;
-}
-
 const ETagKey = Symbol('etag');
 
 export class Client {
 	private baseURL: URL;
 	private headers: Headers = new Headers();
-	private debug: boolean = false;
 
 	constructor(baseURL: string) {
 		this.baseURL = new URL(baseURL, globalThis?.location?.href);
 	}
 
-	setDebug(debug: boolean) {
-		this.debug = debug;
-	}
+	// Skipped: setDebug()
 
 	setHeader(name: string, value: string) {
 		this.headers.set(name, value)
@@ -101,19 +88,23 @@ export class Client {
 	{{- end }}
 
 	async debugInfo(): Promise<Object> {
-		return this.fetch('GET', '_debug');
+		const req = this.newReq('GET', '_debug');
+		return req.fetchJSON();
 	}
 
 	async openAPI(): Promise<Object> {
-		return this.fetch('GET', '_openapi');
+		const req = this.newReq('GET', '_openapi');
+		return req.fetchJSON();
 	}
 
 	async goClient(): Promise<string> {
-		return this.fetch('GET', '_client.go', {text: true});
+		const req = this.newReq('GET', '_client.go');
+		return req.fetchText();
 	}
 
 	async tsClient(): Promise<string> {
-		return this.fetch('GET', '_client.ts', {text: true});
+		const req = this.newReq('GET', '_client.ts');
+		return req.fetchText();
 	}
 
 	{{- range $api := .APIs }}
@@ -161,23 +152,15 @@ export class Client {
 	//// Generic
 
 	async createName<T>(name: string, obj: T): Promise<T & Metadata> {
-		return this.fetch(
-			'POST',
-			encodeURIComponent(name),
-			{
-				body: obj,
-			},
-		);
+		const req = this.newReq<T>('POST', encodeURIComponent(name));
+		req.setBody(obj);
+		return req.fetchObj();
 	}
 
 	async deleteName<T>(name: string, id: string, opts?: UpdateOpts<T> | null): Promise<void> {
-		return this.fetch(
-			'DELETE',
-			`${encodeURIComponent(name)}/${encodeURIComponent(id)}`,
-			{
-				headers: this.buildUpdateHeaders(opts),
-			},
-		);
+		const req = this.newReq<T>('DELETE', `${encodeURIComponent(name)}/${encodeURIComponent(id)}`);
+		req.applyUpdateOpts(opts);
+		return req.fetchVoid();
 	}
 
 	async findName<T>(name: string, shortID: string): Promise<T & Metadata> {
@@ -205,79 +188,51 @@ export class Client {
 	}
 
 	async getName<T>(name: string, id: string, opts?: GetOpts<T> | null): Promise<T & Metadata> {
-		return this.fetch(
-			'GET',
-			`${encodeURIComponent(name)}/${encodeURIComponent(id)}`,
-			{
-				headers: this.buildGetHeaders(opts),
-				prev: opts?.prev,
-			},
-		);
+		const req = this.newReq<T>('GET', `${encodeURIComponent(name)}/${encodeURIComponent(id)}`);
+		req.applyGetOpts(opts);
+		return req.fetchObj();
 	}
 
 	async listName<T>(name: string, opts?: ListOpts<T> | null): Promise<(T & Metadata)[]> {
-		return this.fetch(
-			'GET',
-			`${encodeURIComponent(name)}`,
-			{
-				params: this.buildListParams(opts),
-				headers: this.buildListHeaders(opts),
-				prev: opts?.prev,
-			},
-		);
+		const req = this.newReq<T>('GET', `${encodeURIComponent(name)}`);
+		req.applyListOpts(opts);
+		return req.fetchList();
 	}
 
 	async replaceName<T>(name: string, id: string, obj: T, opts?: UpdateOpts<T> | null): Promise<T & Metadata> {
-		return this.fetch(
-			'PUT',
-			`${encodeURIComponent(name)}/${encodeURIComponent(id)}`,
-			{
-				headers: this.buildUpdateHeaders(opts),
-				body: obj,
-			},
-		);
+		const req = this.newReq<T>('PUT', `${encodeURIComponent(name)}/${encodeURIComponent(id)}`);
+		req.applyUpdateOpts(opts);
+		req.setBody(obj);
+		return req.fetchObj();
 	}
 
 	async updateName<T>(name: string, id: string, obj: T, opts?: UpdateOpts<T> | null): Promise<T & Metadata> {
-		return this.fetch(
-			'PATCH',
-			`${encodeURIComponent(name)}/${encodeURIComponent(id)}`,
-			{
-				headers: this.buildUpdateHeaders(opts),
-				body: obj,
-			},
-		);
+		const req = this.newReq<T>('PATCH', `${encodeURIComponent(name)}/${encodeURIComponent(id)}`);
+		req.applyUpdateOpts(opts);
+		req.setBody(obj);
+		return req.fetchObj();
 	}
 
 	async streamGetName<T>(name: string, id: string, opts?: GetOpts<T> | null): Promise<GetStream<T>> {
-		const controller = new AbortController();
+		const req = this.newReq<T>('GET', `${encodeURIComponent(name)}/${encodeURIComponent(id)}`);
+		req.applyGetOpts(opts);
 
-		const resp = await this.fetch(
-			'GET',
-			`${encodeURIComponent(name)}/${encodeURIComponent(id)}`,
-			{
-				headers: this.buildGetHeaders(opts),
-				stream: true,
-				signal: controller.signal,
-			},
-		);
+		const controller = new AbortController();
+		req.setSignal(controller.signal);
+
+		const resp = await req.fetchStream();
 
 		return new GetStream<T>(resp, controller, opts?.prev);
 	}
 
 	async streamListName<T>(name: string, opts?: ListOpts<T> | null): Promise<ListStream<T>> {
-		const controller = new AbortController();
+		const req = this.newReq<T>('GET', `${encodeURIComponent(name)}`);
+		req.applyListOpts(opts);
 
-		const resp = await this.fetch(
-			'GET',
-			`${encodeURIComponent(name)}`,
-			{
-				params: this.buildListParams(opts),
-				headers: this.buildListHeaders(opts),
-				stream: true,
-				signal: controller.signal,
-			},
-		);
+		const controller = new AbortController();
+		req.setSignal(controller.signal);
+
+		const resp = await req.fetchStream();
 
 		try {
 			switch (resp.headers.get('Stream-Format')) {
@@ -302,153 +257,9 @@ export class Client {
 
 	// XXX Start here
 
-	private buildListParams<T>(opts: ListOpts<T> | null | undefined): URLSearchParams {
-		const params = new URLSearchParams();
-
-		if (!opts) {
-			return params;
-		}
-
-		if (opts.stream) {
-			params.set('_stream', opts.stream);
-		}
-
-		if (opts.limit) {
-			params.set('_limit', `${opts.limit}`);
-		}
-
-		if (opts.offset) {
-			params.set('_offset', `${opts.offset}`);
-		}
-
-		if (opts.after) {
-			params.set('_after', `${opts.after}`);
-		}
-
-		for (const filter of opts.filters || []) {
-			params.set(`${filter.path}[${filter.op}]`, filter.value);
-		}
-
-		for (const sort of opts.sorts || []) {
-			params.append('_sort', sort);
-		}
-
-		return params;
-	}
-
-	private buildListHeaders<T>(opts: ListOpts<T> | null | undefined): Headers {
-		const headers = new Headers();
-
-		this.addETagHeader(headers, 'If-None-Match', opts?.prev);
-
-		return headers;
-	}
-
-	private buildGetHeaders<T>(opts: GetOpts<T> | null | undefined): Headers {
-		const headers = new Headers();
-
-		this.addETagHeader(headers, 'If-None-Match', opts?.prev);
-
-		return headers;
-	}
-
-	private buildUpdateHeaders<T>(opts: UpdateOpts<T> | null | undefined): Headers {
-		const headers = new Headers();
-
-		this.addETagHeader(headers, 'If-Match', opts?.prev);
-
-		return headers;
-	}
-
-	private addETagHeader(headers: Headers, name: string, obj: any | undefined) {
-		if (!obj) {
-			return;
-		}
-
-		const etag = Object.getOwnPropertyDescriptor(obj, ETagKey)?.value;
-
-		if (!etag) {
-			throw(new Error({
-				messages: [
-					`missing ETagKey in ${obj}`,
-				],
-			}));
-		}
-
-		headers.set(name, etag);
-	}
-
-	private async fetch(method: string, path: string, opts?: FetchOptions): Promise<any> {
+	private newReq<T = void>(method: string, path: string): Req<T> {
 		const url = new URL(path, this.baseURL);
-
-		if (opts?.params) {
-			url.search = `?${opts.params}`;
-		}
-
-		// TODO: Add timeout
-		// TODO: Add retry strategy
-		// TODO: Add Idempotency-Key support
-
-		const reqOpts: RequestInit = {
-			method: method,
-			headers: new Headers(this.headers),
-			mode: 'cors',
-			credentials: 'omit',
-			referrerPolicy: 'no-referrer',
-			keepalive: true,
-			signal: opts?.signal ?? null,
-		}
-
-		if (opts?.headers) {
-			for (const [k, v] of opts.headers) {
-				(<Headers>reqOpts.headers).append(k, v);
-			}
-		}
-
-		if (opts?.body) {
-			reqOpts.body = JSON.stringify(opts.body);
-			(<Headers>reqOpts.headers).set('Content-Type', 'application/json');
-		}
-
-		if (opts?.stream) {
-			(<Headers>reqOpts.headers).set('Accept', 'text/event-stream');
-		}
-
-		const req = new Request(url, reqOpts);
-
-		const resp = await fetch(req);
-
-		if (this.debug) {
-			console.log(req, resp);
-		}
-
-		if (opts?.prev && resp.status == 304) {
-			return opts.prev;
-		}
-
-		if (!resp.ok) {
-			throw new Error(await resp.json());
-		}
-
-		if (resp.status == 200) {
-			if (opts?.stream) {
-				return resp;
-			}
-
-			if (opts?.text) {
-				return resp.text();
-			}
-
-			const js = await resp.json();
-
-			if (resp.headers.has('ETag')) {
-				Object.defineProperty(js, ETagKey, {
-					value: resp.headers.get('ETag'),
-				});
-			}
-
-			return js;
-		}
+		return new Req<T>(method, url, this.headers);
 	}
 }
 
@@ -720,5 +531,217 @@ export class Error {
 
 	toString(): string {
 		return this.messages[0] ?? 'error';
+	}
+}
+
+class Req<T> {
+	private method:    string;
+	private url:       URL;
+	private params:    URLSearchParams;
+	private headers:   Headers;
+	private prevObj?:  (T & Metadata)
+	private prevList?: (T & Metadata)[];
+	private body?:     T;
+	private signal?:   AbortSignal;
+
+	constructor(method: string, url: URL, headers: Headers) {
+		this.method = method;
+		this.url = url;
+
+		this.params = new URLSearchParams();
+		this.headers = new Headers(headers);
+	}
+
+	applyGetOpts(opts: GetOpts<T> | null | undefined) {
+		if (!opts) {
+			return;
+		}
+
+		this.setPrevObj('If-None-Match', opts?.prev);
+	}
+
+	applyListOpts(opts: ListOpts<T> | null | undefined) {
+		if (!opts) {
+			return;
+		}
+
+		this.setPrevList('If-None-Match', opts?.prev);
+
+		if (opts?.stream) {
+			this.setQueryParam('_stream', opts.stream);
+		}
+
+		if (opts?.limit) {
+			this.setQueryParam('_limit', `${opts.limit}`);
+		}
+
+		if (opts?.offset) {
+			this.setQueryParam('_offset', `${opts.offset}`);
+		}
+
+		if (opts?.after) {
+			this.setQueryParam('_after', `${opts.after}`);
+		}
+
+		for (const filter of opts?.filters || []) {
+			this.setQueryParam(`${filter.path}[${filter.op}]`, filter.value);
+		}
+
+		for (const sort of opts?.sorts || []) {
+			this.addQueryParam('_sort', sort);
+		}
+	}
+
+	applyUpdateOpts(opts: UpdateOpts<T> | null | undefined) {
+		if (!opts) {
+			return;
+		}
+
+		this.setPrevObj('If-Match', opts?.prev);
+	}
+
+	setPrevObj(headerName: string, obj: (T & Metadata) | null | undefined) {
+		if (!obj) {
+			return;
+		}
+
+		this.headers.set(headerName, this.getETag(obj));
+		this.prevObj = obj;
+	}
+
+	setPrevList(headerName: string, list: (T & Metadata)[] | null | undefined) {
+		if (!list) {
+			return;
+		}
+
+		this.headers.set(headerName, this.getETag(list));
+		this.prevList = list;
+	}
+
+	setSignal(signal: AbortSignal) {
+		this.signal = signal;
+	}
+
+	setBody(obj: T) {
+		this.body = obj;
+		this.headers.set('Content-Type', 'application/json');
+	}
+
+	setHeader(name: string, value: string) {
+		this.headers.set(name, value);
+	}
+
+	setQueryParam(name: string, value: string) {
+		this.params.set(name, value);
+	}
+
+	addQueryParam(name: string, value: string) {
+		this.params.append(name, value);
+	}
+
+	async fetchObj(): Promise<T & Metadata> {
+		this.headers.set('Accept', 'application/json');
+		const resp = await this.fetch();
+
+		if (this?.prevObj && resp.status == 304) {
+			return this.prevObj;
+		}
+
+		await this.throwOnError(resp);
+
+		const obj = await resp.json();
+		this.setETag(obj, resp);
+		return obj;
+	}
+
+	async fetchList(): Promise<(T & Metadata)[]> {
+		this.headers.set('Accept', 'application/json');
+		const resp = await this.fetch();
+
+		if (this?.prevList && resp.status == 304) {
+			return this.prevList;
+		}
+
+		await this.throwOnError(resp);
+
+		const list = await resp.json();
+		this.setETag(list, resp);
+		return list;
+	}
+
+	async fetchJSON(): Promise<Object> {
+		this.headers.set('Accept', 'application/json');
+		const resp = await this.fetch();
+		await this.throwOnError(resp);
+		return resp.json();
+	}
+
+	async fetchText(): Promise<string> {
+		this.headers.set('Accept', 'text/plain');
+		const resp = await this.fetch();
+		await this.throwOnError(resp);
+		return resp.text();
+	}
+
+	async fetchStream(): Promise<Response> {
+		this.headers.set('Accept', 'text/event-stream');
+		const resp = await this.fetch();
+		await this.throwOnError(resp);
+		return resp;
+	}
+
+	async fetchVoid(): Promise<void> {
+		const resp = await this.fetch();
+		await this.throwOnError(resp);
+	}
+
+	async throwOnError(resp: Response) {
+		if (!resp.ok) {
+			throw new Error(await resp.json());
+		}
+	}
+
+	async fetch(): Promise<Response> {
+		this.url.search = `?${this.params}`;
+
+		// TODO: Add timeout
+		// TODO: Add retry strategy
+		// TODO: Add Idempotency-Key support
+
+		const reqOpts: RequestInit = {
+			method: this.method,
+			headers: this.headers,
+			mode: 'cors',
+			credentials: 'omit',
+			referrerPolicy: 'no-referrer',
+			keepalive: true,
+			signal: this?.signal ?? null,
+			body: this?.body ? JSON.stringify(this.body) : null,
+		}
+
+		const req = new Request(this.url, reqOpts);
+		return fetch(req);
+	}
+
+	private getETag(obj: Object): string {
+		const etag = Object.getOwnPropertyDescriptor(obj, ETagKey)?.value;
+
+		if (!etag) {
+			throw(new Error({
+				messages: [
+					`missing ETagKey in ${obj}`,
+				],
+			}));
+		}
+
+		return etag;
+	}
+
+	private setETag(obj: Object, resp: Response) {
+		if (resp.headers.has('ETag')) {
+			Object.defineProperty(obj, ETagKey, {
+				value: resp.headers.get('ETag'),
+			});
+		}
 	}
 }
