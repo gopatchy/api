@@ -505,8 +505,6 @@ func StreamListName[T any](ctx context.Context, c *Client, name string, opts *Li
 	return stream, nil
 }
 
-// XXX Start here
-
 func streamListFull[T any](scan *bufio.Scanner, stream *ListStream[T], opts *ListOpts[T]) {
 	for {
 		event, err := readEvent(scan)

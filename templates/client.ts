@@ -256,8 +256,6 @@ export class Client {
 		}
 	}
 
-	// XXX Start here
-
 	private newReq<T = void>(method: string, path: string): Req<T> {
 		const url = new URL(path, this.baseURL);
 		return new Req<T>(method, url, this.headers);
@@ -296,20 +294,14 @@ class Scanner {
 	}
 }
 
-class StreamCore {
+class EventStream {
 	private scan: Scanner;
-	private controller: AbortController;
 
-	constructor(resp: Response, controller: AbortController) {
-		this.scan = new Scanner(resp.body!);
-		this.controller = controller;
+	constructor(stream: ReadableStream) {
+		this.scan = new Scanner(stream);
 	}
 
-	async abort() {
-		this.controller.abort();
-	}
-
-	protected async readEvent(): Promise<StreamEvent | null> {
+	async readEvent(): Promise<StreamEvent | null> {
 		const data: string[] = [];
 		const ev: StreamEvent = {
 			eventType: '',
@@ -344,18 +336,24 @@ class StreamCore {
 	}
 }
 
-export class GetStream<T> extends StreamCore {
+export class GetStream<T> {
+	private eventStream: EventStream;
+	private controller: AbortController;
 	private prev: (T & Metadata) | null;
 
 	constructor(resp: Response, controller: AbortController, prev: (T & Metadata) | null | undefined) {
-		super(resp, controller);
-
+		this.eventStream = new EventStream(resp.body!);
+		this.controller = controller;
 		this.prev = prev ?? null;
+	}
+
+	async abort() {
+		this.controller.abort();
 	}
 
 	async read(): Promise<(T & Metadata) | null> {
 		while (true) {
-			const ev = await this.readEvent();
+			const ev = await this.eventStream.readEvent();
 
 			if (ev == null) {
 				return null;
@@ -403,9 +401,17 @@ export class GetStream<T> extends StreamCore {
 	}
 }
 
-export abstract class ListStream<T> extends StreamCore {
+export abstract class ListStream<T> {
+	protected eventStream: EventStream;
+	private controller: AbortController;
+
 	constructor(resp: Response, controller: AbortController) {
-		super(resp, controller);
+		this.eventStream = new EventStream(resp.body!);
+		this.controller = controller;
+	}
+
+	async abort() {
+		this.controller.abort();
 	}
 
 	async close() {
@@ -439,7 +445,7 @@ export class ListStreamFull<T> extends ListStream<T> {
 
 	async read(): Promise<(T & Metadata)[] | null> {
 		while (true) {
-			const ev = await this.readEvent();
+			const ev = await this.eventStream.readEvent();
 
 			if (ev == null) {
 				return null;
@@ -480,7 +486,7 @@ export class ListStreamDiff<T> extends ListStream<T> {
 
 	async read(): Promise<(T & Metadata)[] | null> {
 		while (true) {
-			const ev = await this.readEvent();
+			const ev = await this.eventStream.readEvent();
 
 			if (ev == null) {
 				return null;
