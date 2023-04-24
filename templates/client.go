@@ -8,7 +8,6 @@ import (
 	"bufio"
 	"bytes"
 	"context"
-	"crypto/sha256"
 	"crypto/tls"
 	"encoding/json"
 	"fmt"
@@ -29,6 +28,7 @@ import (
 	"github.com/go-resty/resty/v2"
 	"github.com/gopatchy/jsrest"
 	"github.com/gopatchy/metadata"
+	"github.com/gopatchy/path"
 	"golang.org/x/exp/slices"
 )
 
@@ -57,11 +57,18 @@ type UpdateOpts[T any] struct {
 	Prev *T
 }
 
+type streamEvent struct {
+	eventType string
+	params    map[string]string
+	data      []byte
+}
+
 {{- range $type := .Types }}
 
 type {{ $type.TypeUpperCamel }} struct {
 	{{- if $type.TopLevel }}
 	metadata.Metadata
+	listETag string
 	{{- end }}
 
 	{{- range $field := .Fields }}
@@ -335,6 +342,13 @@ func ListName[T any](ctx context.Context, c *Client, name string, opts *ListOpts
 		return nil, jsrest.ReadError(resp.Body())
 	}
 
+	if len(objs) > 0 && resp.Header().Get("ETag") != "" {
+		err = path.Set(objs[0], "listETag", resp.Header().Get("ETag"))
+		if err != nil {
+			return nil, err
+		}
+	}
+
 	return objs, nil
 }
 
@@ -524,6 +538,14 @@ func streamListFull[T any](scan *bufio.Scanner, stream *ListStream[T], opts *Lis
 				return
 			}
 
+			if len(list) > 0 {
+				err = path.Set(list[0], "listETag", event.params["id"])
+				if err != nil {
+					stream.writeError(err)
+					return
+				}
+			}
+
 			stream.writeEvent(list)
 
 		case "notModified":
@@ -608,6 +630,14 @@ func streamListDiff[T any](scan *bufio.Scanner, stream *ListStream[T], opts *Lis
 			}
 
 		case "sync":
+			if len(list) > 0 {
+				err = path.Set(list[0], "listETag", event.params["id"])
+				if err != nil {
+					stream.writeError(err)
+					return
+				}
+			}
+
 			stream.writeEvent(list)
 
 		case "notModified":
@@ -736,12 +766,6 @@ func (ls *ListStream[T]) writeError(err error) {
 	close(ls.ch)
 }
 
-type streamEvent struct {
-	eventType string
-	params    map[string]string
-	data      []byte
-}
-
 func readEvent(scan *bufio.Scanner) (*streamEvent, error) {
 	event := &streamEvent{
 		params: map[string]string{},
@@ -827,13 +851,13 @@ func applyGetOpts[T any](opts *GetOpts[T], req *resty.Request) {
 }
 
 func applyListOpts[T any](opts *ListOpts[T], req *resty.Request) error {
-	if opts.Prev != nil {
-		etag, err := hashList(opts.Prev)
+	if opts.Prev != nil && len(opts.Prev) > 0 {
+		etag, err := path.Get(opts.Prev[0], "listETag")
 		if err != nil {
 			return err
 		}
 
-		req.SetHeader("If-None-Match", fmt.Sprintf(`"%s"`, etag))
+		req.SetHeader("If-None-Match", etag.(string))
 	}
 
 	if opts.Stream != "" {
@@ -872,19 +896,4 @@ func applyUpdateOpts[T any](opts *UpdateOpts[T], req *resty.Request) {
 		md := metadata.GetMetadata(opts.Prev)
 		req.SetHeader("If-Match", fmt.Sprintf(`"%s"`, md.ETag))
 	}
-}
-
-func hashList[T any](list []*T) (string, error) {
-	hash := sha256.New()
-
-	for _, obj := range list {
-		md := metadata.GetMetadata(obj)
-
-		_, err := hash.Write([]byte(md.ETag + "\n"))
-		if err != nil {
-			return "", jsrest.Errorf(jsrest.ErrInternalServerError, "hash write failed (%w)", err)
-		}
-	}
-
-	return fmt.Sprintf("etag:%x", hash.Sum(nil)), nil
 }

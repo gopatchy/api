@@ -46,36 +46,6 @@ export interface JSONError {
 	messages:  string[];
 }
 
-export interface DebugInfo {
-	server: ServerInfo;
-	ip:     IPInfo;
-	http:   HTTPInfo;
-	tls:    TLSInfo;
-}
-
-export interface ServerInfo {
-	hostname:  string;
-}
-
-export interface IPInfo {
-	remoteAddr:  string;
-}
-
-export interface HTTPInfo {
-	protocol:  string;
-	method:    string;
-	header:    string;
-	url:       string;
-}
-
-export interface TLSInfo {
-	version:             number;
-	didResume:           boolean;
-	cipherSuite:         number;
-	negotiatedProtocol:  string;
-	serverName:          string;
-}
-
 interface FetchOptions {
 	params?:  URLSearchParams;
 	headers?: Headers;
@@ -360,7 +330,7 @@ class ClientCore {
 		this.baseURL = new URL(baseURL, globalThis?.location?.href);
 	}
 
-	async debugInfo(): Promise<DebugInfo> {
+	async debugInfo(): Promise<Object> {
 		return this.fetch('GET', '_debug');
 	}
 
