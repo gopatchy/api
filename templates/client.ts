@@ -287,10 +287,14 @@ class Scanner {
 	}
 }
 
-interface StreamEvent {
-	eventType: string;
-	params:    Map<string, string>;
-	data:      string;
+class StreamEvent {
+	eventType: string = '';
+	params:    Map<string, string> = new Map();
+	data:      string = '';
+
+	decode<T>(): T {
+		return JSON.parse(this.data);
+	}
 }
 
 class EventStream {
@@ -302,11 +306,7 @@ class EventStream {
 
 	async readEvent(): Promise<StreamEvent | null> {
 		const data: string[] = [];
-		const ev: StreamEvent = {
-			eventType: '',
-			params: new Map(),
-			data: '',
-		};
+		const ev = new StreamEvent();
 
 		while (true) {
 			const line = await this.scan.readLine();
@@ -358,7 +358,7 @@ export class GetStream<T> {
 				return null;
 
 			} else if (ev.eventType == 'initial' || ev.eventType == 'update') {
-				return JSON.parse(ev.data);
+				return ev.decode<T & Metadata>();
 
 			} else if (ev.eventType == 'notModified') {
 				if (this.prev == null) {
@@ -450,7 +450,7 @@ export class ListStreamFull<T> extends ListStream<T> {
 				return null;
 
 			} else if (ev.eventType == 'list') {
-				return JSON.parse(ev.data);
+				return ev.decode<(T & Metadata)[]>();
 
 			} else if (ev.eventType == 'notModified') {
 				if (this.prev == null) {
@@ -491,13 +491,13 @@ export class ListStreamDiff<T> extends ListStream<T> {
 				return null;
 
 			} else if (ev.eventType == 'add') {
-				const obj = JSON.parse(ev.data) as T & Metadata;
+				const obj = ev.decode<T & Metadata>();
 				this.objs.splice(parseInt(ev.params.get('new-position')!, 10), 0, obj);
 
 			} else if (ev.eventType == 'update') {
 				this.objs.splice(parseInt(ev.params.get('old-position')!, 10), 1);
 
-				const obj = JSON.parse(ev.data) as T & Metadata;
+				const obj = ev.decode<T & Metadata>();
 				this.objs.splice(parseInt(ev.params.get('new-position')!, 10), 0, obj);
 
 			} else if (ev.eventType == 'remove') {
