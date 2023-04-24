@@ -405,47 +405,17 @@ func StreamGetName[T any](ctx context.Context, c *Client, name, id string, opts 
 	}
 
 	body := resp.RawBody()
-	scan := bufio.NewScanner(body)
-	es := newEventStream[T](scan)
 
 	stream := &GetStream[T]{
 		ch:   make(chan *T, 100),
 		body: body,
 	}
 
-	go func() {
-		for {
-			event, err := es.readEvent()
-			if err != nil {
-				stream.writeError(err)
-				return
-			}
+	if opts != nil && opts.Prev != nil {
+		stream.prev = opts.Prev
+	}
 
-			switch event.eventType {
-			case "initial":
-				fallthrough
-			case "update":
-				obj, err := event.decodeObj()
-				if err != nil {
-					stream.writeError(err)
-					return
-				}
-
-				stream.writeEvent(obj)
-
-			case "notModified":
-				if opts != nil && opts.Prev != nil {
-					stream.writeEvent(opts.Prev)
-				} else {
-					stream.writeError(fmt.Errorf("notModified without If-None-Match (%w)", ErrInvalidStreamEvent))
-					return
-				}
-
-			case "heartbeat":
-				stream.writeHeartbeat()
-			}
-		}
-	}()
+	go stream.process()
 
 	return stream, nil
 }
@@ -689,6 +659,7 @@ func streamListDiff[T any](scan *bufio.Scanner, stream *ListStream[T], opts *Lis
 type GetStream[T any] struct {
 	ch   chan *T
 	body io.ReadCloser
+	prev *T
 
 	lastEventReceived time.Time
 	err               error
@@ -719,6 +690,43 @@ func (gs *GetStream[T]) Error() error {
 	defer gs.mu.RUnlock()
 
 	return gs.err
+}
+
+func (gs *GetStream[T]) process() {
+	scan := bufio.NewScanner(gs.body)
+	es := newEventStream[T](scan)
+
+	for {
+		event, err := es.readEvent()
+		if err != nil {
+			gs.writeError(err)
+			return
+		}
+
+		switch event.eventType {
+		case "initial":
+			fallthrough
+		case "update":
+			obj, err := event.decodeObj()
+			if err != nil {
+				gs.writeError(err)
+				return
+			}
+
+			gs.writeEvent(obj)
+
+		case "notModified":
+			if gs.prev != nil {
+				gs.writeEvent(gs.prev)
+			} else {
+				gs.writeError(fmt.Errorf("notModified without If-None-Match (%w)", ErrInvalidStreamEvent))
+				return
+			}
+
+		case "heartbeat":
+			gs.writeHeartbeat()
+		}
+	}
 }
 
 func (gs *GetStream[T]) writeHeartbeat() {
