@@ -406,7 +406,7 @@ func StreamGetName[T any](ctx context.Context, c *Client, name, id string, opts 
 
 	body := resp.RawBody()
 	scan := bufio.NewScanner(body)
-	es := newEventStream(scan)
+	es := newEventStream[T](scan)
 
 	stream := &GetStream[T]{
 		ch:   make(chan *T, 100),
@@ -425,9 +425,7 @@ func StreamGetName[T any](ctx context.Context, c *Client, name, id string, opts 
 			case "initial":
 				fallthrough
 			case "update":
-				obj := new(T)
-
-				err = event.decode(obj)
+				obj, err := event.decodeObj()
 				if err != nil {
 					stream.writeError(err)
 					return
@@ -499,30 +497,52 @@ func StreamListName[T any](ctx context.Context, c *Client, name string, opts *Li
 	return stream, nil
 }
 
-type streamEvent struct {
+type streamEvent[T any] struct {
 	eventType string
 	params    map[string]string
 	data      []byte
 }
 
-func (event *streamEvent) decode(out any) error {
-	return json.Unmarshal(event.data, out)
+func newStreamEvent[T any]() *streamEvent[T] {
+	return &streamEvent[T]{
+		params: map[string]string{},
+	}
 }
 
-type eventStream struct {
+func (ev *streamEvent[T]) decodeObj() (*T, error) {
+	obj := new(T)
+
+	err := json.Unmarshal(ev.data, obj)
+	if err != nil {
+		return nil, err
+	}
+
+	return obj, nil
+}
+
+func (ev *streamEvent[T]) decodeList() ([]*T, error) {
+	list := []*T{}
+
+	err := json.Unmarshal(ev.data, &list)
+	if err != nil {
+		return nil, err
+	}
+
+	return list, nil
+}
+
+type eventStream[T any] struct {
 	scan *bufio.Scanner
 }
 
-func newEventStream(scan *bufio.Scanner) *eventStream {
-	return &eventStream{
+func newEventStream[T any](scan *bufio.Scanner) *eventStream[T] {
+	return &eventStream[T]{
 		scan: scan,
 	}
 }
 
-func (es *eventStream) readEvent() (*streamEvent, error) {
-	event := &streamEvent{
-		params: map[string]string{},
-	}
+func (es *eventStream[T]) readEvent() (*streamEvent[T], error) {
+	event := newStreamEvent[T]()
 	data := [][]byte{}
 
 	for es.scan.Scan() {
@@ -552,7 +572,7 @@ func (es *eventStream) readEvent() (*streamEvent, error) {
 }
 
 func streamListFull[T any](scan *bufio.Scanner, stream *ListStream[T], opts *ListOpts[T]) {
-	es := newEventStream(scan)
+	es := newEventStream[T](scan)
 
 	for {
 		event, err := es.readEvent()
@@ -563,9 +583,7 @@ func streamListFull[T any](scan *bufio.Scanner, stream *ListStream[T], opts *Lis
 
 		switch event.eventType {
 		case "list":
-			list := []*T{}
-
-			err = event.decode(&list)
+			list, err := event.decodeList()
 			if err != nil {
 				stream.writeError(err)
 				return
@@ -589,13 +607,11 @@ func streamListFull[T any](scan *bufio.Scanner, stream *ListStream[T], opts *Lis
 }
 
 func streamListDiff[T any](scan *bufio.Scanner, stream *ListStream[T], opts *ListOpts[T]) {
-	es := newEventStream(scan)
+	es := newEventStream[T](scan)
 	list := []*T{}
 
-	add := func(event *streamEvent) error {
-		obj := new(T)
-
-		err := event.decode(obj)
+	add := func(event *streamEvent[T]) error {
+		obj, err := event.decodeObj()
 		if err != nil {
 			return err
 		}
@@ -610,7 +626,7 @@ func streamListDiff[T any](scan *bufio.Scanner, stream *ListStream[T], opts *Lis
 		return nil
 	}
 
-	remove := func(event *streamEvent) error {
+	remove := func(event *streamEvent[T]) error {
 		pos, err := strconv.Atoi(event.params["old-position"])
 		if err != nil {
 			return err
