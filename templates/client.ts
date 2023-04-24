@@ -264,14 +264,44 @@ export class Client {
 	}
 }
 
-class StreamCore {
+class Scanner {
 	private reader: ReadableStreamDefaultReader;
-	private controller: AbortController;
-
 	private buf: string = '';
 
+	constructor(stream: ReadableStream) {
+		this.reader = stream.pipeThrough(new TextDecoderStream()).getReader();
+	}
+
+	async readLine(): Promise<string | null> {
+		while (!this.buf.includes('\n')) {
+			let chunk: ReadableStreamReadResult<any>;
+
+			try {
+				chunk = await this.reader.read();
+			} catch {
+				return null;
+			}
+
+			if (chunk.done) {
+				return null;
+			}
+
+			this.buf += chunk.value;
+		}
+
+		const lineEnd = this.buf.indexOf('\n');
+		const line = this.buf.substring(0, lineEnd);
+		this.buf = this.buf.substring(lineEnd + 1);
+		return line;
+	}
+}
+
+class StreamCore {
+	private scan: Scanner;
+	private controller: AbortController;
+
 	constructor(resp: Response, controller: AbortController) {
-		this.reader = resp.body!.pipeThrough(new TextDecoderStream()).getReader();
+		this.scan = new Scanner(resp.body!);
 		this.controller = controller;
 	}
 
@@ -288,7 +318,7 @@ class StreamCore {
 		};
 
 		while (true) {
-			const line = await this.readLine();
+			const line = await this.scan.readLine();
 
 			if (line == null) {
 				return null;
@@ -297,10 +327,10 @@ class StreamCore {
 				continue;
 
 			} else if (line.startsWith('event: ')) {
-				ev.eventType = this.removePrefix(line, 'event: ');
+				ev.eventType = trimPrefix(line, 'event: ');
 
 			} else if (line.startsWith('data: ')) {
-				data.push(this.removePrefix(line, 'data: '));
+				data.push(trimPrefix(line, 'data: '));
 
 			} else if (line.includes(': ')) {
 				const [k, v] = line.split(': ', 2);
@@ -311,38 +341,6 @@ class StreamCore {
 				return ev;
 			}
 		}
-	}
-
-	private async readLine(): Promise<string | null> {
-		while (true) {
-			const lineEnd = this.buf.indexOf('\n');
-
-			if (lineEnd == -1) {
-				let chunk: ReadableStreamReadResult<any>;
-
-				try {
-					chunk = await this.reader.read();
-				} catch {
-					return null;
-				}
-
-				if (chunk.done) {
-					return null;
-				}
-
-				this.buf += chunk.value;
-				continue;
-			}
-
-			const line = this.buf.substring(0, lineEnd);
-			this.buf = this.buf.substring(lineEnd + 1);
-
-			return line;
-		}
-	}
-
-	private removePrefix(s: string, prefix: string): string {
-		return s.substring(prefix.length);
 	}
 }
 
@@ -745,4 +743,8 @@ class Req<T> {
 			});
 		}
 	}
+}
+
+function trimPrefix(s: string, prefix: string): string {
+	return s.substring(prefix.length);
 }
