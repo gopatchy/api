@@ -8,9 +8,7 @@ import (
 	"github.com/gopatchy/path"
 )
 
-// TODO: Remove dual generic types
-
-func CreateName[TOut, TIn any](ctx context.Context, api *API, name string, obj *TIn) (*TOut, error) {
+func CreateName[T any](ctx context.Context, api *API, name string, obj *T) (*T, error) {
 	cfg := api.registry[name]
 	if cfg == nil {
 		return nil, jsrest.Errorf(jsrest.ErrInternalServerError, "unknown type: %s", name)
@@ -21,14 +19,14 @@ func CreateName[TOut, TIn any](ctx context.Context, api *API, name string, obj *
 		return nil, jsrest.Errorf(jsrest.ErrInternalServerError, "create failed (%w)", err)
 	}
 
-	return created.(*TOut), nil
+	return created.(*T), nil
 }
 
-func Create[TOut, TIn any](ctx context.Context, api *API, obj *TIn) (*TOut, error) {
-	return CreateName[TOut, TIn](ctx, api, apiName[TOut](), obj)
+func Create[T any](ctx context.Context, api *API, obj *T) (*T, error) {
+	return CreateName[T](ctx, api, apiName[T](), obj)
 }
 
-func DeleteName[TOut any](ctx context.Context, api *API, name, id string, opts *UpdateOpts) error {
+func DeleteName[T any](ctx context.Context, api *API, name, id string, opts *UpdateOpts) error {
 	cfg := api.registry[name]
 	if cfg == nil {
 		return jsrest.Errorf(jsrest.ErrInternalServerError, "unknown type: %s", name)
@@ -42,11 +40,11 @@ func DeleteName[TOut any](ctx context.Context, api *API, name, id string, opts *
 	return nil
 }
 
-func Delete[TOut any](ctx context.Context, api *API, id string, opts *UpdateOpts) error {
-	return DeleteName[TOut](ctx, api, apiName[TOut](), id, opts)
+func Delete[T any](ctx context.Context, api *API, id string, opts *UpdateOpts) error {
+	return DeleteName[T](ctx, api, apiName[T](), id, opts)
 }
 
-func FindName[TOut any](ctx context.Context, api *API, name, shortID string) (*TOut, error) {
+func FindName[T any](ctx context.Context, api *API, name, shortID string) (*T, error) {
 	listOpts := &ListOpts{
 		Filters: []Filter{
 			{
@@ -57,7 +55,7 @@ func FindName[TOut any](ctx context.Context, api *API, name, shortID string) (*T
 		},
 	}
 
-	objs, err := ListName[TOut](ctx, api, name, listOpts)
+	objs, err := ListName[T](ctx, api, name, listOpts)
 	if err != nil {
 		return nil, err
 	}
@@ -73,11 +71,11 @@ func FindName[TOut any](ctx context.Context, api *API, name, shortID string) (*T
 	return objs[0], nil
 }
 
-func Find[TOut any](ctx context.Context, api *API, shortID string) (*TOut, error) {
-	return FindName[TOut](ctx, api, apiName[TOut](), shortID)
+func Find[T any](ctx context.Context, api *API, shortID string) (*T, error) {
+	return FindName[T](ctx, api, apiName[T](), shortID)
 }
 
-func GetName[TOut any](ctx context.Context, api *API, name, id string, opts *GetOpts) (*TOut, error) {
+func GetName[T any](ctx context.Context, api *API, name, id string, opts *GetOpts) (*T, error) {
 	cfg := api.registry[name]
 	if cfg == nil {
 		return nil, jsrest.Errorf(jsrest.ErrInternalServerError, "unknown type: %s", name)
@@ -88,14 +86,14 @@ func GetName[TOut any](ctx context.Context, api *API, name, id string, opts *Get
 		return nil, jsrest.Errorf(jsrest.ErrInternalServerError, "get failed (%w)", err)
 	}
 
-	return convert[TOut](obj), nil
+	return convert[T](obj), nil
 }
 
-func Get[TOut any](ctx context.Context, api *API, id string, opts *GetOpts) (*TOut, error) {
-	return GetName[TOut](ctx, api, apiName[TOut](), id, opts)
+func Get[T any](ctx context.Context, api *API, id string, opts *GetOpts) (*T, error) {
+	return GetName[T](ctx, api, apiName[T](), id, opts)
 }
 
-func ListName[TOut any](ctx context.Context, api *API, name string, opts *ListOpts) ([]*TOut, error) {
+func ListName[T any](ctx context.Context, api *API, name string, opts *ListOpts) ([]*T, error) {
 	cfg := api.registry[name]
 	if cfg == nil {
 		return nil, jsrest.Errorf(jsrest.ErrInternalServerError, "unknown type: %s", name)
@@ -106,19 +104,19 @@ func ListName[TOut any](ctx context.Context, api *API, name string, opts *ListOp
 		return nil, jsrest.Errorf(jsrest.ErrInternalServerError, "list failed (%w)", err)
 	}
 
-	ret := []*TOut{}
+	ret := []*T{}
 	for _, obj := range list {
-		ret = append(ret, obj.(*TOut))
+		ret = append(ret, obj.(*T))
 	}
 
 	return ret, nil
 }
 
-func List[TOut any](ctx context.Context, api *API, opts *ListOpts) ([]*TOut, error) {
-	return ListName[TOut](ctx, api, apiName[TOut](), opts)
+func List[T any](ctx context.Context, api *API, opts *ListOpts) ([]*T, error) {
+	return ListName[T](ctx, api, apiName[T](), opts)
 }
 
-func ReplaceName[TOut, TIn any](ctx context.Context, api *API, name, id string, obj *TIn, opts *UpdateOpts) (*TOut, error) {
+func ReplaceName[T any](ctx context.Context, api *API, name, id string, obj *T, opts *UpdateOpts) (*T, error) {
 	cfg := api.registry[name]
 	if cfg == nil {
 		return nil, jsrest.Errorf(jsrest.ErrInternalServerError, "unknown type: %s", name)
@@ -129,22 +127,17 @@ func ReplaceName[TOut, TIn any](ctx context.Context, api *API, name, id string, 
 		return nil, jsrest.Errorf(jsrest.ErrInternalServerError, "replace failed (%w)", err)
 	}
 
-	return replaced.(*TOut), nil
+	return replaced.(*T), nil
 }
 
-func Replace[TOut, TIn any](ctx context.Context, api *API, id string, obj *TIn, opts *UpdateOpts) (*TOut, error) {
-	return ReplaceName[TOut, TIn](ctx, api, apiName[TOut](), id, obj, opts)
+func Replace[T any](ctx context.Context, api *API, id string, obj *T, opts *UpdateOpts) (*T, error) {
+	return ReplaceName[T](ctx, api, apiName[T](), id, obj, opts)
 }
 
-func UpdateName[TOut, TIn any](ctx context.Context, api *API, name, id string, obj *TIn, opts *UpdateOpts) (*TOut, error) {
+func UpdateNameMap[T any](ctx context.Context, api *API, name, id string, patch map[string]any, opts *UpdateOpts) (*T, error) {
 	cfg := api.registry[name]
 	if cfg == nil {
 		return nil, jsrest.Errorf(jsrest.ErrInternalServerError, "unknown type: %s", name)
-	}
-
-	patch, err := path.ToMap(obj)
-	if err != nil {
-		return nil, jsrest.Errorf(jsrest.ErrBadRequest, "invalid patch content (%w)", err)
 	}
 
 	updated, err := api.updateInt(ctx, cfg, id, patch, opts)
@@ -152,11 +145,24 @@ func UpdateName[TOut, TIn any](ctx context.Context, api *API, name, id string, o
 		return nil, jsrest.Errorf(jsrest.ErrInternalServerError, "update failed (%w)", err)
 	}
 
-	return updated.(*TOut), nil
+	return updated.(*T), nil
 }
 
-func Update[TOut, TIn any](ctx context.Context, api *API, id string, obj *TIn, opts *UpdateOpts) (*TOut, error) {
-	return UpdateName[TOut, TIn](ctx, api, apiName[TOut](), id, obj, opts)
+func UpdateName[T any](ctx context.Context, api *API, name, id string, obj *T, opts *UpdateOpts) (*T, error) {
+	patch, err := path.ToMap(obj)
+	if err != nil {
+		return nil, jsrest.Errorf(jsrest.ErrBadRequest, "invalid patch content (%w)", err)
+	}
+
+	return UpdateNameMap[T](ctx, api, name, id, patch, opts)
+}
+
+func UpdateMap[T any](ctx context.Context, api *API, id string, patch map[string]any, opts *UpdateOpts) (*T, error) {
+	return UpdateNameMap[T](ctx, api, apiName[T](), id, patch, opts)
+}
+
+func Update[T any](ctx context.Context, api *API, id string, obj *T, opts *UpdateOpts) (*T, error) {
+	return UpdateName[T](ctx, api, apiName[T](), id, obj, opts)
 }
 
 func StreamGetName[T any](ctx context.Context, api *API, name, id string) (*GetStream[T], error) {
@@ -186,11 +192,11 @@ func StreamGetName[T any](ctx context.Context, api *API, name, id string) (*GetS
 	return stream, nil
 }
 
-func StreamGet[TOut any](ctx context.Context, api *API, id string) (*GetStream[TOut], error) {
-	return StreamGetName[TOut](ctx, api, apiName[TOut](), id)
+func StreamGet[T any](ctx context.Context, api *API, id string) (*GetStream[T], error) {
+	return StreamGetName[T](ctx, api, apiName[T](), id)
 }
 
-func StreamListName[TOut any](ctx context.Context, api *API, name string, opts *ListOpts) (*ListStream[TOut], error) {
+func StreamListName[T any](ctx context.Context, api *API, name string, opts *ListOpts) (*ListStream[T], error) {
 	cfg := api.registry[name]
 	if cfg == nil {
 		return nil, jsrest.Errorf(jsrest.ErrInternalServerError, "unknown type: %s", name)
@@ -201,17 +207,17 @@ func StreamListName[TOut any](ctx context.Context, api *API, name string, opts *
 		return nil, jsrest.Errorf(jsrest.ErrInternalServerError, "stream list failed (%w)", err)
 	}
 
-	stream := &ListStream[TOut]{
-		ch:  make(chan []*TOut, 100),
+	stream := &ListStream[T]{
+		ch:  make(chan []*T, 100),
 		lsi: lsi,
 	}
 
 	go func() {
 		for list := range lsi.Chan() {
-			typeList := []*TOut{}
+			typeList := []*T{}
 
 			for _, obj := range list {
-				typeList = append(typeList, convert[TOut](obj))
+				typeList = append(typeList, convert[T](obj))
 			}
 
 			stream.writeEvent(typeList)
@@ -223,6 +229,6 @@ func StreamListName[TOut any](ctx context.Context, api *API, name string, opts *
 	return stream, nil
 }
 
-func StreamList[TOut any](ctx context.Context, api *API, opts *ListOpts) (*ListStream[TOut], error) {
-	return StreamListName[TOut](ctx, api, apiName[TOut](), opts)
+func StreamList[T any](ctx context.Context, api *API, opts *ListOpts) (*ListStream[T], error) {
+	return StreamListName[T](ctx, api, apiName[T](), opts)
 }

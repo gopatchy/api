@@ -36,11 +36,6 @@ type testType struct {
 	Num  int64  `json:"num"`
 }
 
-type testTypeRequest struct {
-	Text *string `json:"text"`
-	Num  *int64  `json:"num"`
-}
-
 type testType2 struct {
 	patchy.Metadata
 	Text string `json:"text"`
