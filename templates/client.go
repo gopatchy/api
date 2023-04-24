@@ -74,13 +74,6 @@ type UpdateOpts[T any] struct {
 	Prev *T
 }
 
-// TODO: Move this down
-type streamEvent struct {
-	eventType string
-	params    map[string]string
-	data      []byte
-}
-
 type Client struct {
 	rst *resty.Client
 }
@@ -413,6 +406,7 @@ func StreamGetName[T any](ctx context.Context, c *Client, name, id string, opts 
 
 	body := resp.RawBody()
 	scan := bufio.NewScanner(body)
+	es := newEventStream(scan)
 
 	stream := &GetStream[T]{
 		ch:   make(chan *T, 100),
@@ -421,7 +415,7 @@ func StreamGetName[T any](ctx context.Context, c *Client, name, id string, opts 
 
 	go func() {
 		for {
-			event, err := readEvent(scan)
+			event, err := es.readEvent()
 			if err != nil {
 				stream.writeError(err)
 				return
@@ -505,9 +499,63 @@ func StreamListName[T any](ctx context.Context, c *Client, name string, opts *Li
 	return stream, nil
 }
 
+type streamEvent struct {
+	eventType string
+	params    map[string]string
+	data      []byte
+}
+
+func (event *streamEvent) decode(out any) error {
+	return json.Unmarshal(event.data, out)
+}
+
+type eventStream struct {
+	scan *bufio.Scanner
+}
+
+func newEventStream(scan *bufio.Scanner) *eventStream {
+	return &eventStream{
+		scan: scan,
+	}
+}
+
+func (es *eventStream) readEvent() (*streamEvent, error) {
+	event := &streamEvent{
+		params: map[string]string{},
+	}
+	data := [][]byte{}
+
+	for es.scan.Scan() {
+		line := es.scan.Text()
+
+		switch {
+		case strings.HasPrefix(line, ":"):
+			continue
+
+		case strings.HasPrefix(line, "event: "):
+			event.eventType = strings.TrimPrefix(line, "event: ")
+
+		case strings.HasPrefix(line, "data: "):
+			data = append(data, bytes.TrimPrefix(es.scan.Bytes(), []byte("data: ")))
+
+		case line == "":
+			event.data = bytes.Join(data, []byte("\n"))
+			return event, nil
+
+		case strings.Contains(line, ": "):
+			parts := strings.SplitN(line, ": ", 2)
+			event.params[parts[0]] = parts[1]
+		}
+	}
+
+	return nil, io.EOF
+}
+
 func streamListFull[T any](scan *bufio.Scanner, stream *ListStream[T], opts *ListOpts[T]) {
+	es := newEventStream(scan)
+
 	for {
-		event, err := readEvent(scan)
+		event, err := es.readEvent()
 		if err != nil {
 			stream.writeError(err)
 			return
@@ -541,6 +589,7 @@ func streamListFull[T any](scan *bufio.Scanner, stream *ListStream[T], opts *Lis
 }
 
 func streamListDiff[T any](scan *bufio.Scanner, stream *ListStream[T], opts *ListOpts[T]) {
+	es := newEventStream(scan)
 	list := []*T{}
 
 	add := func(event *streamEvent) error {
@@ -573,7 +622,7 @@ func streamListDiff[T any](scan *bufio.Scanner, stream *ListStream[T], opts *Lis
 	}
 
 	for {
-		event, err := readEvent(scan)
+		event, err := es.readEvent()
 		if err != nil {
 			stream.writeError(err)
 			return
@@ -735,42 +784,6 @@ func (ls *ListStream[T]) writeError(err error) {
 	ls.mu.Unlock()
 
 	close(ls.ch)
-}
-
-func readEvent(scan *bufio.Scanner) (*streamEvent, error) {
-	event := &streamEvent{
-		params: map[string]string{},
-	}
-	data := [][]byte{}
-
-	for scan.Scan() {
-		line := scan.Text()
-
-		switch {
-		case strings.HasPrefix(line, ":"):
-			continue
-
-		case strings.HasPrefix(line, "event: "):
-			event.eventType = strings.TrimPrefix(line, "event: ")
-
-		case strings.HasPrefix(line, "data: "):
-			data = append(data, bytes.TrimPrefix(scan.Bytes(), []byte("data: ")))
-
-		case line == "":
-			event.data = bytes.Join(data, []byte("\n"))
-			return event, nil
-
-		case strings.Contains(line, ": "):
-			parts := strings.SplitN(line, ": ", 2)
-			event.params[parts[0]] = parts[1]
-		}
-	}
-
-	return nil, io.EOF
-}
-
-func (event *streamEvent) decode(out any) error {
-	return json.Unmarshal(event.data, out)
 }
 
 //// Internal

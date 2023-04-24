@@ -46,13 +46,6 @@ export interface JSONError {
 	messages:  string[];
 }
 
-// TODO: Move this down
-interface StreamEvent {
-	eventType: string;
-	params:    Map<string, string>;
-	data:      string;
-}
-
 const ETagKey = Symbol('etag');
 
 export class Client {
@@ -292,6 +285,12 @@ class Scanner {
 		this.buf = this.buf.substring(lineEnd + 1);
 		return line;
 	}
+}
+
+interface StreamEvent {
+	eventType: string;
+	params:    Map<string, string>;
+	data:      string;
 }
 
 class EventStream {
