@@ -37,7 +37,7 @@ type GetOpts[T any] struct {
 	Prev *T
 }
 
-type ListOpts struct {
+type ListOpts[T any] struct {
 	Stream  string
 	Limit   int64
 	Offset  int64
@@ -45,7 +45,7 @@ type ListOpts struct {
 	Sorts   []string
 	Filters []Filter
 
-	Prev any
+	Prev []*T
 }
 
 type Filter struct {
@@ -54,8 +54,8 @@ type Filter struct {
 	Value string
 }
 
-type UpdateOpts struct {
-	Prev any
+type UpdateOpts[T any] struct {
+	Prev *T
 }
 
 {{- range $type := .Types }}
@@ -171,7 +171,7 @@ func (c *Client) Create{{ $api.NameUpperCamel }}(ctx context.Context, obj *{{ $a
 	return CreateName[{{ $api.TypeUpperCamel }}](ctx, c, "{{ $api.NameLower }}", obj)
 }
 
-func (c *Client) Delete{{ $api.NameUpperCamel }}(ctx context.Context, id string, opts *UpdateOpts) error {
+func (c *Client) Delete{{ $api.NameUpperCamel }}(ctx context.Context, id string, opts *UpdateOpts[{{ $api.TypeUpperCamel }}]) error {
 	return DeleteName[{{ $api.TypeUpperCamel }}](ctx, c, "{{ $api.NameLower }}", id, opts)
 }
 
@@ -183,15 +183,15 @@ func (c *Client) Get{{ $api.NameUpperCamel }}(ctx context.Context, id string, op
 	return GetName[{{ $api.TypeUpperCamel }}](ctx, c, "{{ $api.NameLower }}", id, opts)
 }
 
-func (c *Client) List{{ $api.NameUpperCamel }}(ctx context.Context, opts *ListOpts) ([]*{{ $api.TypeUpperCamel }}, error) {
+func (c *Client) List{{ $api.NameUpperCamel }}(ctx context.Context, opts *ListOpts[{{ $api.TypeUpperCamel }}]) ([]*{{ $api.TypeUpperCamel }}, error) {
 	return ListName[{{ $api.TypeUpperCamel }}](ctx, c, "{{ $api.NameLower }}", opts)
 }
 
-func (c *Client) Replace{{ $api.NameUpperCamel }}(ctx context.Context, id string, obj *{{ $api.TypeUpperCamel }}, opts *UpdateOpts) (*{{ $api.TypeUpperCamel }}, error) {
+func (c *Client) Replace{{ $api.NameUpperCamel }}(ctx context.Context, id string, obj *{{ $api.TypeUpperCamel }}, opts *UpdateOpts[{{ $api.TypeUpperCamel }}]) (*{{ $api.TypeUpperCamel }}, error) {
 	return ReplaceName[{{ $api.TypeUpperCamel }}](ctx, c, "{{ $api.NameLower }}", id, obj, opts)
 }
 
-func (c *Client) Update{{ $api.NameUpperCamel }}(ctx context.Context, id string, obj *{{ $api.TypeUpperCamel }}, opts *UpdateOpts) (*{{ $api.TypeUpperCamel }}, error) {
+func (c *Client) Update{{ $api.NameUpperCamel }}(ctx context.Context, id string, obj *{{ $api.TypeUpperCamel }}, opts *UpdateOpts[{{ $api.TypeUpperCamel }}]) (*{{ $api.TypeUpperCamel }}, error) {
 	return UpdateName[{{ $api.TypeUpperCamel }}](ctx, c, "{{ $api.NameLower }}", id, obj, opts)
 }
 
@@ -199,7 +199,7 @@ func (c *Client) StreamGet{{ $api.NameUpperCamel }}(ctx context.Context, id stri
 	return StreamGetName[{{ $api.TypeUpperCamel }}](ctx, c, "{{ $api.NameLower }}", id, opts)
 }
 
-func (c *Client) StreamList{{ $api.NameUpperCamel }}(ctx context.Context, opts *ListOpts) (*ListStream[{{ $api.TypeUpperCamel }}], error) {
+func (c *Client) StreamList{{ $api.NameUpperCamel }}(ctx context.Context, opts *ListOpts[{{ $api.TypeUpperCamel }}]) (*ListStream[{{ $api.TypeUpperCamel }}], error) {
 	return StreamListName[{{ $api.TypeUpperCamel }}](ctx, c, "{{ $api.NameLower }}", opts)
 }
 {{- end }}
@@ -226,7 +226,7 @@ func CreateName[T any](ctx context.Context, c *Client, name string, obj *T) (*T,
 	return created, nil
 }
 
-func DeleteName[T any](ctx context.Context, c *Client, name, id string, opts *UpdateOpts) error {
+func DeleteName[T any](ctx context.Context, c *Client, name, id string, opts *UpdateOpts[T]) error {
 	r := c.rst.R().
 		SetContext(ctx).
 		SetPathParam("name", name).
@@ -249,7 +249,7 @@ func DeleteName[T any](ctx context.Context, c *Client, name, id string, opts *Up
 }
 
 func FindName[T any](ctx context.Context, c *Client, name, shortID string) (*T, error) {
-	listOpts := &ListOpts{
+	listOpts := &ListOpts[T]{
 		Filters: []Filter{
 			{
 				Path:  "id",
@@ -308,7 +308,7 @@ func GetName[T any](ctx context.Context, c *Client, name, id string, opts *GetOp
 	return obj, nil
 }
 
-func ListName[T any](ctx context.Context, c *Client, name string, opts *ListOpts) ([]*T, error) {
+func ListName[T any](ctx context.Context, c *Client, name string, opts *ListOpts[T]) ([]*T, error) {
 	objs := []*T{}
 
 	r := c.rst.R().
@@ -329,7 +329,7 @@ func ListName[T any](ctx context.Context, c *Client, name string, opts *ListOpts
 	}
 
 	if opts != nil && opts.Prev != nil && resp.StatusCode() == http.StatusNotModified {
-		return opts.Prev.([]*T), nil
+		return opts.Prev, nil
 	}
 
 	if resp.IsError() {
@@ -339,7 +339,7 @@ func ListName[T any](ctx context.Context, c *Client, name string, opts *ListOpts
 	return objs, nil
 }
 
-func ReplaceName[T any](ctx context.Context, c *Client, name, id string, obj *T, opts *UpdateOpts) (*T, error) {
+func ReplaceName[T any](ctx context.Context, c *Client, name, id string, obj *T, opts *UpdateOpts[T]) (*T, error) {
 	replaced := new(T)
 
 	r := c.rst.R().
@@ -365,7 +365,7 @@ func ReplaceName[T any](ctx context.Context, c *Client, name, id string, obj *T,
 	return replaced, nil
 }
 
-func UpdateName[T any](ctx context.Context, c *Client, name, id string, obj *T, opts *UpdateOpts) (*T, error) {
+func UpdateName[T any](ctx context.Context, c *Client, name, id string, obj *T, opts *UpdateOpts[T]) (*T, error) {
 	updated := new(T)
 
 	r := c.rst.R().
@@ -458,14 +458,14 @@ func StreamGetName[T any](ctx context.Context, c *Client, name, id string, opts 
 	return stream, nil
 }
 
-func StreamListName[T any](ctx context.Context, c *Client, name string, opts *ListOpts) (*ListStream[T], error) {
+func StreamListName[T any](ctx context.Context, c *Client, name string, opts *ListOpts[T]) (*ListStream[T], error) {
 	r := c.rst.R().
 		SetDoNotParseResponse(true).
 		SetHeader("Accept", "text/event-stream").
 		SetPathParam("name", name)
 
 	if opts == nil {
-		opts = &ListOpts{}
+		opts = &ListOpts[T]{}
 	}
 
 	if opts != nil {
@@ -507,7 +507,7 @@ func StreamListName[T any](ctx context.Context, c *Client, name string, opts *Li
 	return stream, nil
 }
 
-func streamListFull[T any](scan *bufio.Scanner, stream *ListStream[T], opts *ListOpts) {
+func streamListFull[T any](scan *bufio.Scanner, stream *ListStream[T], opts *ListOpts[T]) {
 	for {
 		event, err := readEvent(scan)
 		if err != nil {
@@ -529,7 +529,7 @@ func streamListFull[T any](scan *bufio.Scanner, stream *ListStream[T], opts *Lis
 
 		case "notModified":
 			if opts != nil && opts.Prev != nil {
-				stream.writeEvent(opts.Prev.([]*T))
+				stream.writeEvent(opts.Prev)
 			} else {
 				stream.writeError(fmt.Errorf("notModified without If-None-Match (%w)", ErrInvalidStreamEvent))
 				return
@@ -541,7 +541,7 @@ func streamListFull[T any](scan *bufio.Scanner, stream *ListStream[T], opts *Lis
 	}
 }
 
-func streamListDiff[T any](scan *bufio.Scanner, stream *ListStream[T], opts *ListOpts) {
+func streamListDiff[T any](scan *bufio.Scanner, stream *ListStream[T], opts *ListOpts[T]) {
 	list := []*T{}
 
 	add := func(event *streamEvent) error {
@@ -612,7 +612,7 @@ func streamListDiff[T any](scan *bufio.Scanner, stream *ListStream[T], opts *Lis
 			stream.writeEvent(list)
 
 		case "notModified":
-			list = opts.Prev.([]*T)
+			list = opts.Prev
 			stream.writeEvent(list)
 
 		case "heartbeat":
@@ -827,7 +827,7 @@ func applyGetOpts[T any](opts *GetOpts[T], req *resty.Request) {
 	}
 }
 
-func applyListOpts(opts *ListOpts, req *resty.Request) error {
+func applyListOpts[T any](opts *ListOpts[T], req *resty.Request) error {
 	if opts.Prev != nil {
 		etag, err := hashList(opts.Prev)
 		if err != nil {
@@ -868,7 +868,7 @@ func applyListOpts(opts *ListOpts, req *resty.Request) error {
 	return nil
 }
 
-func applyUpdateOpts(opts *UpdateOpts, req *resty.Request) {
+func applyUpdateOpts[T any](opts *UpdateOpts[T], req *resty.Request) {
 	if opts.Prev != nil {
 		md := metadata.GetMetadata(opts.Prev)
 		req.SetHeader("If-Match", fmt.Sprintf(`"%s"`, md.ETag))

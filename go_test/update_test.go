@@ -55,7 +55,7 @@ func TestUpdateIfMatchETagSuccess(t *testing.T) {
 	created, err := c.CreateTestType(ctx, &goclient.TestType{Text: "foo"})
 	require.NoError(t, err)
 
-	updated, err := c.UpdateTestType(ctx, created.ID, &goclient.TestType{Text: "bar"}, &goclient.UpdateOpts{Prev: created})
+	updated, err := c.UpdateTestType(ctx, created.ID, &goclient.TestType{Text: "bar"}, &goclient.UpdateOpts[goclient.TestType]{Prev: created})
 	require.NoError(t, err)
 	require.Equal(t, "bar", updated.Text)
 
@@ -76,7 +76,7 @@ func TestUpdateIfMatchETagMismatch(t *testing.T) {
 
 	created.ETag = "etag:doesnotmatch"
 
-	updated, err := c.UpdateTestType(ctx, created.ID, &goclient.TestType{Text: "bar"}, &goclient.UpdateOpts{Prev: created})
+	updated, err := c.UpdateTestType(ctx, created.ID, &goclient.TestType{Text: "bar"}, &goclient.UpdateOpts[goclient.TestType]{Prev: created})
 	require.Error(t, err)
 	require.Nil(t, updated)
 

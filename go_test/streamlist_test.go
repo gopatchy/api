@@ -161,7 +161,7 @@ func TestStreamListOpts(t *testing.T) {
 	_, err = c.CreateTestType(ctx, &goclient.TestType{Text: "bar"})
 	require.NoError(t, err)
 
-	stream, err := c.StreamListTestType(ctx, &goclient.ListOpts{Limit: 1})
+	stream, err := c.StreamListTestType(ctx, &goclient.ListOpts[goclient.TestType]{Limit: 1})
 	require.NoError(t, err)
 
 	defer stream.Close()
@@ -185,7 +185,7 @@ func TestStreamListIgnoreIrrelevant(t *testing.T) {
 	_, err = c.CreateTestType(ctx, &goclient.TestType{Text: "bar"})
 	require.NoError(t, err)
 
-	stream, err := c.StreamListTestType(ctx, &goclient.ListOpts{Sorts: []string{"+text"}, Limit: 1})
+	stream, err := c.StreamListTestType(ctx, &goclient.ListOpts[goclient.TestType]{Sorts: []string{"+text"}, Limit: 1})
 	require.NoError(t, err)
 
 	defer stream.Close()
@@ -237,7 +237,7 @@ func TestStreamListPrev(t *testing.T) {
 
 	s1[0].Num = 5
 
-	stream2, err := c.StreamListTestType(ctx, &goclient.ListOpts{Prev: s1})
+	stream2, err := c.StreamListTestType(ctx, &goclient.ListOpts[goclient.TestType]{Prev: s1})
 	require.NoError(t, err)
 
 	defer stream2.Close()
@@ -259,7 +259,7 @@ func TestStreamListDiffInitial(t *testing.T) {
 	_, err := c.CreateTestType(ctx, &goclient.TestType{Text: "foo"})
 	require.NoError(t, err)
 
-	stream, err := c.StreamListTestType(ctx, &goclient.ListOpts{Stream: "diff"})
+	stream, err := c.StreamListTestType(ctx, &goclient.ListOpts[goclient.TestType]{Stream: "diff"})
 	require.NoError(t, err)
 
 	defer stream.Close()
@@ -277,7 +277,7 @@ func TestStreamListDiffCreate(t *testing.T) {
 	c := getClient(t)
 	ctx := context.Background()
 
-	stream, err := c.StreamListTestType(ctx, &goclient.ListOpts{Stream: "diff"})
+	stream, err := c.StreamListTestType(ctx, &goclient.ListOpts[goclient.TestType]{Stream: "diff"})
 	require.NoError(t, err)
 
 	defer stream.Close()
@@ -305,7 +305,7 @@ func TestStreamListDiffUpdate(t *testing.T) {
 	created, err := c.CreateTestType(ctx, &goclient.TestType{Text: "foo", Num: 1})
 	require.NoError(t, err)
 
-	stream, err := c.StreamListTestType(ctx, &goclient.ListOpts{Stream: "diff"})
+	stream, err := c.StreamListTestType(ctx, &goclient.ListOpts[goclient.TestType]{Stream: "diff"})
 	require.NoError(t, err)
 
 	defer stream.Close()
@@ -336,7 +336,7 @@ func TestStreamListDiffReplace(t *testing.T) {
 	created, err := c.CreateTestType(ctx, &goclient.TestType{Text: "foo", Num: 1})
 	require.NoError(t, err)
 
-	stream, err := c.StreamListTestType(ctx, &goclient.ListOpts{Stream: "diff"})
+	stream, err := c.StreamListTestType(ctx, &goclient.ListOpts[goclient.TestType]{Stream: "diff"})
 	require.NoError(t, err)
 
 	defer stream.Close()
@@ -367,7 +367,7 @@ func TestStreamListDiffDelete(t *testing.T) {
 	created, err := c.CreateTestType(ctx, &goclient.TestType{Text: "foo"})
 	require.NoError(t, err)
 
-	stream, err := c.StreamListTestType(ctx, &goclient.ListOpts{Stream: "diff"})
+	stream, err := c.StreamListTestType(ctx, &goclient.ListOpts[goclient.TestType]{Stream: "diff"})
 	require.NoError(t, err)
 
 	defer stream.Close()
@@ -395,7 +395,7 @@ func TestStreamListDiffSort(t *testing.T) {
 	_, err := c.CreateTestType(ctx, &goclient.TestType{Text: "foo"})
 	require.NoError(t, err)
 
-	stream, err := c.StreamListTestType(ctx, &goclient.ListOpts{
+	stream, err := c.StreamListTestType(ctx, &goclient.ListOpts[goclient.TestType]{
 		Stream: "diff",
 		Sorts:  []string{"text"},
 		Limit:  1,
@@ -431,7 +431,7 @@ func TestStreamListDiffIgnoreIrrelevant(t *testing.T) {
 	_, err = c.CreateTestType(ctx, &goclient.TestType{Text: "bar"})
 	require.NoError(t, err)
 
-	stream, err := c.StreamListTestType(ctx, &goclient.ListOpts{Stream: "diff", Sorts: []string{"+text"}, Limit: 1})
+	stream, err := c.StreamListTestType(ctx, &goclient.ListOpts[goclient.TestType]{Stream: "diff", Sorts: []string{"+text"}, Limit: 1})
 	require.NoError(t, err)
 
 	defer stream.Close()
@@ -471,7 +471,7 @@ func TestStreamListDiffPrev(t *testing.T) {
 	_, err := c.CreateTestType(ctx, &goclient.TestType{Text: "foo"})
 	require.NoError(t, err)
 
-	stream1, err := c.StreamListTestType(ctx, &goclient.ListOpts{Stream: "diff"})
+	stream1, err := c.StreamListTestType(ctx, &goclient.ListOpts[goclient.TestType]{Stream: "diff"})
 	require.NoError(t, err)
 
 	defer stream1.Close()
@@ -483,7 +483,7 @@ func TestStreamListDiffPrev(t *testing.T) {
 
 	s1[0].Num = 5
 
-	stream2, err := c.StreamListTestType(ctx, &goclient.ListOpts{Stream: "diff", Prev: s1})
+	stream2, err := c.StreamListTestType(ctx, &goclient.ListOpts[goclient.TestType]{Stream: "diff", Prev: s1})
 	require.NoError(t, err)
 
 	defer stream2.Close()
@@ -512,7 +512,7 @@ func TestStreamListDiffPrevMiss(t *testing.T) {
 	_, err := c.CreateTestType(ctx, &goclient.TestType{Text: "foo"})
 	require.NoError(t, err)
 
-	stream1, err := c.StreamListTestType(ctx, &goclient.ListOpts{Stream: "diff"})
+	stream1, err := c.StreamListTestType(ctx, &goclient.ListOpts[goclient.TestType]{Stream: "diff"})
 	require.NoError(t, err)
 
 	defer stream1.Close()
@@ -527,7 +527,7 @@ func TestStreamListDiffPrevMiss(t *testing.T) {
 	_, err = c.CreateTestType(ctx, &goclient.TestType{Text: "bar"})
 	require.NoError(t, err)
 
-	stream2, err := c.StreamListTestType(ctx, &goclient.ListOpts{Stream: "diff", Prev: s1})
+	stream2, err := c.StreamListTestType(ctx, &goclient.ListOpts[goclient.TestType]{Stream: "diff", Prev: s1})
 	require.NoError(t, err)
 
 	defer stream2.Close()

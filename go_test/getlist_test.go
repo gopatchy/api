@@ -49,7 +49,7 @@ func TestListEquals(t *testing.T) {
 	_, err = c.CreateTestType(ctx, &goclient.TestType{Text: "bar"})
 	require.NoError(t, err)
 
-	list, err := c.ListTestType(ctx, &goclient.ListOpts{
+	list, err := c.ListTestType(ctx, &goclient.ListOpts[goclient.TestType]{
 		Filters: []goclient.Filter{
 			{
 				Path:  "text",
@@ -73,7 +73,7 @@ func TestListInvalidOp(t *testing.T) {
 	_, err := c.CreateTestType(ctx, &goclient.TestType{Text: "foo"})
 	require.NoError(t, err)
 
-	list, err := c.ListTestType(ctx, &goclient.ListOpts{
+	list, err := c.ListTestType(ctx, &goclient.ListOpts[goclient.TestType]{
 		Filters: []goclient.Filter{
 			{
 				Path:  "text",
@@ -99,7 +99,7 @@ func TestListGreaterThan(t *testing.T) {
 	_, err = c.CreateTestType(ctx, &goclient.TestType{Text: "bar"})
 	require.NoError(t, err)
 
-	list, err := c.ListTestType(ctx, &goclient.ListOpts{
+	list, err := c.ListTestType(ctx, &goclient.ListOpts[goclient.TestType]{
 		Filters: []goclient.Filter{
 			{
 				Path:  "text",
@@ -129,7 +129,7 @@ func TestListGreaterThanOrEqual(t *testing.T) {
 	_, err = c.CreateTestType(ctx, &goclient.TestType{Text: "zig"})
 	require.NoError(t, err)
 
-	list, err := c.ListTestType(ctx, &goclient.ListOpts{
+	list, err := c.ListTestType(ctx, &goclient.ListOpts[goclient.TestType]{
 		Filters: []goclient.Filter{
 			{
 				Path:  "text",
@@ -156,7 +156,7 @@ func TestListHasPrefix(t *testing.T) {
 	_, err = c.CreateTestType(ctx, &goclient.TestType{Text: "bar"})
 	require.NoError(t, err)
 
-	list, err := c.ListTestType(ctx, &goclient.ListOpts{
+	list, err := c.ListTestType(ctx, &goclient.ListOpts[goclient.TestType]{
 		Filters: []goclient.Filter{
 			{
 				Path:  "text",
@@ -183,7 +183,7 @@ func TestListIn(t *testing.T) {
 	_, err = c.CreateTestType(ctx, &goclient.TestType{Text: "bar"})
 	require.NoError(t, err)
 
-	list, err := c.ListTestType(ctx, &goclient.ListOpts{
+	list, err := c.ListTestType(ctx, &goclient.ListOpts[goclient.TestType]{
 		Filters: []goclient.Filter{
 			{
 				Path:  "text",
@@ -210,7 +210,7 @@ func TestListLessThan(t *testing.T) {
 	_, err = c.CreateTestType(ctx, &goclient.TestType{Text: "bar"})
 	require.NoError(t, err)
 
-	list, err := c.ListTestType(ctx, &goclient.ListOpts{
+	list, err := c.ListTestType(ctx, &goclient.ListOpts[goclient.TestType]{
 		Filters: []goclient.Filter{
 			{
 				Path:  "text",
@@ -240,7 +240,7 @@ func TestListLessThanOrEqual(t *testing.T) {
 	_, err = c.CreateTestType(ctx, &goclient.TestType{Text: "zig"})
 	require.NoError(t, err)
 
-	list, err := c.ListTestType(ctx, &goclient.ListOpts{
+	list, err := c.ListTestType(ctx, &goclient.ListOpts[goclient.TestType]{
 		Filters: []goclient.Filter{
 			{
 				Path:  "text",
@@ -267,7 +267,7 @@ func TestListLimit(t *testing.T) {
 	_, err = c.CreateTestType(ctx, &goclient.TestType{Text: "bar"})
 	require.NoError(t, err)
 
-	list, err := c.ListTestType(ctx, &goclient.ListOpts{Limit: 1})
+	list, err := c.ListTestType(ctx, &goclient.ListOpts[goclient.TestType]{Limit: 1})
 	require.NoError(t, err)
 	require.Len(t, list, 1)
 	require.Contains(t, []string{"foo", "bar"}, list[0].Text)
@@ -289,7 +289,7 @@ func TestListOffset(t *testing.T) {
 	_, err = c.CreateTestType(ctx, &goclient.TestType{Text: "zig"})
 	require.NoError(t, err)
 
-	list, err := c.ListTestType(ctx, &goclient.ListOpts{Offset: 1})
+	list, err := c.ListTestType(ctx, &goclient.ListOpts[goclient.TestType]{Offset: 1})
 	require.NoError(t, err)
 	require.Len(t, list, 2)
 	require.Contains(t, []string{"foo", "bar", "zig"}, list[0].Text)
@@ -317,7 +317,7 @@ func TestListAfter(t *testing.T) {
 	require.NoError(t, err)
 	require.Len(t, list1, 3)
 
-	list2, err := c.ListTestType(ctx, &goclient.ListOpts{After: list1[0].ID})
+	list2, err := c.ListTestType(ctx, &goclient.ListOpts[goclient.TestType]{After: list1[0].ID})
 	require.NoError(t, err)
 	require.Len(t, list2, 2)
 	require.Equal(t, list2[0].Text, list1[1].Text)
@@ -340,7 +340,7 @@ func TestListSort(t *testing.T) {
 	_, err = c.CreateTestType(ctx, &goclient.TestType{Text: "zig"})
 	require.NoError(t, err)
 
-	list, err := c.ListTestType(ctx, &goclient.ListOpts{Sorts: []string{"text"}})
+	list, err := c.ListTestType(ctx, &goclient.ListOpts[goclient.TestType]{Sorts: []string{"text"}})
 	require.NoError(t, err)
 	require.Len(t, list, 3)
 	require.Equal(t, []string{"bar", "foo", "zig"}, []string{list[0].Text, list[1].Text, list[2].Text})
@@ -362,7 +362,7 @@ func TestListSortAsc(t *testing.T) {
 	_, err = c.CreateTestType(ctx, &goclient.TestType{Text: "zig"})
 	require.NoError(t, err)
 
-	list, err := c.ListTestType(ctx, &goclient.ListOpts{Sorts: []string{"+text"}})
+	list, err := c.ListTestType(ctx, &goclient.ListOpts[goclient.TestType]{Sorts: []string{"+text"}})
 	require.NoError(t, err)
 	require.Len(t, list, 3)
 	require.Equal(t, []string{"bar", "foo", "zig"}, []string{list[0].Text, list[1].Text, list[2].Text})
@@ -384,7 +384,7 @@ func TestListSortDesc(t *testing.T) {
 	_, err = c.CreateTestType(ctx, &goclient.TestType{Text: "zig"})
 	require.NoError(t, err)
 
-	list, err := c.ListTestType(ctx, &goclient.ListOpts{Sorts: []string{"-text"}})
+	list, err := c.ListTestType(ctx, &goclient.ListOpts[goclient.TestType]{Sorts: []string{"-text"}})
 	require.NoError(t, err)
 	require.Len(t, list, 3)
 	require.Equal(t, []string{"zig", "foo", "bar"}, []string{list[0].Text, list[1].Text, list[2].Text})
@@ -406,7 +406,7 @@ func TestListSortBeforeOffset(t *testing.T) {
 	_, err = c.CreateTestType(ctx, &goclient.TestType{Text: "zig"})
 	require.NoError(t, err)
 
-	list, err := c.ListTestType(ctx, &goclient.ListOpts{
+	list, err := c.ListTestType(ctx, &goclient.ListOpts[goclient.TestType]{
 		Offset: 1,
 		Sorts:  []string{"text"},
 	})
@@ -431,7 +431,7 @@ func TestListSortBeforeLimit(t *testing.T) {
 	_, err = c.CreateTestType(ctx, &goclient.TestType{Text: "zig"})
 	require.NoError(t, err)
 
-	list, err := c.ListTestType(ctx, &goclient.ListOpts{
+	list, err := c.ListTestType(ctx, &goclient.ListOpts[goclient.TestType]{
 		Limit: 2,
 		Sorts: []string{"text"},
 	})
@@ -459,7 +459,7 @@ func TestListPrev(t *testing.T) {
 	// Validate that previous version passing only compares the ETag
 	list[0].Num = 1
 
-	list2, err := c.ListTestType(ctx, &goclient.ListOpts{Prev: list})
+	list2, err := c.ListTestType(ctx, &goclient.ListOpts[goclient.TestType]{Prev: list})
 	require.NoError(t, err)
 	require.Len(t, list2, 1)
 	require.Equal(t, "foo", list2[0].Text)

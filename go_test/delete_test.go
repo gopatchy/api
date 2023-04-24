@@ -98,7 +98,7 @@ func TestDeleteIfMatchETagSuccess(t *testing.T) {
 	created, err := c.CreateTestType(ctx, &goclient.TestType{Text: "foo"})
 	require.NoError(t, err)
 
-	err = c.DeleteTestType(ctx, created.ID, &goclient.UpdateOpts{Prev: created})
+	err = c.DeleteTestType(ctx, created.ID, &goclient.UpdateOpts[goclient.TestType]{Prev: created})
 	require.NoError(t, err)
 
 	get, err := c.GetTestType(ctx, created.ID, nil)
@@ -119,7 +119,7 @@ func TestDeleteIfMatchETagMismatch(t *testing.T) {
 	_, err = c.UpdateTestType(ctx, created.ID, &goclient.TestType{Text: "bar"}, nil)
 	require.NoError(t, err)
 
-	err = c.DeleteTestType(ctx, created.ID, &goclient.UpdateOpts{Prev: created})
+	err = c.DeleteTestType(ctx, created.ID, &goclient.UpdateOpts[goclient.TestType]{Prev: created})
 	require.Error(t, err)
 
 	get, err := c.GetTestType(ctx, created.ID, nil)

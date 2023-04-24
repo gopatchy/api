@@ -57,7 +57,7 @@ func TestReplaceWithModify(t *testing.T) {
 
 	created.Num = 5
 
-	replaced, err := c.ReplaceTestType(ctx, created.ID, created, &goclient.UpdateOpts{Prev: created})
+	replaced, err := c.ReplaceTestType(ctx, created.ID, created, &goclient.UpdateOpts[goclient.TestType]{Prev: created})
 	require.NoError(t, err)
 	require.Equal(t, "foo", replaced.Text)
 	require.EqualValues(t, 5, replaced.Num)
@@ -73,7 +73,7 @@ func TestReplaceIfMatchETagSuccess(t *testing.T) {
 	created, err := c.CreateTestType(ctx, &goclient.TestType{Text: "foo"})
 	require.NoError(t, err)
 
-	replaced, err := c.ReplaceTestType(ctx, created.ID, &goclient.TestType{Text: "bar"}, &goclient.UpdateOpts{Prev: created})
+	replaced, err := c.ReplaceTestType(ctx, created.ID, &goclient.TestType{Text: "bar"}, &goclient.UpdateOpts[goclient.TestType]{Prev: created})
 	require.NoError(t, err)
 	require.Equal(t, "bar", replaced.Text)
 
@@ -94,7 +94,7 @@ func TestReplaceIfMatchETagMismatch(t *testing.T) {
 
 	created.ETag = "etag:doesnotmatch"
 
-	replaced, err := c.ReplaceTestType(ctx, created.ID, &goclient.TestType{Text: "bar"}, &goclient.UpdateOpts{Prev: created})
+	replaced, err := c.ReplaceTestType(ctx, created.ID, &goclient.TestType{Text: "bar"}, &goclient.UpdateOpts[goclient.TestType]{Prev: created})
 	require.Error(t, err)
 	require.Nil(t, replaced)
 

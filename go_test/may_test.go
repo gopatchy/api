@@ -578,7 +578,7 @@ func TestMayReadSideEffect(t *testing.T) {
 
 	c.SetHeader("X-NewText1", "")
 
-	list, err := c.ListMayType(ctx, &goclient.ListOpts{Sorts: []string{"+text1"}})
+	list, err := c.ListMayType(ctx, &goclient.ListOpts[goclient.MayType]{Sorts: []string{"+text1"}})
 	require.NoError(t, err)
 	require.Len(t, list, 2)
 	require.Equal(t, "abcd", list[0].Text1)
