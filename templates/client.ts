@@ -343,12 +343,16 @@ export class GetStream<T> {
 	private eventStream: EventStream<T>;
 	private controller: AbortController;
 	private prev: (T & Metadata) | null;
-	// TODO: Add LastEventReceived
+	private lastEvent: Date = new Date();
 
 	constructor(resp: Response, controller: AbortController, prev: (T & Metadata) | null | undefined) {
 		this.eventStream = new EventStream<T>(resp.body!);
 		this.controller = controller;
 		this.prev = prev ?? null;
+	}
+
+	lastEventReceived(): Date {
+		return this.lastEvent;
 	}
 
 	async abort() {
@@ -361,16 +365,20 @@ export class GetStream<T> {
 
 			if (ev == null) {
 				return null;
+			}
 
-			} else if (ev.eventType == 'initial' || ev.eventType == 'update') {
+			this.lastEvent = new Date();
+
+			switch (ev.eventType) {
+			case 'initial':
+			case 'update':
 				return ev.decodeObj();
 
-			} else if (ev.eventType == 'notModified') {
+			case 'notModified':
 				return this.prev;
 
-			} else if (ev.eventType == 'heartbeat') {
+			case 'heartbeat':
 				continue;
-
 			}
 		}
 	}
@@ -397,11 +405,15 @@ export class GetStream<T> {
 export abstract class ListStream<T> {
 	protected eventStream: EventStream<T>;
 	private controller: AbortController;
-	// TODO: Add LastEventReceived
+	protected lastEvent: Date = new Date();
 
 	constructor(resp: Response, controller: AbortController) {
 		this.eventStream = new EventStream<T>(resp.body!);
 		this.controller = controller;
+	}
+
+	lastEventReceived(): Date {
+		return this.lastEvent;
 	}
 
 	async abort() {
@@ -443,16 +455,19 @@ export class ListStreamFull<T> extends ListStream<T> {
 
 			if (ev == null) {
 				return null;
+			}
 
-			} else if (ev.eventType == 'list') {
+			this.lastEvent = new Date();
+
+			switch (ev.eventType) {
+			case 'list':
 				return ev.decodeList();
 
-			} else if (ev.eventType == 'notModified') {
+			case 'notModified':
 				return this.prev;
 
-			} else if (ev.eventType == 'heartbeat') {
+			case 'heartbeat':
 				continue;
-
 			}
 		}
 	}
@@ -473,30 +488,33 @@ export class ListStreamDiff<T> extends ListStream<T> {
 
 			if (ev == null) {
 				return null;
+			}
 
-			} else if (ev.eventType == 'add') {
-				const obj = ev.decodeObj();
-				this.objs.splice(parseInt(ev.params.get('new-position')!, 10), 0, obj);
+			this.lastEvent = new Date();
 
-			} else if (ev.eventType == 'update') {
+			switch (ev.eventType) {
+			case 'add':
+				this.objs.splice(parseInt(ev.params.get('new-position')!, 10), 0, ev.decodeObj());
+				continue;
+
+			case 'update':
 				this.objs.splice(parseInt(ev.params.get('old-position')!, 10), 1);
+				this.objs.splice(parseInt(ev.params.get('new-position')!, 10), 0, ev.decodeObj());
+				continue;
 
-				const obj = ev.decodeObj();
-				this.objs.splice(parseInt(ev.params.get('new-position')!, 10), 0, obj);
-
-			} else if (ev.eventType == 'remove') {
+			case 'remove':
 				this.objs.splice(parseInt(ev.params.get('old-position')!, 10), 1);
+				continue;
 
-			} else if (ev.eventType == 'sync') {
+			case 'sync':
 				return this.objs;
 
-			} else if (ev.eventType == 'notModified') {
+			case 'notModified':
 				this.objs = this.prev!;
 				return this.objs;
 
-			} else if (ev.eventType == 'heartbeat') {
+			case 'heartbeat':
 				continue;
-
 			}
 		}
 	}
