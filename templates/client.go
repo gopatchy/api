@@ -17,7 +17,6 @@ import (
 	{{- if .URLPrefix }}
 	"net/url"
 	{{- end }}
-	"reflect"
 	"strconv"
 	"strings"
 	"sync"
@@ -875,16 +874,11 @@ func applyUpdateOpts[T any](opts *UpdateOpts[T], req *resty.Request) {
 	}
 }
 
-func hashList(list any) (string, error) {
+func hashList[T any](list []*T) (string, error) {
 	hash := sha256.New()
 
-	// TODO: Make this generic and stop using reflect
-	v := reflect.ValueOf(list)
-
-	for i := 0; i < v.Len(); i++ {
-		iter := v.Index(i)
-
-		md := metadata.GetMetadata(iter.Interface())
+	for _, obj := range list {
+		md := metadata.GetMetadata(obj)
 
 		_, err := hash.Write([]byte(md.ETag + "\n"))
 		if err != nil {
