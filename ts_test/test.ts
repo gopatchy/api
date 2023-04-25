@@ -66,7 +66,7 @@ export class T {
 export async function def(name: string, cb: (t: T) => Promise<void>) {
 	const t = new T(name);
 
-	t.logEvent('begin');
+	await t.logEvent('begin');
 
 	try {
 		await cb(t);
