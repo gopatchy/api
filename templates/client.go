@@ -12,6 +12,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"math/rand"
 	"net/http"
 	{{- if .URLPrefix }}
 	"net/url"
@@ -388,6 +389,7 @@ func UpdateName[T any](ctx context.Context, c *Client, name, id string, obj *T, 
 
 func StreamGetName[T any](ctx context.Context, c *Client, name, id string, opts *GetOpts[T]) (*GetStream[T], error) {
 	r := c.rst.R().
+		SetContext(ctx).
 		SetDoNotParseResponse(true).
 		SetHeader("Accept", "text/event-stream").
 		SetPathParam("name", name).
@@ -419,20 +421,34 @@ func StreamGetName[T any](ctx context.Context, c *Client, name, id string, opts 
 }
 
 func StreamListName[T any](ctx context.Context, c *Client, name string, opts *ListOpts[T]) (*ListStream[T], error) {
+	ctx, cancel := context.WithCancel(ctx)
+
 	stream := &ListStream[T]{
-		ch:   make(chan []*T, 100),
+		ch:     make(chan []*T, 100),
+		cancel: cancel,
 	}
 
+	if opts != nil {
+		stream.prev = opts.Prev
+	}
+
+	b := backoff{}
+
 	go func() {
-		err := StreamListNameOnce[T](ctx, c, name, opts, stream)
-		stream.writeError(err)
+		for ctx.Err() == nil {
+			err := streamListNameOnce[T](ctx, c, name, opts, stream)
+			stream.writeError(err)
+
+			b.failure(ctx)
+		}
 	}()
 
 	return stream, nil
 }
 
-func StreamListNameOnce[T any](ctx context.Context, c *Client, name string, opts *ListOpts[T], stream *ListStream[T]) error {
+func streamListNameOnce[T any](ctx context.Context, c *Client, name string, opts *ListOpts[T], stream *ListStream[T]) error {
 	r := c.rst.R().
+		SetContext(ctx).
 		SetDoNotParseResponse(true).
 		SetHeader("Accept", "text/event-stream").
 		SetPathParam("name", name)
@@ -440,6 +456,8 @@ func StreamListNameOnce[T any](ctx context.Context, c *Client, name string, opts
 	if opts == nil {
 		opts = &ListOpts[T]{}
 	}
+
+	opts.Prev = stream.prev
 
 	err := opts.apply(r)
 	if err != nil {
@@ -455,12 +473,7 @@ func StreamListNameOnce[T any](ctx context.Context, c *Client, name string, opts
 		return jsrest.ReadError(resp.Body())
 	}
 
-	var prev []*T
-	if opts != nil {
-		prev = opts.Prev
-	}
-
-	stream.reset(resp.RawBody(), prev)
+	stream.reset(resp.RawBody())
 
 	switch resp.Header().Get("Stream-Format") {
 	case "full":
@@ -645,20 +658,20 @@ func (gs *GetStream[T]) writeError(err error) {
 }
 
 type ListStream[T any] struct {
-	ch   chan []*T
-	body io.ReadCloser
-	prev []*T
+	ch     chan []*T
+	cancel context.CancelFunc
+	body   io.ReadCloser
+	prev   []*T
 
 	lastEventReceived time.Time
 
 	err error
-	closed bool
 
 	mu sync.RWMutex
 }
 
 func (ls *ListStream[T]) Close() {
-	ls.closed = true
+	ls.cancel()
 	ls.body.Close()
 }
 
@@ -684,9 +697,8 @@ func (ls *ListStream[T]) Error() error {
 	return ls.err
 }
 
-func (ls *ListStream[T]) reset(body io.ReadCloser, prev []*T) {
+func (ls *ListStream[T]) reset(body io.ReadCloser) {
 	ls.body = body
-	ls.prev = prev
 	ls.err = nil
 }
 
@@ -818,6 +830,8 @@ func (ls *ListStream[T]) writeEvent(list []*T) {
 		out[0] = tmp
 	}
 
+	ls.prev = out
+
 	ls.ch <- out
 }
 
@@ -945,4 +959,45 @@ func setListETag[T any](list []*T, etag string) {
 
 func getListETagField[T any](list []*T) reflect.Value {
 	return reflect.Indirect(reflect.ValueOf(list[0])).FieldByName("ListETag")
+}
+
+type backoff struct {
+	delay time.Duration
+	lastFailure time.Time
+}
+
+const minDelay = 1 * time.Second
+const maxDelay = 60 * time.Second
+
+func (b *backoff) failure(ctx context.Context) {
+	if !b.lastFailure.IsZero() {
+		// Credit for time since last delay
+		b.delay -= time.Since(b.lastFailure)
+	}
+
+	b.lastFailure = time.Now()
+
+	// Increase for current failure
+	b.delay *= 2
+
+	// Minimum bound
+	if b.delay < minDelay {
+		b.delay = minDelay
+	}
+
+	// Maximum bound
+	if b.delay > maxDelay {
+		b.delay = maxDelay
+	}
+
+	// Full jitter
+	actualDelay := time.Duration(rand.Int63n(int64(b.delay)))
+
+	t := time.NewTimer(actualDelay)
+
+	select {
+	case <-ctx.Done():
+		t.Stop()
+	case <-t.C:
+	}
 }
