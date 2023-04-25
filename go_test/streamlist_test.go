@@ -249,6 +249,37 @@ func TestStreamListPrev(t *testing.T) {
 	require.EqualValues(t, 5, s2[0].Num)
 }
 
+func TestStreamListReconnect(t *testing.T) {
+	t.Parallel()
+
+	defer registerTest(t)()
+	c := getClient(t)
+	ctx := context.Background()
+
+	created, err := c.CreateTestType(ctx, &goclient.TestType{Text: "foo"})
+	require.NoError(t, err)
+
+	stream, err := c.StreamListTestType(ctx, nil)
+	require.NoError(t, err)
+
+	defer stream.Close()
+
+	s1 := stream.Read()
+	require.NotNil(t, s1, stream.Error())
+	require.Len(t, s1, 1)
+	require.Equal(t, "foo", s1[0].Text)
+
+	closeAllConns(t)
+
+	_, err = c.UpdateTestType(ctx, created.ID, &goclient.TestType{Text: "bar"}, nil)
+	require.NoError(t, err)
+
+	s2 := stream.Read()
+	require.NotNil(t, s2, stream.Error())
+	require.Len(t, s2, 1)
+	require.Equal(t, "bar", s2[0].Text)
+}
+
 func TestStreamListDiffInitial(t *testing.T) {
 	t.Parallel()
 
@@ -535,6 +566,37 @@ func TestStreamListDiffPrevMiss(t *testing.T) {
 	s4 := stream2.Read()
 	require.NotNil(t, s4, stream2.Error())
 	require.Len(t, s4, 2)
+}
+
+func TestStreamListDiffReconnect(t *testing.T) {
+	t.Parallel()
+
+	defer registerTest(t)()
+	c := getClient(t)
+	ctx := context.Background()
+
+	created, err := c.CreateTestType(ctx, &goclient.TestType{Text: "foo"})
+	require.NoError(t, err)
+
+	stream, err := c.StreamListTestType(ctx, &goclient.ListOpts[goclient.TestType]{Stream: "diff"})
+	require.NoError(t, err)
+
+	defer stream.Close()
+
+	s1 := stream.Read()
+	require.NotNil(t, s1, stream.Error())
+	require.Len(t, s1, 1)
+	require.Equal(t, "foo", s1[0].Text)
+
+	closeAllConns(t)
+
+	_, err = c.UpdateTestType(ctx, created.ID, &goclient.TestType{Text: "bar"}, nil)
+	require.NoError(t, err)
+
+	s2 := stream.Read()
+	require.NotNil(t, s2, stream.Error())
+	require.Len(t, s2, 1)
+	require.Equal(t, "bar", s2[0].Text)
 }
 
 func TestStreamListForceDiff(t *testing.T) {

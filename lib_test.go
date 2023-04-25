@@ -245,6 +245,9 @@ func newTestAPIInt(t *testing.T, api *patchy.API, scheme string) *testAPI {
 
 		case "log":
 			t.Logf("[%s] LOG: %s", name, r.Form.Get("details"))
+
+		case "connsClose":
+			proxy.CloseAllConns()
 		}
 	})
 

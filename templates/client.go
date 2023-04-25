@@ -441,6 +441,8 @@ func StreamListName[T any](ctx context.Context, c *Client, name string, opts *Li
 
 			b.failure(ctx)
 		}
+
+		close(stream.ch)
 	}()
 
 	return stream, nil
@@ -664,6 +666,7 @@ type ListStream[T any] struct {
 	prev   []*T
 
 	lastEventReceived time.Time
+	lastETag string
 
 	err error
 
@@ -829,8 +832,15 @@ func (ls *ListStream[T]) writeHeartbeat() {
 
 func (ls *ListStream[T]) writeEvent(list []*T) {
 	ls.mu.Lock()
+	defer ls.mu.Unlock()
+
 	ls.lastEventReceived = time.Now()
-	ls.mu.Unlock()
+
+	etag := getListETag(list)
+	if etag != "" && etag == ls.lastETag {
+		// Skip duplicates
+		return
+	}
 
 	ls.ch <- list
 }
@@ -839,8 +849,6 @@ func (ls *ListStream[T]) writeError(err error) {
 	ls.mu.Lock()
 	ls.err = err
 	ls.mu.Unlock()
-
-	close(ls.ch)
 }
 
 func (ls *ListStream[T]) clone(list []*T) ([]*T, error) {

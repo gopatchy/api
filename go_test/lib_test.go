@@ -4,6 +4,7 @@ import (
 	"crypto/tls"
 	"os"
 	"testing"
+	"time"
 
 	"github.com/go-resty/resty/v2"
 	"github.com/stretchr/testify/require"
@@ -32,12 +33,17 @@ func getResty(t *testing.T) *resty.Request {
 }
 
 func logEvent(t *testing.T, event string) {
-	resp, err := getResty(t).
+	getResty(t).
 		SetQueryParam("event", event).
 		SetQueryParam("name", t.Name()).
 		Get("api/_logEvent")
-	require.NoError(t, err)
-	require.True(t, resp.IsSuccess())
+	// Allowed to fail
+}
+
+func closeAllConns(t *testing.T) {
+	logEvent(t, "connsClose")
+	// Our own conn gets killed; give it time for others to die as well
+	time.Sleep(100 * time.Millisecond)
 }
 
 func getBaseURL(t *testing.T) string {
