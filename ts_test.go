@@ -106,7 +106,7 @@ func runFirefox(ctx context.Context, t *testing.T, profileDir, url string) {
 }
 
 func runChrome(ctx context.Context, t *testing.T, profileDir, url string) {
-	runNoError(ctx, t, "", nil, "google-chrome", "--headless", "--disable-gpu", "--remote-debugging-port=9222", fmt.Sprintf("--user-data-dir=%s", profileDir), url)
+	runNoError(ctx, t, "", nil, "chromium", "--headless", "--disable-gpu", "--remote-debugging-port=9222", fmt.Sprintf("--user-data-dir=%s", profileDir), url)
 }
 
 func buildTS(t *testing.T, env string) string {
