@@ -795,11 +795,25 @@ func (ls *ListStream[T]) processDiff() error {
 
 		case "sync":
 			setListETag(list, fmt.Sprintf(`"%s"`, event.params["id"]))
-			ls.writeEvent(list)
+
+			// Write a copy since we mutate list
+			tmp, err := ls.clone(list)
+			if err != nil {
+				return err
+			}
+
+			ls.writeEvent(tmp)
 
 		case "notModified":
 			list = ls.prev
-			ls.writeEvent(list)
+
+			// Write a copy since we mutate list
+			tmp, err := ls.clone(list)
+			if err != nil {
+				return err
+			}
+
+			ls.writeEvent(tmp)
 
 		case "heartbeat":
 			ls.writeHeartbeat()
@@ -818,21 +832,7 @@ func (ls *ListStream[T]) writeEvent(list []*T) {
 	ls.lastEventReceived = time.Now()
 	ls.mu.Unlock()
 
-	// We mutate the list, so pass back a copy
-	out := make([]*T, len(list))
-	copy(out, list)
-
-	if len(out) > 0 {
-		// The first item in the list smuggles the list etag
-		// Make a shallow copy to avoid races
-		tmp := new(T)
-		*tmp = *out[0]
-		out[0] = tmp
-	}
-
-	ls.prev = out
-
-	ls.ch <- out
+	ls.ch <- list
 }
 
 func (ls *ListStream[T]) writeError(err error) {
@@ -841,6 +841,24 @@ func (ls *ListStream[T]) writeError(err error) {
 	ls.mu.Unlock()
 
 	close(ls.ch)
+}
+
+func (ls *ListStream[T]) clone(list []*T) ([]*T, error) {
+	js, err := json.Marshal(list)
+	if err != nil {
+		return nil, err
+	}
+
+	ret := []*T{}
+
+	err = json.Unmarshal(js, &ret)
+	if err != nil {
+		return nil, err
+	}
+
+	setListETag(ret, getListETag(list))
+
+	return ret, nil
 }
 
 //// Internal
