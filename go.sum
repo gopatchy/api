@@ -31,6 +31,8 @@ github.com/gopatchy/path v0.0.0-20230424234051-603b99fc608c h1:mMlShByzg3PfSXLjK
 github.com/gopatchy/path v0.0.0-20230424234051-603b99fc608c/go.mod h1:0D+TNiMJZ7/FBCeWvAvuXATvaK6wX4kW8zTnvK2PByM=
 github.com/gopatchy/potency v0.0.0-20230424234149-389837c7dc88 h1:Ilx81593L/Mus8xjwCBTkbY32W/CzNvDMEfSnXwCpas=
 github.com/gopatchy/potency v0.0.0-20230424234149-389837c7dc88/go.mod h1:4xJzSlzk2hJRZtqiyEPXzwnCuUtQNAvGwK/c+lhBz70=
+github.com/gopatchy/proxy v0.0.0-20230425212646-49de6d7dafc2 h1:CIBfoWldg4W1Y5CKaHmwgpKJPJ5LIC6zqIhGXvx/49o=
+github.com/gopatchy/proxy v0.0.0-20230425212646-49de6d7dafc2/go.mod h1:KzL3DePH2QgRe2QskCWhh+a+ZehmMQR265CpY/NepCM=
 github.com/gopatchy/selfcert v0.0.0-20230424223354-2910841ecc96 h1:QS51+jkw8VWQVppZcdsY0qA+uUcsDDg48d+PI8hvOfs=
 github.com/gopatchy/selfcert v0.0.0-20230424223354-2910841ecc96/go.mod h1:g0OCB3Win9FvqvAPmU42evR2v9x/O00heZ2Hcl8tWQ8=
 github.com/gopatchy/store v0.0.0-20230424234123-d35f011d4f0f h1:YFUPQfPf4dhGJr1cx/LPqTCCBPUep80FtruksX6kEAU=
