@@ -55,14 +55,12 @@ func buildGo(t *testing.T) (string, string, map[string]string, []string) {
 	dir, err := os.MkdirTemp("", "go_test")
 	require.NoError(t, err)
 
-	goRootDir := filepath.Join(dir, "root")
 	goPathDir := filepath.Join(dir, "path")
 	goCacheDir := filepath.Join(dir, "cache")
 	workDir := filepath.Join(dir, "work")
 	goClientDir := filepath.Join(dir, "work/goclient")
 	testDir := filepath.Join(dir, "work/gotest")
 
-	require.NoError(t, os.MkdirAll(goRootDir, 0o700))
 	require.NoError(t, os.MkdirAll(goPathDir, 0o700))
 	require.NoError(t, os.MkdirAll(goCacheDir, 0o700))
 	require.NoError(t, os.MkdirAll(goClientDir, 0o700))
@@ -97,7 +95,6 @@ func buildGo(t *testing.T) (string, string, map[string]string, []string) {
 	require.NoError(t, err)
 
 	env := map[string]string{
-		"GOROOT":  goRootDir,
 		"GOPATH":  goPathDir,
 		"GOCACHE": goCacheDir,
 	}
