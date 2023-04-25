@@ -841,6 +841,7 @@ func (ls *ListStream[T]) writeEvent(list []*T) {
 		// Skip duplicates
 		return
 	}
+	ls.lastETag = etag
 
 	ls.ch <- list
 }
