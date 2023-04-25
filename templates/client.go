@@ -419,6 +419,19 @@ func StreamGetName[T any](ctx context.Context, c *Client, name, id string, opts 
 }
 
 func StreamListName[T any](ctx context.Context, c *Client, name string, opts *ListOpts[T]) (*ListStream[T], error) {
+	stream := &ListStream[T]{
+		ch:   make(chan []*T, 100),
+	}
+
+	go func() {
+		err := StreamListNameOnce[T](ctx, c, name, opts, stream)
+		stream.writeError(err)
+	}()
+
+	return stream, nil
+}
+
+func StreamListNameOnce[T any](ctx context.Context, c *Client, name string, opts *ListOpts[T], stream *ListStream[T]) error {
 	r := c.rst.R().
 		SetDoNotParseResponse(true).
 		SetHeader("Accept", "text/event-stream").
@@ -430,40 +443,36 @@ func StreamListName[T any](ctx context.Context, c *Client, name string, opts *Li
 
 	err := opts.apply(r)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	resp, err := r.Get("{name}")
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	if resp.IsError() {
-		return nil, jsrest.ReadError(resp.Body())
+		return jsrest.ReadError(resp.Body())
 	}
 
-	stream := &ListStream[T]{
-		ch:   make(chan []*T, 100),
-		body: resp.RawBody(),
+	var prev []*T
+	if opts != nil {
+		prev = opts.Prev
 	}
 
-	if opts != nil && opts.Prev != nil {
-		stream.prev = opts.Prev
-	}
+	stream.reset(resp.RawBody(), prev)
 
 	switch resp.Header().Get("Stream-Format") {
 	case "full":
-		go stream.processFull()
+		return stream.processFull()
 
 	case "diff":
-		go stream.processDiff()
+		return stream.processDiff()
 
 	default:
 		stream.Close()
-		return nil, fmt.Errorf("%s (%w)", resp.Header().Get("Stream-Format"), ErrInvalidStreamFormat)
+		return fmt.Errorf("%s (%w)", resp.Header().Get("Stream-Format"), ErrInvalidStreamFormat)
 	}
-
-	return stream, nil
 }
 
 type streamEvent[T any] struct {
@@ -643,11 +652,13 @@ type ListStream[T any] struct {
 	lastEventReceived time.Time
 
 	err error
+	closed bool
 
 	mu sync.RWMutex
 }
 
 func (ls *ListStream[T]) Close() {
+	ls.closed = true
 	ls.body.Close()
 }
 
@@ -673,23 +684,27 @@ func (ls *ListStream[T]) Error() error {
 	return ls.err
 }
 
-func (ls *ListStream[T]) processFull() {
+func (ls *ListStream[T]) reset(body io.ReadCloser, prev []*T) {
+	ls.body = body
+	ls.prev = prev
+	ls.err = nil
+}
+
+func (ls *ListStream[T]) processFull() error {
 	scan := bufio.NewScanner(ls.body)
 	es := newEventStream[T](scan)
 
 	for {
 		event, err := es.readEvent()
 		if err != nil {
-			ls.writeError(err)
-			return
+			return err
 		}
 
 		switch event.eventType {
 		case "list":
 			list, err := event.decodeList()
 			if err != nil {
-				ls.writeError(err)
-				return
+				return err
 			}
 
 			setListETag(list, fmt.Sprintf(`"%s"`, event.params["id"]))
@@ -704,7 +719,7 @@ func (ls *ListStream[T]) processFull() {
 	}
 }
 
-func (ls *ListStream[T]) processDiff() {
+func (ls *ListStream[T]) processDiff() error {
 	scan := bufio.NewScanner(ls.body)
 	es := newEventStream[T](scan)
 	list := []*T{}
@@ -739,36 +754,31 @@ func (ls *ListStream[T]) processDiff() {
 	for {
 		event, err := es.readEvent()
 		if err != nil {
-			ls.writeError(err)
-			return
+			return err
 		}
 
 		switch event.eventType {
 		case "add":
 			err = add(event)
 			if err != nil {
-				ls.writeError(err)
-				return
+				return err
 			}
 
 		case "update":
 			err = remove(event)
 			if err != nil {
-				ls.writeError(err)
-				return
+				return err
 			}
 
 			err = add(event)
 			if err != nil {
-				ls.writeError(err)
-				return
+				return err
 			}
 
 		case "remove":
 			err = remove(event)
 			if err != nil {
-				ls.writeError(err)
-				return
+				return err
 			}
 
 		case "sync":
@@ -796,7 +806,19 @@ func (ls *ListStream[T]) writeEvent(list []*T) {
 	ls.lastEventReceived = time.Now()
 	ls.mu.Unlock()
 
-	ls.ch <- list
+	// We mutate the list, so pass back a copy
+	out := make([]*T, len(list))
+	copy(out, list)
+
+	if len(out) > 0 {
+		// The first item in the list smuggles the list etag
+		// Make a shallow copy to avoid races
+		tmp := new(T)
+		*tmp = *out[0]
+		out[0] = tmp
+	}
+
+	ls.ch <- out
 }
 
 func (ls *ListStream[T]) writeError(err error) {
