@@ -225,7 +225,7 @@ func CreateName[T any](ctx context.Context, c *Client, name string, obj *T) (*T,
 	}
 
 	if resp.IsError() {
-		return nil, jsrest.ReadError(resp.Body())
+		return nil, jsrest.ReadError(resp)
 	}
 
 	return created, nil
@@ -248,7 +248,7 @@ func DeleteName[T any](ctx context.Context, c *Client, name, id string, opts *Up
 	}
 
 	if resp.IsError() {
-		return jsrest.ReadError(resp.Body())
+		return jsrest.ReadError(resp)
 	}
 
 	return nil
@@ -308,7 +308,7 @@ func GetName[T any](ctx context.Context, c *Client, name, id string, opts *GetOp
 	}
 
 	if resp.IsError() {
-		return nil, jsrest.ReadError(resp.Body())
+		return nil, jsrest.ReadError(resp)
 	}
 
 	return obj, nil
@@ -339,7 +339,7 @@ func ListName[T any](ctx context.Context, c *Client, name string, opts *ListOpts
 	}
 
 	if resp.IsError() {
-		return nil, jsrest.ReadError(resp.Body())
+		return nil, jsrest.ReadError(resp)
 	}
 
 	setListETag(objs, resp.Header().Get("ETag"))
@@ -368,7 +368,7 @@ func ReplaceName[T any](ctx context.Context, c *Client, name, id string, obj *T,
 	}
 
 	if resp.IsError() {
-		return nil, jsrest.ReadError(resp.Body())
+		return nil, jsrest.ReadError(resp)
 	}
 
 	return replaced, nil
@@ -395,7 +395,7 @@ func UpdateName[T any](ctx context.Context, c *Client, name, id string, obj *T, 
 	}
 
 	if resp.IsError() {
-		return nil, jsrest.ReadError(resp.Body())
+		return nil, jsrest.ReadError(resp)
 	}
 
 	return updated, nil
@@ -419,7 +419,7 @@ func StreamGetName[T any](ctx context.Context, c *Client, name, id string, opts 
 	}
 
 	if resp.IsError() {
-		return nil, jsrest.ReadError(resp.Body())
+		return nil, jsrest.ReadError(resp)
 	}
 
 	stream := &GetStream[T]{
@@ -489,7 +489,7 @@ func streamListNameOnce[T any](ctx context.Context, c *Client, name string, opts
 	}
 
 	if resp.IsError() {
-		return jsrest.ReadError(resp.Body())
+		return jsrest.ReadError(resp)
 	}
 
 	stream.reset(resp.RawBody())
@@ -966,7 +966,7 @@ func (c *Client) fetchMap(ctx context.Context, path string) (map[string]any, err
 	}
 
 	if resp.IsError() {
-		return nil, jsrest.ReadError(resp.Body())
+		return nil, jsrest.ReadError(resp)
 	}
 
 	return ret, nil
@@ -981,7 +981,7 @@ func (c *Client) fetchString(ctx context.Context, path string) (string, error) {
 	}
 
 	if resp.IsError() {
-		return "", jsrest.ReadError(resp.Body())
+		return "", jsrest.ReadError(resp)
 	}
 
 	return resp.String(), nil
