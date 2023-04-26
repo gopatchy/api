@@ -3,6 +3,7 @@ package patchy_test
 import (
 	"context"
 	"testing"
+	"time"
 
 	"github.com/gopatchy/patchy"
 	"github.com/stretchr/testify/require"
@@ -490,4 +491,123 @@ func TestDirectStreamListOpts(t *testing.T) {
 	require.NotNil(t, s1, stream.Error())
 	require.Len(t, s1, 1)
 	require.Contains(t, []string{"foo", "bar"}, s1[0].Text)
+}
+
+func TestReplicateCreate(t *testing.T) {
+	t.Parallel()
+
+	taSrc := newTestAPI(t)
+	defer taSrc.shutdown(t)
+
+	taDst := newTestAPI(t)
+	defer taDst.shutdown(t)
+
+	ctx := context.Background()
+
+	stream, err := patchy.StreamList[testType](ctx, taSrc.api, nil)
+	require.NoError(t, err)
+
+	defer stream.Close()
+
+	go func() {
+		err := patchy.ReplicateIn(ctx, taDst.api, stream.Chan(), func(tt *testType) (*testType, error) { return tt, nil })
+		require.NoError(t, err)
+	}()
+
+	created, err := patchy.Create(ctx, taSrc.api, &testType{Text: "foo"})
+	require.NoError(t, err)
+
+	time.Sleep(100 * time.Millisecond)
+
+	list, err := patchy.List[testType](ctx, taDst.api, nil)
+	require.NoError(t, err)
+	require.Len(t, list, 1)
+	require.Equal(t, created.ID, list[0].ID)
+	require.Equal(t, "foo", list[0].Text)
+}
+
+func TestReplicateUpdate(t *testing.T) {
+	t.Parallel()
+
+	taSrc := newTestAPI(t)
+	defer taSrc.shutdown(t)
+
+	taDst := newTestAPI(t)
+	defer taDst.shutdown(t)
+
+	ctx := context.Background()
+
+	created, err := patchy.Create(ctx, taSrc.api, &testType{Text: "foo"})
+	require.NoError(t, err)
+
+	stream, err := patchy.StreamList[testType](ctx, taSrc.api, nil)
+	require.NoError(t, err)
+
+	defer stream.Close()
+
+	go func() {
+		err := patchy.ReplicateIn(ctx, taDst.api, stream.Chan(), func(tt *testType) (*testType, error) { return tt, nil })
+		require.NoError(t, err)
+	}()
+
+	time.Sleep(100 * time.Millisecond)
+
+	list, err := patchy.List[testType](ctx, taDst.api, nil)
+	require.NoError(t, err)
+	require.Len(t, list, 1)
+	require.Equal(t, created.ID, list[0].ID)
+	require.Equal(t, "foo", list[0].Text)
+
+	_, err = patchy.Update(ctx, taSrc.api, created.ID, &testType{Text: "bar"}, nil)
+	require.NoError(t, err)
+
+	time.Sleep(100 * time.Millisecond)
+
+	list, err = patchy.List[testType](ctx, taDst.api, nil)
+	require.NoError(t, err)
+	require.Len(t, list, 1)
+	require.Equal(t, created.ID, list[0].ID)
+	require.Equal(t, "bar", list[0].Text)
+}
+
+func TestReplicateDelete(t *testing.T) {
+	t.Parallel()
+
+	taSrc := newTestAPI(t)
+	defer taSrc.shutdown(t)
+
+	taDst := newTestAPI(t)
+	defer taDst.shutdown(t)
+
+	ctx := context.Background()
+
+	created, err := patchy.Create(ctx, taSrc.api, &testType{Text: "foo"})
+	require.NoError(t, err)
+
+	stream, err := patchy.StreamList[testType](ctx, taSrc.api, nil)
+	require.NoError(t, err)
+
+	defer stream.Close()
+
+	go func() {
+		err := patchy.ReplicateIn(ctx, taDst.api, stream.Chan(), func(tt *testType) (*testType, error) { return tt, nil })
+		require.NoError(t, err)
+	}()
+
+	time.Sleep(100 * time.Millisecond)
+
+	list, err := patchy.List[testType](ctx, taDst.api, nil)
+	require.NoError(t, err)
+	require.Len(t, list, 1)
+	require.Equal(t, created.ID, list[0].ID)
+	require.Equal(t, "foo", list[0].Text)
+
+	err = patchy.Delete[testType](ctx, taSrc.api, created.ID, nil)
+	require.NoError(t, err)
+
+	time.Sleep(100 * time.Millisecond)
+
+	list, err = patchy.List[testType](ctx, taDst.api, nil)
+	require.NoError(t, err)
+	require.Len(t, list, 0)
 }

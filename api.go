@@ -57,6 +57,9 @@ const (
 
 	ContextAuthBearer
 	ContextAuthBasic
+
+	ContextWriteID
+	ContextWriteGeneration
 )
 
 func NewAPI(dbname string) (*API, error) {

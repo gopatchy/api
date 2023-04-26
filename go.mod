@@ -8,13 +8,13 @@ require (
 	github.com/getkin/kin-openapi v0.116.0
 	github.com/go-resty/resty/v2 v2.7.0
 	github.com/gopatchy/header v0.0.0-20230424234011-7f2c5e310d5a
-	github.com/gopatchy/jsrest v0.0.0-20230424233807-5231a3dd5640
+	github.com/gopatchy/jsrest v0.0.0-20230426170406-8236a8c1154b
 	github.com/gopatchy/metadata v0.0.0-20230424223338-33e58fee42bf
 	github.com/gopatchy/path v0.0.0-20230425232214-6708f2be480a
 	github.com/gopatchy/potency v0.0.0-20230424234149-389837c7dc88
 	github.com/gopatchy/proxy v0.0.0-20230425224044-bfe64d67fcae
 	github.com/gopatchy/selfcert v0.0.0-20230424223354-2910841ecc96
-	github.com/gopatchy/storebus v0.0.0-20230424234935-cbeb9484491f
+	github.com/gopatchy/storebus v0.0.0-20230426185618-b09376873294
 	github.com/julienschmidt/httprouter v1.3.0
 	github.com/stretchr/testify v1.8.2
 	github.com/vfaronov/httpheader v0.1.0

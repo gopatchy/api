@@ -5,7 +5,9 @@ import (
 	"io"
 
 	"github.com/gopatchy/jsrest"
+	"github.com/gopatchy/metadata"
 	"github.com/gopatchy/path"
+	"github.com/gopatchy/storebus"
 )
 
 func CreateName[T any](ctx context.Context, api *API, name string, obj *T) (*T, error) {
@@ -231,4 +233,84 @@ func StreamListName[T any](ctx context.Context, api *API, name string, opts *Lis
 
 func StreamList[T any](ctx context.Context, api *API, opts *ListOpts) (*ListStream[T], error) {
 	return StreamListName[T](ctx, api, apiName[T](), opts)
+}
+
+func ReplicateInName[TIn, TOut any](ctx context.Context, api *API, name string, in <-chan []*TIn, transform func(in *TIn) (*TOut, error)) error {
+	ctx = context.WithValue(ctx, ContextInternal, true)
+	ctx = context.WithValue(ctx, ContextWriteID, true)
+	ctx = context.WithValue(ctx, ContextWriteGeneration, true)
+
+	for {
+		inList := <-in
+		if inList == nil {
+			return nil
+		}
+
+		transList := []*TOut{}
+
+		for _, inObj := range inList {
+			transObj, err := transform(inObj)
+			if err != nil {
+				return err
+			}
+
+			err = storebus.UpdateHash(transObj)
+			if err != nil {
+				return err
+			}
+
+			transList = append(transList, transObj)
+		}
+
+		curList, err := ListName[TOut](ctx, api, name, nil)
+		if err != nil {
+			return err
+		}
+
+		curByID := map[string]*TOut{}
+
+		for _, curObj := range curList {
+			curMD := metadata.GetMetadata(curObj)
+			curByID[curMD.ID] = curObj
+		}
+
+		for _, transObj := range transList {
+			transMD := metadata.GetMetadata(transObj)
+
+			curObj := curByID[transMD.ID]
+
+			if curObj == nil {
+				_, err = CreateName[TOut](ctx, api, name, transObj)
+				if err != nil {
+					return err
+				}
+
+				continue
+			}
+
+			delete(curByID, transMD.ID)
+
+			curMD := metadata.GetMetadata(curObj)
+
+			if transMD.ETag == curMD.ETag {
+				continue
+			}
+
+			_, err = UpdateName[TOut](ctx, api, name, curMD.ID, transObj, nil)
+			if err != nil {
+				return err
+			}
+		}
+
+		for curID := range curByID {
+			err = DeleteName[TOut](ctx, api, name, curID, nil)
+			if err != nil {
+				return err
+			}
+		}
+	}
+}
+
+func ReplicateIn[TIn, TOut any](ctx context.Context, api *API, in <-chan []*TIn, transform func(in *TIn) (*TOut, error)) error {
+	return ReplicateInName[TIn, TOut](ctx, api, apiName[TOut](), in, transform)
 }

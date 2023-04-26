@@ -28,8 +28,14 @@ type listStreamInt struct {
 
 func (api *API) createInt(ctx context.Context, cfg *config, obj any) (any, error) {
 	md := metadata.GetMetadata(obj)
-	md.ID = uniuri.New()
-	md.Generation = 1
+
+	if ctx.Value(ContextWriteID) == nil || md.ID == "" {
+		md.ID = uniuri.New()
+	}
+
+	if ctx.Value(ContextWriteGeneration) == nil || md.Generation == 0 {
+		md.Generation = 1
+	}
 
 	obj, err := cfg.checkWrite(ctx, obj, nil, api)
 	if err != nil {
