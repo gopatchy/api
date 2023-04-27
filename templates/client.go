@@ -1038,7 +1038,7 @@ func (b *backoff) failure(ctx context.Context) {
 	}
 
 	// Full jitter
-	actualDelay := time.Duration(rand.Int63n(int64(b.delay)))
+	actualDelay := time.Duration(rand.Int63n(int64(b.delay))) //nolint:gosec
 
 	t := time.NewTimer(actualDelay)
 
