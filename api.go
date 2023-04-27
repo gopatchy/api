@@ -132,6 +132,12 @@ func RegisterName[T any](api *API, apiName, camelName string) {
 	}
 }
 
+func (api *API) SetBaseContext(ctx context.Context) {
+	api.srv.BaseContext = func(_ net.Listener) context.Context {
+		return ctx
+	}
+}
+
 func (api *API) SetStripPrefix(prefix string) {
 	api.prefix = prefix
 
