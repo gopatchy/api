@@ -23,6 +23,7 @@ func authBasic[T any](_ http.ResponseWriter, r *http.Request, api *API, name, pa
 		return nil, jsrest.Errorf(jsrest.ErrBadRequest, "Authorization Basic data parsing failed (%w)", err)
 	}
 
+	// TODO: Split out from ContextInternal (ContextAuthBasic?)
 	users, err := ListName[T](
 		context.WithValue(r.Context(), ContextInternal, true),
 		api,
