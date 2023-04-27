@@ -242,6 +242,7 @@ func (api *API) Addr() *net.TCPAddr {
 }
 
 func (api *API) Serve() error {
+	// TODO: Validate that api.listener is set
 	return api.srv.Serve(api.listener)
 }
 
@@ -292,6 +293,7 @@ func (api *API) serveHTTP(w http.ResponseWriter, r *http.Request) error {
 }
 
 func (api *API) Close() {
+	// TODO: Merge Shutdown() and Close()
 	api.sb.Close()
 }
 

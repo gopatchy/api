@@ -510,7 +510,7 @@ func TestReplicateCreate(t *testing.T) {
 	defer stream.Close()
 
 	go func() {
-		err := patchy.ReplicateIn(ctx, taDst.api, stream.Chan(), func(tt *testType) (*testType, error) { return tt, nil })
+		err := patchy.ReplicateIn(ctx, taDst.api, stream.Chan(), func(tt *testType) (*testType, error) { return tt, nil }, nil)
 		require.NoError(t, err)
 	}()
 
@@ -546,7 +546,7 @@ func TestReplicateUpdate(t *testing.T) {
 	defer stream.Close()
 
 	go func() {
-		err := patchy.ReplicateIn(ctx, taDst.api, stream.Chan(), func(tt *testType) (*testType, error) { return tt, nil })
+		err := patchy.ReplicateIn(ctx, taDst.api, stream.Chan(), func(tt *testType) (*testType, error) { return tt, nil }, nil)
 		require.NoError(t, err)
 	}()
 
@@ -590,7 +590,7 @@ func TestReplicateDelete(t *testing.T) {
 	defer stream.Close()
 
 	go func() {
-		err := patchy.ReplicateIn(ctx, taDst.api, stream.Chan(), func(tt *testType) (*testType, error) { return tt, nil })
+		err := patchy.ReplicateIn(ctx, taDst.api, stream.Chan(), func(tt *testType) (*testType, error) { return tt, nil }, nil)
 		require.NoError(t, err)
 	}()
 
