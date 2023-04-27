@@ -53,7 +53,9 @@ var (
 )
 
 const (
-	ContextInternal ContextKey = iota
+	ContextAuthBasicLookup ContextKey = iota
+	ContextAuthBearerLookup
+	ContextReplicate
 
 	ContextAuthBearer
 	ContextAuthBasic

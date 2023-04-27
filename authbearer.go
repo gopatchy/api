@@ -17,9 +17,8 @@ func authBearer[T any](_ http.ResponseWriter, r *http.Request, api *API, name, p
 		return r, nil
 	}
 
-	// TODO: Split out from ContextInternal (ContextAuthBearer?)
 	bearers, err := ListName[T](
-		context.WithValue(r.Context(), ContextInternal, true),
+		context.WithValue(r.Context(), ContextAuthBearerLookup, true),
 		api,
 		name,
 		&ListOpts{

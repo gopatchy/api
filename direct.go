@@ -236,8 +236,7 @@ func StreamList[T any](ctx context.Context, api *API, opts *ListOpts) (*ListStre
 }
 
 func ReplicateInName[TIn, TOut any](ctx context.Context, api *API, name string, in <-chan []*TIn, transform func(in *TIn) (*TOut, error)) error {
-	// TODO: Don't use ContextInternal for this (perhaps split to ContextReplication)
-	ctx = context.WithValue(ctx, ContextInternal, true)
+	ctx = context.WithValue(ctx, ContextReplicate, true)
 	ctx = context.WithValue(ctx, ContextWriteID, true)
 	ctx = context.WithValue(ctx, ContextWriteGeneration, true)
 
