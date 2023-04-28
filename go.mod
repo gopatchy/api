@@ -8,7 +8,7 @@ require (
 	github.com/getkin/kin-openapi v0.116.0
 	github.com/go-resty/resty/v2 v2.7.0
 	github.com/gopatchy/header v0.0.0-20230427161709-11e503db9998
-	github.com/gopatchy/jsrest v0.0.0-20230427161232-1d2f7769078f
+	github.com/gopatchy/jsrest v0.0.0-20230427234754-bbc8de765b72
 	github.com/gopatchy/metadata v0.0.0-20230424223338-33e58fee42bf
 	github.com/gopatchy/path v0.0.0-20230427161756-8ddf6bee842d
 	github.com/gopatchy/potency v0.0.0-20230427161821-c28b3c550158

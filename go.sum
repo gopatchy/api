@@ -23,8 +23,8 @@ github.com/gopatchy/bus v0.0.0-20230424233749-c395ddbca3df h1:3sBy+B3e+oLPtbk35a
 github.com/gopatchy/bus v0.0.0-20230424233749-c395ddbca3df/go.mod h1:Dkr9lxuxCUgZNA6b+ODThSpYoqiMN9Nyz6LOEN5BGxw=
 github.com/gopatchy/header v0.0.0-20230427161709-11e503db9998 h1:td3WG//1R6m1G3Pl69K8LEv850tBwJlt8YmMVvhy3E0=
 github.com/gopatchy/header v0.0.0-20230427161709-11e503db9998/go.mod h1:KCLhTOdF7DqIimUgTXuUTOLOqYxoQcQCHyFT0JbiTwQ=
-github.com/gopatchy/jsrest v0.0.0-20230427161232-1d2f7769078f h1:v+EEAVHgiYkBC5qvU3kb307ggNclXK4TSCTMU5cTDcU=
-github.com/gopatchy/jsrest v0.0.0-20230427161232-1d2f7769078f/go.mod h1:UbCpUbMPcF0WtfBPp1xb6QyequTftgVDqb8lR+cXNBc=
+github.com/gopatchy/jsrest v0.0.0-20230427234754-bbc8de765b72 h1:YSHMS391TetiWqie8DY131OXjFCWtXJhgu4NqitsjBw=
+github.com/gopatchy/jsrest v0.0.0-20230427234754-bbc8de765b72/go.mod h1:UbCpUbMPcF0WtfBPp1xb6QyequTftgVDqb8lR+cXNBc=
 github.com/gopatchy/metadata v0.0.0-20230424223338-33e58fee42bf h1:HKCbhVEpC3++ydeapSJN2DGs9KGWMvOLpcZrwKkrXQs=
 github.com/gopatchy/metadata v0.0.0-20230424223338-33e58fee42bf/go.mod h1:VgD33raUShjDePCDBo55aj+eSXFtUEpMzs+Ie39g2zo=
 github.com/gopatchy/path v0.0.0-20230427161756-8ddf6bee842d h1:4rberZoGlkSH1O/4OG0iEpamwjSRRQMGucKuyjpdUR0=
