@@ -106,6 +106,11 @@ func NewClient(baseURL string) *Client {
 	}
 }
 
+func (c *Client) SetBaseURL(baseURL string) *Client {
+	c.rst.SetBaseURL(baseURL)
+	return c
+}
+
 func (c *Client) SetTLSClientConfig(cfg *tls.Config) *Client {
 	c.rst.SetTLSClientConfig(cfg)
 	return c
