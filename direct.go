@@ -238,17 +238,21 @@ func StreamList[T any](ctx context.Context, api *API, opts *ListOpts) (*ListStre
 	return StreamListName[T](ctx, api, apiName[T](), opts)
 }
 
-func ReplicateInName[TIn, TOut any](ctx context.Context, api *API, name string, in <-chan []*TIn, transform func(in *TIn) (*TOut, error), opts *ListOpts) error {
+func ReplicateInName[TIn, TOut any](ctx context.Context, api *API, name string, in <-chan []*TIn, transform func(in *TIn) (*TOut, error), opts *ListOpts, firstSync chan<- any) error {
 	for {
 		err := ReplicateInNameOnce[TIn, TOut](ctx, api, name, in, transform, opts)
 		if err != nil {
 			return err
 		}
+
+		if firstSync != nil {
+			close(firstSync)
+		}
 	}
 }
 
-func ReplicateIn[TIn, TOut any](ctx context.Context, api *API, in <-chan []*TIn, transform func(in *TIn) (*TOut, error), opts *ListOpts) error {
-	return ReplicateInName[TIn, TOut](ctx, api, apiName[TOut](), in, transform, opts)
+func ReplicateIn[TIn, TOut any](ctx context.Context, api *API, in <-chan []*TIn, transform func(in *TIn) (*TOut, error), opts *ListOpts, firstSync chan<- any) error {
+	return ReplicateInName[TIn, TOut](ctx, api, apiName[TOut](), in, transform, opts, firstSync)
 }
 
 func ReplicateInNameOnce[TIn, TOut any](ctx context.Context, api *API, name string, in <-chan []*TIn, transform func(in *TIn) (*TOut, error), opts *ListOpts) error {
