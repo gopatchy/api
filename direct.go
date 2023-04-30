@@ -247,6 +247,7 @@ func ReplicateInName[TIn, TOut any](ctx context.Context, api *API, name string, 
 
 		if firstSync != nil {
 			close(firstSync)
+			firstSync = nil
 		}
 	}
 }
