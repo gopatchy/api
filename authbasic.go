@@ -48,7 +48,7 @@ func authBasic[T any](_ http.ResponseWriter, r *http.Request, api *API, name, pa
 		}
 
 		if userPass == nil {
-			return nil, jsrest.Errorf(jsrest.ErrInternalServerError, "user password hash not set")
+			continue
 		}
 
 		var strPass string

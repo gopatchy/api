@@ -93,6 +93,20 @@ func {{ .Form.Get "newClient" }}(baseURL string) *Client {
 
 func NewClient(baseURL string) *Client {
 {{- end }}
+	c := &Client{}
+
+	c.rst = resty.New().
+		SetHeader("Accept", "application/json").
+		SetJSONEscapeHTML(false)
+
+	c.SetBaseURL(baseURL)
+
+	// TODO: SetTimeout()
+
+	return c
+}
+
+func (c *Client) SetBaseURL(baseURL string) *Client {
 	{{- if .URLPrefix }}
 	baseURL, err := url.JoinPath(baseURL, "{{ .URLPrefix }}")
 	if err != nil {
@@ -100,20 +114,8 @@ func NewClient(baseURL string) *Client {
 	}
 	{{- end }}
 
-	rst := resty.New().
-		SetBaseURL(baseURL).
-		SetHeader("Accept", "application/json").
-		SetJSONEscapeHTML(false)
-
-	// TODO: SetTimeout()
-
-	return &Client{
-		rst: rst,
-	}
-}
-
-func (c *Client) SetBaseURL(baseURL string) *Client {
 	c.rst.SetBaseURL(baseURL)
+
 	return c
 }
 
