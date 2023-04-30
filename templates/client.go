@@ -86,7 +86,13 @@ var (
 	ErrInvalidStreamFormat = fmt.Errorf("invalid stream format")
 )
 
+{{- if .Form.Has "newClient" }}
+
+func {{ .Form.Get "newClient" }}(baseURL string) *Client {
+{{- else }}
+
 func NewClient(baseURL string) *Client {
+{{- end }}
 	{{- if .URLPrefix }}
 	baseURL, err := url.JoinPath(baseURL, "{{ .URLPrefix }}")
 	if err != nil {

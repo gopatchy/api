@@ -41,43 +41,39 @@ func authBasic[T any](_ http.ResponseWriter, r *http.Request, api *API, name, pa
 		return nil, jsrest.Errorf(jsrest.ErrInternalServerError, "list users for auth failed (%w)", err)
 	}
 
-	if len(users) != 1 {
-		return r, jsrest.Errorf(jsrest.ErrUnauthorized, "user not found")
+	for _, user := range users {
+		userPass, err := path.Get(user, pathPass)
+		if err != nil {
+			return nil, jsrest.Errorf(jsrest.ErrInternalServerError, "get user password hash failed (%w)", err)
+		}
+
+		if userPass == nil {
+			return nil, jsrest.Errorf(jsrest.ErrInternalServerError, "user password hash not set")
+		}
+
+		var strPass string
+
+		switch v := userPass.(type) {
+		case string:
+			strPass = v
+		case *string:
+			strPass = *v
+		default:
+			return nil, jsrest.Errorf(jsrest.ErrInternalServerError, "user password hash has invalid type %T", v)
+		}
+
+		err = bcrypt.CompareHashAndPassword([]byte(strPass), []byte(reqPass))
+		if err == nil {
+			err = path.Set(user, pathPass, "")
+			if err != nil {
+				return nil, jsrest.Errorf(jsrest.ErrInternalServerError, "clear user password hash failed (%w)", err)
+			}
+
+			return r.WithContext(context.WithValue(r.Context(), ContextAuthBasic, user)), nil
+		}
 	}
 
-	user := users[0]
-
-	userPass, err := path.Get(user, pathPass)
-	if err != nil {
-		return nil, jsrest.Errorf(jsrest.ErrInternalServerError, "get user password hash failed (%w)", err)
-	}
-
-	if userPass == nil {
-		return nil, jsrest.Errorf(jsrest.ErrInternalServerError, "user password hash not set")
-	}
-
-	var strPass string
-
-	switch v := userPass.(type) {
-	case string:
-		strPass = v
-	case *string:
-		strPass = *v
-	default:
-		return nil, jsrest.Errorf(jsrest.ErrInternalServerError, "user password hash has invalid type %T", v)
-	}
-
-	err = bcrypt.CompareHashAndPassword([]byte(strPass), []byte(reqPass))
-	if err != nil {
-		return nil, jsrest.Errorf(jsrest.ErrUnauthorized, "user password mismatch (%w)", err)
-	}
-
-	err = path.Set(user, pathPass, "")
-	if err != nil {
-		return nil, jsrest.Errorf(jsrest.ErrInternalServerError, "clear user password hash failed (%w)", err)
-	}
-
-	return r.WithContext(context.WithValue(r.Context(), ContextAuthBasic, user)), nil
+	return nil, jsrest.Errorf(jsrest.ErrUnauthorized, "user not found or password mismatch")
 }
 
 func AddAuthBasicName[T any](api *API, name, pathUser, pathPass string) {

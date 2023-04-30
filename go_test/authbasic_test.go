@@ -33,7 +33,7 @@ func TestBasicAuthInvalidUser(t *testing.T) {
 
 	_, err := c.ListAuthBasicType(ctx, nil)
 	require.Error(t, err)
-	require.ErrorContains(t, err, "user not found")
+	require.ErrorContains(t, err, "user not found or password mismatch")
 }
 
 func TestBasicAuthInvalidPassword(t *testing.T) {
@@ -47,7 +47,7 @@ func TestBasicAuthInvalidPassword(t *testing.T) {
 
 	_, err := c.ListAuthBasicType(ctx, nil)
 	require.Error(t, err)
-	require.ErrorContains(t, err, "user password mismatch")
+	require.ErrorContains(t, err, "user not found or password mismatch")
 }
 
 func TestBasicAuthOptional(t *testing.T) {
