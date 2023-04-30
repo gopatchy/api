@@ -7,14 +7,14 @@ require (
 	github.com/dchest/uniuri v1.2.0
 	github.com/getkin/kin-openapi v0.116.0
 	github.com/go-resty/resty/v2 v2.7.0
-	github.com/gopatchy/header v0.0.0-20230430184755-ec177964d56e
-	github.com/gopatchy/jsrest v0.0.0-20230428140817-2ae31b25545e
+	github.com/gopatchy/header v0.0.0-20230430231118-c7818e9e2b67
+	github.com/gopatchy/jsrest v0.0.0-20230430221623-9f19b9d8dace
 	github.com/gopatchy/metadata v0.0.0-20230424223338-33e58fee42bf
-	github.com/gopatchy/path v0.0.0-20230430184811-4f958abfcd48
-	github.com/gopatchy/potency v0.0.0-20230430184948-bcf410b4a72c
+	github.com/gopatchy/path v0.0.0-20230430231142-6d3cf63bb609
+	github.com/gopatchy/potency v0.0.0-20230430231153-d71eb284ae4d
 	github.com/gopatchy/proxy v0.0.0-20230425224044-bfe64d67fcae
 	github.com/gopatchy/selfcert v0.0.0-20230424223354-2910841ecc96
-	github.com/gopatchy/storebus v0.0.0-20230430184818-7d0eed984d70
+	github.com/gopatchy/storebus v0.0.0-20230430231202-67e1319ac46f
 	github.com/julienschmidt/httprouter v1.3.0
 	github.com/stretchr/testify v1.8.2
 	github.com/vfaronov/httpheader v0.1.0
