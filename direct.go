@@ -2,6 +2,7 @@ package patchy
 
 import (
 	"context"
+	"fmt"
 	"io"
 
 	"github.com/gopatchy/jsrest"
@@ -9,6 +10,8 @@ import (
 	"github.com/gopatchy/path"
 	"github.com/gopatchy/storebus"
 )
+
+var ErrEndOfStream = fmt.Errorf("end of stream")
 
 func CreateName[T any](ctx context.Context, api *API, name string, obj *T) (*T, error) {
 	cfg := api.registry[name]
@@ -236,81 +239,102 @@ func StreamList[T any](ctx context.Context, api *API, opts *ListOpts) (*ListStre
 }
 
 func ReplicateInName[TIn, TOut any](ctx context.Context, api *API, name string, in <-chan []*TIn, transform func(in *TIn) (*TOut, error), opts *ListOpts) error {
-	ctx = context.WithValue(ctx, ContextReplicate, true)
-	ctx = context.WithValue(ctx, ContextWriteID, true)
-	ctx = context.WithValue(ctx, ContextWriteGeneration, true)
-
 	for {
-		inList := <-in
-		if inList == nil {
-			return nil
-		}
-
-		transList := []*TOut{}
-
-		for _, inObj := range inList {
-			transObj, err := transform(inObj)
-			if err != nil {
-				return err
-			}
-
-			err = storebus.UpdateHash(transObj)
-			if err != nil {
-				return err
-			}
-
-			transList = append(transList, transObj)
-		}
-
-		curList, err := ListName[TOut](ctx, api, name, opts)
+		err := ReplicateInNameOnce[TIn, TOut](ctx, api, name, in, transform, opts)
 		if err != nil {
 			return err
-		}
-
-		curByID := map[string]*TOut{}
-
-		for _, curObj := range curList {
-			curMD := metadata.GetMetadata(curObj)
-			curByID[curMD.ID] = curObj
-		}
-
-		for _, transObj := range transList {
-			transMD := metadata.GetMetadata(transObj)
-
-			curObj := curByID[transMD.ID]
-
-			if curObj == nil {
-				_, err = CreateName[TOut](ctx, api, name, transObj)
-				if err != nil {
-					return err
-				}
-
-				continue
-			}
-
-			delete(curByID, transMD.ID)
-
-			curMD := metadata.GetMetadata(curObj)
-
-			if transMD.ETag == curMD.ETag {
-				continue
-			}
-
-			_, err = UpdateName[TOut](ctx, api, name, curMD.ID, transObj, nil)
-			if err != nil {
-				return err
-			}
-		}
-
-		for curID := range curByID {
-			err = DeleteName[TOut](ctx, api, name, curID, nil)
-			if err != nil {
-				return err
-			}
 		}
 	}
 }
 
 func ReplicateIn[TIn, TOut any](ctx context.Context, api *API, in <-chan []*TIn, transform func(in *TIn) (*TOut, error), opts *ListOpts) error {
 	return ReplicateInName[TIn, TOut](ctx, api, apiName[TOut](), in, transform, opts)
+}
+
+func ReplicateInNameOnce[TIn, TOut any](ctx context.Context, api *API, name string, in <-chan []*TIn, transform func(in *TIn) (*TOut, error), opts *ListOpts) error {
+	inList := <-in
+	if inList == nil {
+		return ErrEndOfStream
+	}
+
+	transList := []*TOut{}
+
+	for _, inObj := range inList {
+		transObj, err := transform(inObj)
+		if err != nil {
+			return err
+		}
+
+		err = storebus.UpdateHash(transObj)
+		if err != nil {
+			return err
+		}
+
+		transList = append(transList, transObj)
+	}
+
+	return SyncListName[TOut](ctx, api, name, transList, opts)
+}
+
+func ReplicateInOnce[TIn, TOut any](ctx context.Context, api *API, in <-chan []*TIn, transform func(in *TIn) (*TOut, error), opts *ListOpts) error {
+	return ReplicateInNameOnce[TIn, TOut](ctx, api, apiName[TOut](), in, transform, opts)
+}
+
+func SyncListName[T any](ctx context.Context, api *API, name string, list []*T, opts *ListOpts) error {
+	ctx = context.WithValue(ctx, ContextReplicate, true)
+	ctx = context.WithValue(ctx, ContextWriteID, true)
+	ctx = context.WithValue(ctx, ContextWriteGeneration, true)
+
+	curList, err := ListName[T](ctx, api, name, opts)
+	if err != nil {
+		return err
+	}
+
+	curByID := map[string]*T{}
+
+	for _, curObj := range curList {
+		curMD := metadata.GetMetadata(curObj)
+		curByID[curMD.ID] = curObj
+	}
+
+	for _, newObj := range list {
+		newMD := metadata.GetMetadata(newObj)
+
+		curObj := curByID[newMD.ID]
+
+		if curObj == nil {
+			_, err = CreateName[T](ctx, api, name, newObj)
+			if err != nil {
+				return err
+			}
+
+			continue
+		}
+
+		delete(curByID, newMD.ID)
+
+		curMD := metadata.GetMetadata(curObj)
+
+		if newMD.ETag == curMD.ETag {
+			continue
+		}
+
+		_, err = UpdateName[T](ctx, api, name, curMD.ID, newObj, nil)
+		if err != nil {
+			return err
+		}
+	}
+
+	for curID := range curByID {
+		err = DeleteName[T](ctx, api, name, curID, nil)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func SyncList[T any](ctx context.Context, api *API, list []*T, opts *ListOpts) error {
+	return SyncListName[T](ctx, api, apiName[T](), list, opts)
 }
