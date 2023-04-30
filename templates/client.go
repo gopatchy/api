@@ -52,6 +52,7 @@ type {{ $type.TypeUpperCamel }} struct {
 
 type GetOpts[T any] struct {
 	Prev *T
+	// TODO: Add FailFast bool
 }
 
 type ListOpts[T any] struct {
@@ -63,6 +64,7 @@ type ListOpts[T any] struct {
 	Filters []Filter
 
 	Prev []*T
+	// TODO: Add FailFast bool
 }
 
 type Filter struct {
@@ -73,6 +75,7 @@ type Filter struct {
 
 type UpdateOpts[T any] struct {
 	Prev *T
+	// TODO: Add FailFast bool
 }
 
 type Client struct {
@@ -182,6 +185,7 @@ func (c *Client) TSClient(ctx context.Context) (string, error) {
 
 //// {{ $api.NameUpperCamel }}
 
+// TODO: Take CreateOpts (with at least FailFast)
 func (c *Client) Create{{ $api.NameUpperCamel }}(ctx context.Context, obj *{{ $api.TypeUpperCamel }}) (*{{ $api.TypeUpperCamel }}, error) {
 	return CreateName[{{ $api.TypeUpperCamel }}](ctx, c, "{{ $api.NameLower }}", obj)
 }
@@ -190,6 +194,7 @@ func (c *Client) Delete{{ $api.NameUpperCamel }}(ctx context.Context, id string,
 	return DeleteName[{{ $api.TypeUpperCamel }}](ctx, c, "{{ $api.NameLower }}", id, opts)
 }
 
+// TODO: Take GetOpts or something (for FailFast)
 func (c *Client) Find{{ $api.NameUpperCamel }}(ctx context.Context, shortID string) (*{{ $api.TypeUpperCamel }}, error) {
 	return FindName[{{ $api.TypeUpperCamel }}](ctx, c, "{{ $api.NameLower }}", shortID)
 }

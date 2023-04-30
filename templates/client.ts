@@ -20,6 +20,7 @@ export interface Metadata {
 
 export interface GetOpts<T> {
 	prev?: T & Metadata;
+	// TODO: Add failFast
 }
 
 export interface ListOpts<T> {
@@ -29,7 +30,9 @@ export interface ListOpts<T> {
 	after?:   string;
 	sorts?:   string[];
 	filters?: Filter[];
+
 	prev?:    (T & Metadata)[];
+	// TODO: Add failFast
 }
 
 export interface Filter {
@@ -40,6 +43,8 @@ export interface Filter {
 
 export interface UpdateOpts<T> {
 	prev?: T & Metadata;
+
+	// TODO: Add failFast
 }
 
 export interface JSONError {
@@ -105,6 +110,7 @@ export class Client {
 
 	//// {{ $api.NameUpperCamel }}
 
+	// TODO: Take CreateOpts (or something, for failFast)
 	async create{{ $api.NameUpperCamel }}(obj: {{ $api.TypeUpperCamel }}): Promise<{{ $api.TypeUpperCamel }} & Metadata> {
 		return this.createName<{{ $api.TypeUpperCamel }}>('{{ $api.NameLower }}', obj);
 	}
@@ -113,6 +119,7 @@ export class Client {
 		return this.deleteName('{{ $api.NameLower }}', id, opts);
 	}
 
+	// TODO: Take GetOpts (or something, for failFast)
 	async find{{ $api.NameUpperCamel }}(shortID: string): Promise<{{ $api.TypeUpperCamel }} & Metadata> {
 		return this.findName<{{ $api.TypeUpperCamel }}>('{{ $api.NameLower }}', shortID);
 	}
