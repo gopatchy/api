@@ -262,7 +262,12 @@ func (api *API) Serve() error {
 		return jsrest.Errorf(jsrest.ErrInternalServerError, "Serve() called before Listen*()")
 	}
 
-	return api.srv.Serve(api.listener)
+	err := api.srv.Serve(api.listener)
+	if err != nil && err != http.ErrServerClosed {
+		return err
+	}
+
+	return nil
 }
 
 func (api *API) Shutdown(ctx context.Context) error {
