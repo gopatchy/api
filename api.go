@@ -65,6 +65,8 @@ const (
 
 	ContextWriteID
 	ContextWriteGeneration
+
+	ContextStub
 )
 
 func NewAPI(dbname string) (*API, error) {
@@ -87,7 +89,7 @@ func NewAPI(dbname string) (*API, error) {
 		},
 	}
 
-	api.baseContext.Store(context.Background())
+	api.SetBaseContext(context.Background())
 
 	api.srv.Handler = api
 
@@ -142,7 +144,8 @@ func RegisterName[T any](api *API, apiName, camelName string) {
 }
 
 func (api *API) SetBaseContext(ctx context.Context) {
-	api.baseContext.Store(ctx)
+	// ContextStub exists to force the stored type to context.valueCtx
+	api.baseContext.Store(context.WithValue(ctx, ContextStub, true))
 }
 
 func (api *API) SetContextValue(key, val any) {
