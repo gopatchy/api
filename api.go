@@ -10,6 +10,7 @@ import (
 	"reflect"
 	"sort"
 	"strings"
+	"sync/atomic"
 	"time"
 
 	"github.com/gopatchy/jsrest"
@@ -34,6 +35,8 @@ type API struct {
 	openAPI openAPI
 
 	prefix string
+
+	baseContext atomic.Value
 
 	requestHooks []RequestHook
 
@@ -84,7 +87,13 @@ func NewAPI(dbname string) (*API, error) {
 		},
 	}
 
+	api.baseContext.Store(context.Background())
+
 	api.srv.Handler = api
+
+	api.srv.BaseContext = func(_ net.Listener) context.Context {
+		return api.baseContext.Load().(context.Context)
+	}
 
 	api.router.GET(
 		"/_debug",
@@ -133,9 +142,13 @@ func RegisterName[T any](api *API, apiName, camelName string) {
 }
 
 func (api *API) SetBaseContext(ctx context.Context) {
-	api.srv.BaseContext = func(_ net.Listener) context.Context {
-		return ctx
-	}
+	api.baseContext.Store(ctx)
+}
+
+func (api *API) SetContextValue(key, val any) {
+	ctx := api.baseContext.Load().(context.Context)
+	ctx = context.WithValue(ctx, key, val)
+	api.baseContext.Store(ctx)
 }
 
 func (api *API) SetStripPrefix(prefix string) {
