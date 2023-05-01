@@ -10,6 +10,7 @@ import (
 	"reflect"
 	"sort"
 	"strings"
+	"sync"
 	"sync/atomic"
 	"time"
 
@@ -42,6 +43,9 @@ type API struct {
 
 	authBasic  bool
 	authBearer bool
+
+	contextValues   map[any]any
+	contextValuesMu sync.RWMutex
 }
 
 type (
@@ -87,6 +91,7 @@ func NewAPI(dbname string) (*API, error) {
 		srv: &http.Server{
 			ReadHeaderTimeout: 30 * time.Second,
 		},
+		contextValues: map[any]any{},
 	}
 
 	api.SetBaseContext(context.Background())
@@ -149,9 +154,10 @@ func (api *API) SetBaseContext(ctx context.Context) {
 }
 
 func (api *API) SetContextValue(key, val any) {
-	ctx := api.baseContext.Load().(context.Context)
-	ctx = context.WithValue(ctx, key, val)
-	api.baseContext.Store(ctx)
+	api.contextValuesMu.Lock()
+	defer api.contextValuesMu.Unlock()
+
+	api.contextValues[key] = val
 }
 
 func (api *API) SetStripPrefix(prefix string) {
@@ -263,7 +269,7 @@ func (api *API) Serve() error {
 	}
 
 	err := api.srv.Serve(api.listener)
-	if err != nil && err != http.ErrServerClosed {
+	if err != nil && !errors.Is(err, http.ErrServerClosed) {
 		return err
 	}
 
@@ -282,6 +288,20 @@ func (api *API) Shutdown(ctx context.Context) error {
 }
 
 func (api *API) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
+	{
+		api.contextValuesMu.RLock()
+
+		for k, v := range api.contextValues {
+			ctx = context.WithValue(ctx, k, v)
+		}
+
+		api.contextValuesMu.RUnlock()
+	}
+
+	r = r.WithContext(ctx)
+
 	err := api.serveHTTP(w, r)
 	if err != nil {
 		jsrest.WriteError(w, err)
