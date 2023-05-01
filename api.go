@@ -258,12 +258,22 @@ func (api *API) Addr() *net.TCPAddr {
 }
 
 func (api *API) Serve() error {
-	// TODO: Validate that api.listener is set
+	if api.listener == nil {
+		return jsrest.Errorf(jsrest.ErrInternalServerError, "Serve() called before Listen*()")
+	}
+
 	return api.srv.Serve(api.listener)
 }
 
 func (api *API) Shutdown(ctx context.Context) error {
-	return api.srv.Shutdown(ctx)
+	err := api.srv.Shutdown(ctx)
+	if err != nil {
+		return err
+	}
+
+	api.sb.Close()
+
+	return nil
 }
 
 func (api *API) ServeHTTP(w http.ResponseWriter, r *http.Request) {
@@ -306,11 +316,6 @@ func (api *API) serveHTTP(w http.ResponseWriter, r *http.Request) error {
 	api.potency.ServeHTTP(w, r)
 
 	return nil
-}
-
-func (api *API) Close() {
-	// TODO: Merge Shutdown() and Close()
-	api.sb.Close()
 }
 
 func (api *API) registerHandlers(base string, cfg *config) {

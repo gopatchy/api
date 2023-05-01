@@ -14,12 +14,17 @@ import (
 func TestRegisterMissingMetadata(t *testing.T) {
 	t.Parallel()
 
+	ctx := context.Background()
+
 	dbname := fmt.Sprintf("file:%s?mode=memory&cache=shared", uniuri.New())
 
 	api, err := patchy.NewAPI(dbname)
 	require.NoError(t, err)
 
-	defer api.Close()
+	defer func() {
+		err := api.Shutdown(ctx)
+		require.NoError(t, err)
+	}()
 
 	require.Panics(t, func() {
 		patchy.Register[missingMetadata](api)
@@ -29,12 +34,17 @@ func TestRegisterMissingMetadata(t *testing.T) {
 func TestIsSafeSuccess(t *testing.T) {
 	t.Parallel()
 
+	ctx := context.Background()
+
 	dbname := fmt.Sprintf("file:%s?mode=memory&cache=shared", uniuri.New())
 
 	api, err := patchy.NewAPI(dbname)
 	require.NoError(t, err)
 
-	defer api.Close()
+	defer func() {
+		err := api.Shutdown(ctx)
+		require.NoError(t, err)
+	}()
 
 	patchy.Register[testType3](api)
 
@@ -44,12 +54,17 @@ func TestIsSafeSuccess(t *testing.T) {
 func TestIsSafeWithoutWrite(t *testing.T) {
 	t.Parallel()
 
+	ctx := context.Background()
+
 	dbname := fmt.Sprintf("file:%s?mode=memory&cache=shared", uniuri.New())
 
 	api, err := patchy.NewAPI(dbname)
 	require.NoError(t, err)
 
-	defer api.Close()
+	defer func() {
+		err := api.Shutdown(ctx)
+		require.NoError(t, err)
+	}()
 
 	require.NoError(t, api.IsSafe())
 
@@ -61,12 +76,17 @@ func TestIsSafeWithoutWrite(t *testing.T) {
 func TestIsSafeWithoutRead(t *testing.T) {
 	t.Parallel()
 
+	ctx := context.Background()
+
 	dbname := fmt.Sprintf("file:%s?mode=memory&cache=shared", uniuri.New())
 
 	api, err := patchy.NewAPI(dbname)
 	require.NoError(t, err)
 
-	defer api.Close()
+	defer func() {
+		err := api.Shutdown(ctx)
+		require.NoError(t, err)
+	}()
 
 	require.NoError(t, api.IsSafe())
 
@@ -78,12 +98,17 @@ func TestIsSafeWithoutRead(t *testing.T) {
 func TestCheckSafeSuccess(t *testing.T) {
 	t.Parallel()
 
+	ctx := context.Background()
+
 	dbname := fmt.Sprintf("file:%s?mode=memory&cache=shared", uniuri.New())
 
 	api, err := patchy.NewAPI(dbname)
 	require.NoError(t, err)
 
-	defer api.Close()
+	defer func() {
+		err := api.Shutdown(ctx)
+		require.NoError(t, err)
+	}()
 
 	patchy.Register[testType3](api)
 
@@ -93,12 +118,17 @@ func TestCheckSafeSuccess(t *testing.T) {
 func TestCheckSafeWithoutWrite(t *testing.T) {
 	t.Parallel()
 
+	ctx := context.Background()
+
 	dbname := fmt.Sprintf("file:%s?mode=memory&cache=shared", uniuri.New())
 
 	api, err := patchy.NewAPI(dbname)
 	require.NoError(t, err)
 
-	defer api.Close()
+	defer func() {
+		err := api.Shutdown(ctx)
+		require.NoError(t, err)
+	}()
 
 	require.NotPanics(t, api.CheckSafe)
 
@@ -110,12 +140,17 @@ func TestCheckSafeWithoutWrite(t *testing.T) {
 func TestCheckSafeWithoutRead(t *testing.T) {
 	t.Parallel()
 
+	ctx := context.Background()
+
 	dbname := fmt.Sprintf("file:%s?mode=memory&cache=shared", uniuri.New())
 
 	api, err := patchy.NewAPI(dbname)
 	require.NoError(t, err)
 
-	defer api.Close()
+	defer func() {
+		err := api.Shutdown(ctx)
+		require.NoError(t, err)
+	}()
 
 	require.NotPanics(t, api.CheckSafe)
 

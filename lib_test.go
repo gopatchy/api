@@ -284,7 +284,6 @@ func (ta *testAPI) shutdown(t *testing.T) {
 	err := ta.api.Shutdown(context.Background())
 	require.NoError(t, err)
 
-	ta.api.Close()
 	ta.proxy.Close()
 }
 
