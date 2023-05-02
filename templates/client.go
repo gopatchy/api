@@ -122,13 +122,18 @@ func (c *Client) SetBaseURL(baseURL string) *Client {
 	return c
 }
 
+func (c *Client) SetDebug(debug bool) *Client {
+	c.rst.SetDebug(debug)
+	return c
+}
+
 func (c *Client) SetTLSClientConfig(cfg *tls.Config) *Client {
 	c.rst.SetTLSClientConfig(cfg)
 	return c
 }
 
-func (c *Client) SetDebug(debug bool) *Client {
-	c.rst.SetDebug(debug)
+func (c *Client) SetCloseConnection(cl bool) *Client {
+	c.rst.SetCloseConnection(cl)
 	return c
 }
 
