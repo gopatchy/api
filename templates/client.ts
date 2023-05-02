@@ -61,7 +61,13 @@ export class Client {
 		this.baseURL = new URL(baseURL, globalThis?.location?.href);
 	}
 
+	setBaseURL(baseURL: string)  {
+		this.baseURL = new URL(baseURL, globalThis?.location?.href);
+	}
+
 	// Skipped: setDebug()
+	// Skipped: setTLSClientConfig()
+	// Skipped: setCloseConnection()
 
 	setHeader(name: string, value: string) {
 		this.headers.set(name, value)
