@@ -76,6 +76,11 @@ func (api *API) registerTemplates() {
 
 func (api *API) writeTemplate(name string) func(http.ResponseWriter, *http.Request, httprouter.Params) {
 	return func(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
+		api.info(
+			r.Context(), "template",
+			"template", name,
+		)
+
 		input := &templateInput{
 			Info:       api.openAPI.info,
 			Form:       r.Form,

@@ -7,6 +7,12 @@ import (
 )
 
 func (api *API) patch(cfg *config, id string, w http.ResponseWriter, r *http.Request) error {
+	api.info(
+		r.Context(), "update",
+		"type", cfg.apiName,
+		"id", id,
+	)
+
 	patch := map[string]any{}
 	opts := parseUpdateOpts(r)
 

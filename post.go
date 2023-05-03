@@ -7,6 +7,11 @@ import (
 )
 
 func (api *API) post(cfg *config, w http.ResponseWriter, r *http.Request) error {
+	api.info(
+		r.Context(), "create",
+		"type", cfg.apiName,
+	)
+
 	obj := cfg.factory()
 
 	err := jsrest.Read(r, obj)

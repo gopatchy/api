@@ -38,6 +38,8 @@ type TLSInfo struct {
 }
 
 func (api *API) handleDebug(w http.ResponseWriter, r *http.Request) {
+	api.info(r.Context(), "debug")
+
 	w.Header().Add("Content-Type", "application/json")
 
 	enc := json.NewEncoder(w)

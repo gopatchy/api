@@ -14,6 +14,12 @@ import (
 func (api *API) streamList(cfg *config, w http.ResponseWriter, r *http.Request) error {
 	ctx := r.Context()
 
+	api.info(
+		ctx, "list",
+		"type", cfg.apiName,
+		"stream", true,
+	)
+
 	if _, ok := w.(http.Flusher); !ok {
 		return jsrest.Errorf(jsrest.ErrBadRequest, "stream failed (%w)", ErrStreamingNotSupported)
 	}

@@ -264,6 +264,7 @@ func newTestAPIInt(t *testing.T, api *patchy.API, scheme string) *testAPI {
 		SetBaseURL(ret.baseURL)
 
 	if os.Getenv("PATCHY_DEBUG") != "" {
+		ret.api.AddStderrLogger()
 		ret.rst.SetDebug(true)
 	}
 

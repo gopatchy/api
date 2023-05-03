@@ -7,6 +7,7 @@ import (
 
 	"github.com/gopatchy/header"
 	"github.com/gopatchy/jsrest"
+	"github.com/gopatchy/metadata"
 	"github.com/gopatchy/path"
 )
 
@@ -45,6 +46,11 @@ func authBearer[T any](_ http.ResponseWriter, r *http.Request, api *API, name, p
 	if err != nil {
 		return nil, jsrest.Errorf(jsrest.ErrInternalServerError, "clear token failed (%w)", err)
 	}
+
+	api.info(
+		r.Context(), "authBearer",
+		"tokenID", metadata.GetMetadata(bearer).ID,
+	)
 
 	return r.WithContext(context.WithValue(r.Context(), ContextAuthBearer, bearer)), nil
 }

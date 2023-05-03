@@ -10,6 +10,13 @@ import (
 )
 
 func (api *API) getObject(cfg *config, id string, w http.ResponseWriter, r *http.Request) error {
+	api.info(
+		r.Context(), "get",
+		"type", cfg.apiName,
+		"id", id,
+		"stream", false,
+	)
+
 	opts := parseGetOpts(r)
 
 	obj, err := api.getInt(r.Context(), cfg, id)

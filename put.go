@@ -7,6 +7,12 @@ import (
 )
 
 func (api *API) put(cfg *config, id string, w http.ResponseWriter, r *http.Request) error {
+	api.info(
+		r.Context(), "replace",
+		"type", cfg.apiName,
+		"id", id,
+	)
+
 	replace := cfg.factory()
 	opts := parseUpdateOpts(r)
 

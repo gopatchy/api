@@ -7,6 +7,7 @@ import (
 
 	"github.com/gopatchy/header"
 	"github.com/gopatchy/jsrest"
+	"github.com/gopatchy/metadata"
 	"github.com/gopatchy/path"
 	"golang.org/x/crypto/bcrypt"
 )
@@ -68,6 +69,11 @@ func authBasic[T any](_ http.ResponseWriter, r *http.Request, api *API, name, pa
 			if err != nil {
 				return nil, jsrest.Errorf(jsrest.ErrInternalServerError, "clear user password hash failed (%w)", err)
 			}
+
+			api.info(
+				r.Context(), "authBasic",
+				"userID", metadata.GetMetadata(user).ID,
+			)
 
 			return r.WithContext(context.WithValue(r.Context(), ContextAuthBasic, user)), nil
 		}

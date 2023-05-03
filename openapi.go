@@ -27,6 +27,8 @@ func (api *API) SetOpenAPIInfo(info *OpenAPIInfo) {
 }
 
 func (api *API) handleOpenAPI(w http.ResponseWriter, r *http.Request) {
+	api.info(r.Context(), "openapi")
+
 	err := api.handleOpenAPIInt(w, r)
 	if err != nil {
 		jsrest.WriteError(w, err)
