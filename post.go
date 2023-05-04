@@ -7,10 +7,10 @@ import (
 )
 
 func (api *API) post(cfg *config, w http.ResponseWriter, r *http.Request) error {
-	api.info(
-		r.Context(), "create",
-		"type", cfg.apiName,
-	)
+	ctx := r.Context()
+
+	api.AddEventData(ctx, "name", "create")
+	api.AddEventData(ctx, "service.name", cfg.apiName)
 
 	obj := cfg.factory()
 
@@ -19,7 +19,7 @@ func (api *API) post(cfg *config, w http.ResponseWriter, r *http.Request) error 
 		return jsrest.Errorf(jsrest.ErrInternalServerError, "read request failed (%w)", err)
 	}
 
-	created, err := api.createInt(r.Context(), cfg, obj)
+	created, err := api.createInt(ctx, cfg, obj)
 	if err != nil {
 		return jsrest.Errorf(jsrest.ErrInternalServerError, "create failed (%w)", err)
 	}

@@ -17,12 +17,10 @@ var ErrStreamingNotSupported = errors.New("streaming not supported")
 func (api *API) streamGet(cfg *config, id string, w http.ResponseWriter, r *http.Request) error {
 	ctx := r.Context()
 
-	api.info(
-		ctx, "get",
-		"type", cfg.apiName,
-		"id", id,
-		"stream", true,
-	)
+	api.AddEventData(ctx, "name", "get")
+	api.AddEventData(ctx, "service.name", cfg.apiName)
+	api.AddEventData(ctx, "id", id)
+	api.AddEventData(ctx, "stream", true)
 
 	opts := parseGetOpts(r)
 
@@ -50,7 +48,9 @@ func (api *API) streamGet(cfg *config, id string, w http.ResponseWriter, r *http
 
 func (api *API) streamGetWrite(ctx context.Context, w http.ResponseWriter, ch <-chan any, opts *GetOpts) error {
 	first := true
+
 	ticker := time.NewTicker(5 * time.Second)
+	defer ticker.Stop()
 
 	for {
 		select {

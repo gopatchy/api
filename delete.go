@@ -7,15 +7,15 @@ import (
 )
 
 func (api *API) delete(cfg *config, id string, w http.ResponseWriter, r *http.Request) error {
-	api.info(
-		r.Context(), "delete",
-		"type", cfg.apiName,
-		"id", id,
-	)
+	ctx := r.Context()
+
+	api.AddEventData(ctx, "name", "delete")
+	api.AddEventData(ctx, "service.name", cfg.apiName)
+	api.AddEventData(ctx, "id", id)
 
 	opts := parseUpdateOpts(r)
 
-	err := api.deleteInt(r.Context(), cfg, id, opts)
+	err := api.deleteInt(ctx, cfg, id, opts)
 	if err != nil {
 		return jsrest.Errorf(jsrest.ErrInternalServerError, "delete failed (%w)", err)
 	}

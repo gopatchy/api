@@ -7,11 +7,11 @@ import (
 )
 
 func (api *API) put(cfg *config, id string, w http.ResponseWriter, r *http.Request) error {
-	api.info(
-		r.Context(), "replace",
-		"type", cfg.apiName,
-		"id", id,
-	)
+	ctx := r.Context()
+
+	api.AddEventData(ctx, "name", "replace")
+	api.AddEventData(ctx, "service.name", cfg.apiName)
+	api.AddEventData(ctx, "id", id)
 
 	replace := cfg.factory()
 	opts := parseUpdateOpts(r)
@@ -21,7 +21,7 @@ func (api *API) put(cfg *config, id string, w http.ResponseWriter, r *http.Reque
 		return jsrest.Errorf(jsrest.ErrInternalServerError, "read request failed (%w)", err)
 	}
 
-	replace, err = api.replaceInt(r.Context(), cfg, id, replace, opts)
+	replace, err = api.replaceInt(ctx, cfg, id, replace, opts)
 	if err != nil {
 		return jsrest.Errorf(jsrest.ErrInternalServerError, "replace failed (%w)", err)
 	}

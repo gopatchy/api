@@ -10,16 +10,16 @@ import (
 )
 
 func (api *API) getObject(cfg *config, id string, w http.ResponseWriter, r *http.Request) error {
-	api.info(
-		r.Context(), "get",
-		"type", cfg.apiName,
-		"id", id,
-		"stream", false,
-	)
+	ctx := r.Context()
+
+	api.AddEventData(ctx, "name", "get")
+	api.AddEventData(ctx, "service.name", cfg.apiName)
+	api.AddEventData(ctx, "id", id)
+	api.AddEventData(ctx, "stream", false)
 
 	opts := parseGetOpts(r)
 
-	obj, err := api.getInt(r.Context(), cfg, id)
+	obj, err := api.getInt(ctx, cfg, id)
 	if err != nil {
 		return jsrest.Errorf(jsrest.ErrInternalServerError, "get failed (%w)", err)
 	}

@@ -8,18 +8,18 @@ import (
 )
 
 func (api *API) getList(cfg *config, w http.ResponseWriter, r *http.Request) error {
-	api.info(
-		r.Context(), "list",
-		"type", cfg.apiName,
-		"stream", false,
-	)
+	ctx := r.Context()
+
+	api.AddEventData(ctx, "name", "list")
+	api.AddEventData(ctx, "service.name", cfg.apiName)
+	api.AddEventData(ctx, "stream", false)
 
 	opts, err := api.parseListOpts(r)
 	if err != nil {
 		return jsrest.Errorf(jsrest.ErrBadRequest, "parse list parameters failed (%w)", err)
 	}
 
-	list, err := api.listInt(r.Context(), cfg, opts)
+	list, err := api.listInt(ctx, cfg, opts)
 	if err != nil {
 		return jsrest.Errorf(jsrest.ErrInternalServerError, "list failed (%w)", err)
 	}

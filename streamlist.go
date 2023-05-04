@@ -14,11 +14,9 @@ import (
 func (api *API) streamList(cfg *config, w http.ResponseWriter, r *http.Request) error {
 	ctx := r.Context()
 
-	api.info(
-		ctx, "list",
-		"type", cfg.apiName,
-		"stream", true,
-	)
+	api.AddEventData(ctx, "name", "list")
+	api.AddEventData(ctx, "service.name", cfg.apiName)
+	api.AddEventData(ctx, "stream", true)
 
 	if _, ok := w.(http.Flusher); !ok {
 		return jsrest.Errorf(jsrest.ErrBadRequest, "stream failed (%w)", ErrStreamingNotSupported)
@@ -63,6 +61,8 @@ func (api *API) streamListFull(ctx context.Context, cfg *config, w http.Response
 	defer lsi.Close()
 
 	ticker := time.NewTicker(5 * time.Second)
+	defer ticker.Stop()
+
 	ifNoneMatch := opts.IfNoneMatch
 	previousETag := ""
 

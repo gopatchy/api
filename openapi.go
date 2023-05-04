@@ -27,7 +27,9 @@ func (api *API) SetOpenAPIInfo(info *OpenAPIInfo) {
 }
 
 func (api *API) handleOpenAPI(w http.ResponseWriter, r *http.Request) {
-	api.info(r.Context(), "openapi")
+	ctx := r.Context()
+
+	api.AddEventData(ctx, "name", "openapi")
 
 	err := api.handleOpenAPIInt(w, r)
 	if err != nil {

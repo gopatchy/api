@@ -7,11 +7,11 @@ import (
 )
 
 func (api *API) patch(cfg *config, id string, w http.ResponseWriter, r *http.Request) error {
-	api.info(
-		r.Context(), "update",
-		"type", cfg.apiName,
-		"id", id,
-	)
+	ctx := r.Context()
+
+	api.AddEventData(ctx, "name", "update")
+	api.AddEventData(ctx, "service.name", cfg.apiName)
+	api.AddEventData(ctx, "id", id)
 
 	patch := map[string]any{}
 	opts := parseUpdateOpts(r)
@@ -21,7 +21,7 @@ func (api *API) patch(cfg *config, id string, w http.ResponseWriter, r *http.Req
 		return jsrest.Errorf(jsrest.ErrInternalServerError, "read request failed (%w)", err)
 	}
 
-	obj, err := api.updateInt(r.Context(), cfg, id, patch, opts)
+	obj, err := api.updateInt(ctx, cfg, id, patch, opts)
 	if err != nil {
 		return jsrest.Errorf(jsrest.ErrInternalServerError, "update failed (%w)", err)
 	}

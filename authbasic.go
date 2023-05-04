@@ -13,6 +13,8 @@ import (
 )
 
 func authBasic[T any](_ http.ResponseWriter, r *http.Request, api *API, name, pathUser, pathPass string) (*http.Request, error) {
+	ctx := r.Context()
+
 	scheme, val := header.ParseAuthorization(r)
 
 	if strings.ToLower(scheme) != "basic" {
@@ -25,7 +27,7 @@ func authBasic[T any](_ http.ResponseWriter, r *http.Request, api *API, name, pa
 	}
 
 	users, err := ListName[T](
-		context.WithValue(r.Context(), ContextAuthBasicLookup, true),
+		context.WithValue(ctx, ContextAuthBasicLookup, true),
 		api,
 		name,
 		&ListOpts{
@@ -70,12 +72,10 @@ func authBasic[T any](_ http.ResponseWriter, r *http.Request, api *API, name, pa
 				return nil, jsrest.Errorf(jsrest.ErrInternalServerError, "clear user password hash failed (%w)", err)
 			}
 
-			api.info(
-				r.Context(), "authBasic",
-				"userID", metadata.GetMetadata(user).ID,
-			)
+			api.AddEventData(ctx, "auth", "basic")
+			api.AddEventData(ctx, "user", metadata.GetMetadata(user).ID)
 
-			return r.WithContext(context.WithValue(r.Context(), ContextAuthBasic, user)), nil
+			return r.WithContext(context.WithValue(ctx, ContextAuthBasic, user)), nil
 		}
 	}
 

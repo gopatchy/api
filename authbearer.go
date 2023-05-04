@@ -12,6 +12,8 @@ import (
 )
 
 func authBearer[T any](_ http.ResponseWriter, r *http.Request, api *API, name, pathToken string) (*http.Request, error) {
+	ctx := r.Context()
+
 	scheme, val := header.ParseAuthorization(r)
 
 	if strings.ToLower(scheme) != "bearer" {
@@ -19,7 +21,7 @@ func authBearer[T any](_ http.ResponseWriter, r *http.Request, api *API, name, p
 	}
 
 	bearers, err := ListName[T](
-		context.WithValue(r.Context(), ContextAuthBearerLookup, true),
+		context.WithValue(ctx, ContextAuthBearerLookup, true),
 		api,
 		name,
 		&ListOpts{
@@ -47,12 +49,10 @@ func authBearer[T any](_ http.ResponseWriter, r *http.Request, api *API, name, p
 		return nil, jsrest.Errorf(jsrest.ErrInternalServerError, "clear token failed (%w)", err)
 	}
 
-	api.info(
-		r.Context(), "authBearer",
-		"tokenID", metadata.GetMetadata(bearer).ID,
-	)
+	api.AddEventData(ctx, "auth", "bearer")
+	api.AddEventData(ctx, "token", metadata.GetMetadata(bearer).ID)
 
-	return r.WithContext(context.WithValue(r.Context(), ContextAuthBearer, bearer)), nil
+	return r.WithContext(context.WithValue(ctx, ContextAuthBearer, bearer)), nil
 }
 
 func AddAuthBearerName[T any](api *API, name, pathToken string) {

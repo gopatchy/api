@@ -38,7 +38,9 @@ type TLSInfo struct {
 }
 
 func (api *API) handleDebug(w http.ResponseWriter, r *http.Request) {
-	api.info(r.Context(), "debug")
+	ctx := r.Context()
+
+	api.AddEventData(ctx, "name", "debug")
 
 	w.Header().Add("Content-Type", "application/json")
 

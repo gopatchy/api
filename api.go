@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"net"
 	"net/http"
-	"os"
 	"reflect"
 	"sort"
 	"strings"
@@ -24,7 +23,6 @@ import (
 	"github.com/gopatchy/storebus"
 	"github.com/julienschmidt/httprouter"
 	"github.com/vfaronov/httpheader"
-	"golang.org/x/exp/slog"
 )
 
 type API struct {
@@ -36,12 +34,9 @@ type API struct {
 	listener net.Listener
 	srv      *http.Server
 
-	openAPI openAPI
-
-	prefix string
-
-	baseContext atomic.Value
-
+	openAPI      openAPI
+	prefix       string
+	baseContext  atomic.Value
 	requestHooks []RequestHook
 
 	authBasic  bool
@@ -50,7 +45,7 @@ type API struct {
 	contextValues   map[any]any
 	contextValuesMu sync.RWMutex
 
-	loggers []*slog.Logger
+	eventState eventState
 }
 
 type (
@@ -65,7 +60,9 @@ var (
 )
 
 const (
-	ContextAuthBasicLookup ContextKey = iota
+	ContextStub ContextKey = iota
+
+	ContextAuthBasicLookup
 	ContextAuthBearerLookup
 	ContextReplicate
 
@@ -75,9 +72,8 @@ const (
 	ContextWriteID
 	ContextWriteGeneration
 
-	ContextStub
-
 	ContextSpanID
+	ContextEventData
 )
 
 func NewAPI(dbname string) (*API, error) {
@@ -221,14 +217,6 @@ func (api *API) ServeFiles(path string, fs http.FileSystem) {
 	api.router.ServeFiles(path, fs)
 }
 
-func (api *API) AddLogger(logger *slog.Logger) {
-	api.loggers = append(api.loggers, logger)
-}
-
-func (api *API) AddStderrLogger() {
-	api.AddLogger(slog.New(slog.NewTextHandler(os.Stderr)))
-}
-
 func (api *API) ListenSelfCert(bind string) error {
 	tlsConfig, err := selfcert.NewTLSConfigFromHostPort(bind)
 	if err != nil {
@@ -297,6 +285,7 @@ func (api *API) Shutdown(ctx context.Context) error {
 		return err
 	}
 
+	api.closeEventTargets()
 	api.sb.Close()
 
 	return nil
@@ -309,6 +298,7 @@ func (api *API) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	spanID := uniuri.New()
 
 	ctx = context.WithValue(ctx, ContextSpanID, spanID)
+	ctx = context.WithValue(ctx, ContextEventData, map[string]any{})
 
 	{
 		api.contextValuesMu.RLock()
@@ -327,26 +317,7 @@ func (api *API) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		jsrest.WriteError(w, err)
 	}
 
-	code := 200
-
-	if err != nil {
-		hErr := jsrest.GetHTTPError(err)
-		if hErr != nil {
-			code = hErr.Code
-		}
-	}
-
-	api.info(
-		ctx, "http",
-		"proto", r.Proto,
-		"host", r.Host,
-		"method", r.Method,
-		"path", r.URL.Path,
-		"remoteAddr", r.RemoteAddr,
-		"code", code,
-		"error", err,
-		"durationMS", time.Since(start).Milliseconds(),
-	)
+	api.writeEvent(ctx, r, err, start)
 }
 
 func (api *API) serveHTTP(w http.ResponseWriter, r *http.Request) error {
@@ -481,22 +452,6 @@ func (api *API) names() []string {
 	sort.Strings(names)
 
 	return names
-}
-
-func (api *API) log(ctx context.Context, level slog.Level, msg string, args ...any) {
-	spanID := ctx.Value(ContextSpanID)
-
-	if spanID != nil {
-		args = append(args, "spanID", spanID.(string))
-	}
-
-	for _, logger := range api.loggers {
-		logger.Log(ctx, level, msg, args...)
-	}
-}
-
-func (api *API) info(ctx context.Context, msg string, args ...any) {
-	api.log(ctx, slog.LevelInfo, msg, args...)
 }
 
 func apiName[T any]() string {
