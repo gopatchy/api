@@ -95,6 +95,9 @@ func NewAPI(dbname string) (*API, error) {
 			ReadHeaderTimeout: 30 * time.Second,
 		},
 		contextValues: map[any]any{},
+		eventState: eventState{
+			baseEventData: map[string]any{},
+		},
 	}
 
 	api.SetBaseContext(context.Background())
@@ -296,9 +299,20 @@ func (api *API) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	start := time.Now()
 	spanID := uniuri.New()
+	eventData := map[string]any{}
+
+	{
+		api.eventState.mu.Lock()
+
+		for k, v := range api.eventState.baseEventData {
+			eventData[k] = v
+		}
+
+		api.eventState.mu.Unlock()
+	}
 
 	ctx = context.WithValue(ctx, ContextSpanID, spanID)
-	ctx = context.WithValue(ctx, ContextEventData, map[string]any{})
+	ctx = context.WithValue(ctx, ContextEventData, eventData)
 
 	{
 		api.contextValuesMu.RLock()

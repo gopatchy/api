@@ -13,6 +13,8 @@ import (
 )
 
 type eventState struct {
+	baseEventData map[string]any
+
 	targets []*eventTarget
 
 	lastEvent              time.Time
@@ -28,6 +30,7 @@ type eventTarget struct {
 	writePeriodSeconds float64
 	done               chan bool
 
+	// TODO: Remove double locking
 	events   []*event
 	eventsMu sync.Mutex
 }
@@ -40,6 +43,7 @@ type event struct {
 
 func (api *API) AddEventTarget(url string, headers map[string]string, eventsPerSecond, writePeriodSeconds float64) {
 	target := &eventTarget{
+		// TODO: Enable compression
 		client:             resty.New().SetBaseURL(url).SetHeaders(headers),
 		eventsPerSecond:    eventsPerSecond,
 		writePeriodSeconds: writePeriodSeconds,
@@ -52,6 +56,22 @@ func (api *API) AddEventTarget(url string, headers map[string]string, eventsPerS
 	defer api.eventState.mu.Unlock()
 
 	api.eventState.targets = append(api.eventState.targets, target)
+}
+
+func (api *API) AddBaseEventData(k string, v any) {
+	api.eventState.mu.Lock()
+	defer api.eventState.mu.Unlock()
+
+	api.eventState.baseEventData[k] = v
+}
+
+func (api *API) AddEventData(ctx context.Context, k string, v any) {
+	data := ctx.Value(ContextEventData)
+	if data == nil {
+		return
+	}
+
+	data.(map[string]any)[k] = v
 }
 
 func (api *API) closeEventTargets() {
@@ -120,6 +140,8 @@ func (api *API) buildEvent(ctx context.Context, r *http.Request, err error, star
 		},
 	}
 
+	// TODO: Add process metrics (CPU, memory, IO?)
+
 	if err != nil {
 		hErr := jsrest.GetHTTPError(err)
 		if hErr != nil {
@@ -144,15 +166,6 @@ func (api *API) buildEvent(ctx context.Context, r *http.Request, err error, star
 	}
 
 	return ev
-}
-
-func (api *API) AddEventData(ctx context.Context, k string, v any) {
-	data := ctx.Value(ContextEventData)
-	if data == nil {
-		return
-	}
-
-	data.(map[string]any)[k] = v
 }
 
 func (target *eventTarget) writeLoop() {
