@@ -5,8 +5,12 @@ import (
 	"log"
 	"math/rand"
 	"net/http"
+	"runtime/metrics"
+	"strings"
 	"sync"
+	"syscall"
 	"time"
+	"unicode"
 
 	"github.com/go-resty/resty/v2"
 	"github.com/gopatchy/jsrest"
@@ -151,6 +155,9 @@ func (api *API) buildEvent(ctx context.Context, r *http.Request, err error, star
 		ev.Data["spanID"] = spanID.(string)
 	}
 
+	ev.addMetrics()
+	ev.addRUsage()
+
 	data := ctx.Value(ContextEventData)
 
 	if data != nil {
@@ -198,4 +205,62 @@ func (target *eventTarget) write(es *eventState) {
 	if resp.IsError() {
 		log.Printf("HTTP %d %s: %s", resp.StatusCode(), resp.Status(), resp.String())
 	}
+}
+
+func (ev *event) addMetrics() {
+	descs := metrics.All()
+
+	samples := make([]metrics.Sample, len(descs))
+	for i := range samples {
+		samples[i].Name = descs[i].Name
+	}
+
+	metrics.Read(samples)
+
+	for _, sample := range samples {
+		name := convertMetricName(sample.Name)
+
+		switch sample.Value.Kind() { //nolint:exhaustive
+		case metrics.KindUint64:
+			ev.Data[name] = sample.Value.Uint64()
+		case metrics.KindFloat64:
+			ev.Data[name] = sample.Value.Float64()
+		}
+	}
+}
+
+func (ev *event) addRUsage() {
+	rusage := &syscall.Rusage{}
+
+	err := syscall.Getrusage(syscall.RUSAGE_SELF, rusage)
+	if err != nil {
+		panic(err)
+	}
+
+	ev.Data["rUsageUTime"] = time.Duration(rusage.Utime.Nano()).Seconds()
+	ev.Data["rUsageSTime"] = time.Duration(rusage.Stime.Nano()).Seconds()
+}
+
+func convertMetricName(in string) string {
+	upperNext := false
+
+	in = strings.TrimLeft(in, "/")
+
+	ret := strings.Builder{}
+
+	for _, r := range in {
+		if !unicode.IsLetter(r) && !unicode.IsDigit(r) {
+			upperNext = true
+			continue
+		}
+
+		if upperNext {
+			r = unicode.ToUpper(r)
+			upperNext = false
+		}
+
+		ret.WriteRune(r)
+	}
+
+	return ret.String()
 }
