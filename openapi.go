@@ -29,7 +29,7 @@ func (api *API) SetOpenAPIInfo(info *OpenAPIInfo) {
 func (api *API) handleOpenAPI(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
-	api.AddEventData(ctx, "name", "openapi")
+	api.AddEventData(ctx, "operation", "openapi")
 
 	err := api.handleOpenAPIInt(w, r)
 	if err != nil {

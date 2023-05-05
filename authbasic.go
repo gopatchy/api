@@ -72,8 +72,8 @@ func authBasic[T any](_ http.ResponseWriter, r *http.Request, api *API, name, pa
 				return nil, jsrest.Errorf(jsrest.ErrInternalServerError, "clear user password hash failed (%w)", err)
 			}
 
-			api.AddEventData(ctx, "auth", "basic")
-			api.AddEventData(ctx, "user", metadata.GetMetadata(user).ID)
+			api.AddEventData(ctx, "authMethod", "basic")
+			api.AddEventData(ctx, "userID", metadata.GetMetadata(user).ID)
 
 			return r.WithContext(context.WithValue(ctx, ContextAuthBasic, user)), nil
 		}
@@ -88,6 +88,8 @@ func AddAuthBasicName[T any](api *API, name, pathUser, pathPass string) {
 	})
 
 	api.authBasic = true
+	api.AddBaseEventData("authMethod", "")
+	api.AddBaseEventData("userID", "")
 }
 
 func AddAuthBasic[T any](api *API, pathUser, pathPass string) {

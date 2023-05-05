@@ -9,8 +9,8 @@ import (
 func (api *API) put(cfg *config, id string, w http.ResponseWriter, r *http.Request) error {
 	ctx := r.Context()
 
-	api.AddEventData(ctx, "name", "replace")
-	api.AddEventData(ctx, "service.name", cfg.apiName)
+	api.AddEventData(ctx, "operation", "replace")
+	api.AddEventData(ctx, "typeName", cfg.apiName)
 	api.AddEventData(ctx, "id", id)
 
 	replace := cfg.factory()

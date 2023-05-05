@@ -129,14 +129,15 @@ func (api *API) buildEvent(ctx context.Context, r *http.Request, err error, star
 	ev := &event{
 		Time: time.Now().Format(time.RFC3339Nano),
 		Data: map[string]any{
-			"proto":                r.Proto,
-			"host":                 r.Host,
-			"method":               r.Method,
-			"route":                r.URL.Path,
-			"remote_addr":          r.RemoteAddr,
-			"response.status_code": 200,
-			"error":                nil,
-			"duration_ms":          time.Since(start).Milliseconds(),
+			"httpProto":     r.Proto,
+			"requestHost":   r.Host,
+			"requestMethod": r.Method,
+			"requestPath":   r.URL.Path,
+			"remoteAddr":    r.RemoteAddr,
+			"responseCode":  200,
+			"responseError": "",
+			"durationMS":    time.Since(start).Milliseconds(),
+			"spanID":        "",
 		},
 	}
 
@@ -145,16 +146,16 @@ func (api *API) buildEvent(ctx context.Context, r *http.Request, err error, star
 	if err != nil {
 		hErr := jsrest.GetHTTPError(err)
 		if hErr != nil {
-			ev.Data["response.status_code"] = hErr.Code
+			ev.Data["responseCode"] = hErr.Code
 		}
 
-		ev.Data["error"] = err.Error()
+		ev.Data["responseError"] = err.Error()
 	}
 
 	spanID := ctx.Value(ContextSpanID)
 
 	if spanID != nil {
-		ev.Data["trace.span_id"] = spanID.(string)
+		ev.Data["spanID"] = spanID.(string)
 	}
 
 	data := ctx.Value(ContextEventData)

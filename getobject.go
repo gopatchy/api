@@ -12,8 +12,8 @@ import (
 func (api *API) getObject(cfg *config, id string, w http.ResponseWriter, r *http.Request) error {
 	ctx := r.Context()
 
-	api.AddEventData(ctx, "name", "get")
-	api.AddEventData(ctx, "service.name", cfg.apiName)
+	api.AddEventData(ctx, "operation", "get")
+	api.AddEventData(ctx, "typeName", cfg.apiName)
 	api.AddEventData(ctx, "id", id)
 	api.AddEventData(ctx, "stream", false)
 

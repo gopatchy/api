@@ -49,8 +49,8 @@ func authBearer[T any](_ http.ResponseWriter, r *http.Request, api *API, name, p
 		return nil, jsrest.Errorf(jsrest.ErrInternalServerError, "clear token failed (%w)", err)
 	}
 
-	api.AddEventData(ctx, "auth", "bearer")
-	api.AddEventData(ctx, "token", metadata.GetMetadata(bearer).ID)
+	api.AddEventData(ctx, "authMethod", "bearer")
+	api.AddEventData(ctx, "tokenID", metadata.GetMetadata(bearer).ID)
 
 	return r.WithContext(context.WithValue(ctx, ContextAuthBearer, bearer)), nil
 }
@@ -61,6 +61,8 @@ func AddAuthBearerName[T any](api *API, name, pathToken string) {
 	})
 
 	api.authBearer = true
+	api.AddBaseEventData("authMethod", "")
+	api.AddBaseEventData("tokenID", "")
 }
 
 func AddAuthBearer[T any](api *API, pathToken string) {

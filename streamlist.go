@@ -14,8 +14,8 @@ import (
 func (api *API) streamList(cfg *config, w http.ResponseWriter, r *http.Request) error {
 	ctx := r.Context()
 
-	api.AddEventData(ctx, "name", "list")
-	api.AddEventData(ctx, "service.name", cfg.apiName)
+	api.AddEventData(ctx, "operation", "list")
+	api.AddEventData(ctx, "typeName", cfg.apiName)
 	api.AddEventData(ctx, "stream", true)
 
 	if _, ok := w.(http.Flusher); !ok {
