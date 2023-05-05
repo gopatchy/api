@@ -3,6 +3,7 @@ package patchy
 import (
 	"context"
 	"log"
+	"math"
 	"math/rand"
 	"net/http"
 	"runtime/metrics"
@@ -84,6 +85,8 @@ func (api *API) closeEventTargets() {
 }
 
 func (api *API) writeEvent(ctx context.Context, r *http.Request, err error, start time.Time) {
+	// TODO: Expose this to clients
+	// TODO: Take an event type; not all events are queries
 	ev := api.buildEvent(ctx, r, err, start)
 	rnd := rand.Float64() //nolint:gosec
 
@@ -99,7 +102,7 @@ func (api *API) writeEvent(ctx context.Context, r *http.Request, err error, star
 
 		if rnd < prob {
 			ev2 := *ev
-			ev2.SampleRate = int64(1 / prob)
+			ev2.SampleRate = int64(math.Round(1 / prob))
 			target.events = append(target.events, &ev2)
 		}
 	}
@@ -154,6 +157,7 @@ func (api *API) buildEvent(ctx context.Context, r *http.Request, err error, star
 	ev.addMetrics()
 	ev.addRUsage()
 
+	// TODO: Replace ContextEventData, metrics, rusage with event data hooks
 	data := ctx.Value(ContextEventData)
 
 	if data != nil {
