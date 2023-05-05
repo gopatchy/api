@@ -3,14 +3,14 @@ module github.com/gopatchy/patchy
 go 1.19
 
 require (
-	cloud.google.com/go v0.110.0
+	cloud.google.com/go v0.110.1
 	github.com/dchest/uniuri v1.2.0
 	github.com/getkin/kin-openapi v0.116.0
 	github.com/go-resty/resty/v2 v2.7.0
 	github.com/gopatchy/header v0.0.0-20230430231118-c7818e9e2b67
 	github.com/gopatchy/jsrest v0.0.0-20230430221623-9f19b9d8dace
 	github.com/gopatchy/metadata v0.0.0-20230424223338-33e58fee42bf
-	github.com/gopatchy/path v0.0.0-20230430231142-6d3cf63bb609
+	github.com/gopatchy/path v0.0.0-20230505055749-b787868754cc
 	github.com/gopatchy/potency v0.0.0-20230430231153-d71eb284ae4d
 	github.com/gopatchy/proxy v0.0.0-20230425224044-bfe64d67fcae
 	github.com/gopatchy/selfcert v0.0.0-20230424223354-2910841ecc96
