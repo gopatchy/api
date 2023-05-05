@@ -138,8 +138,6 @@ func (api *API) buildEvent(ctx context.Context, r *http.Request, err error, star
 		},
 	}
 
-	// TODO: Add process metrics (CPU, memory, IO?)
-
 	if err != nil {
 		hErr := jsrest.GetHTTPError(err)
 		if hErr != nil {
