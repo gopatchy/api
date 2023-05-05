@@ -132,9 +132,7 @@ func (api *API) buildEvent(ctx context.Context, r *http.Request, err error, star
 			"requestPath":   r.URL.Path,
 			"remoteAddr":    r.RemoteAddr,
 			"responseCode":  200,
-			"responseError": "",
 			"durationMS":    time.Since(start).Milliseconds(),
-			"spanID":        "",
 		},
 	}
 
