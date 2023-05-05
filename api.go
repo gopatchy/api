@@ -104,12 +104,6 @@ func NewAPI(dbname string) (*API, error) {
 
 	api.SetBaseContext(context.Background())
 
-	api.AddBaseEventData("id", "")
-	api.AddBaseEventData("operation", "")
-	api.AddBaseEventData("stream", false)
-	api.AddBaseEventData("template", "")
-	api.AddBaseEventData("typeName", "")
-
 	buildInfo, ok := debug.ReadBuildInfo()
 	if !ok {
 		return nil, ErrBuildInfoFailed

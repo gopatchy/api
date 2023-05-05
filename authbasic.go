@@ -88,8 +88,6 @@ func AddAuthBasicName[T any](api *API, name, pathUser, pathPass string) {
 	})
 
 	api.authBasic = true
-	api.AddBaseEventData("authMethod", "")
-	api.AddBaseEventData("userID", "")
 }
 
 func AddAuthBasic[T any](api *API, pathUser, pathPass string) {
