@@ -126,6 +126,7 @@ func (api *API) updateEventRates(err error) {
 }
 
 func (api *API) buildEvent(ctx context.Context, r *http.Request, err error, start time.Time) *event {
+	// TODO: Add lastRequestHost for queries & other
 	ev := &event{
 		Time: time.Now().Format(time.RFC3339Nano),
 		Data: map[string]any{
