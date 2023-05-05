@@ -29,10 +29,7 @@ type eventTarget struct {
 	eventsPerSecond    float64
 	writePeriodSeconds float64
 	done               chan bool
-
-	// TODO: Remove double locking
-	events   []*event
-	eventsMu sync.Mutex
+	events             []*event
 }
 
 type event struct {
@@ -43,14 +40,13 @@ type event struct {
 
 func (api *API) AddEventTarget(url string, headers map[string]string, eventsPerSecond, writePeriodSeconds float64) {
 	target := &eventTarget{
-		// TODO: Enable compression
 		client:             resty.New().SetBaseURL(url).SetHeaders(headers),
 		eventsPerSecond:    eventsPerSecond,
 		writePeriodSeconds: writePeriodSeconds,
 		done:               make(chan bool),
 	}
 
-	go target.writeLoop()
+	go target.writeLoop(&api.eventState)
 
 	api.eventState.mu.Lock()
 	defer api.eventState.mu.Unlock()
@@ -100,10 +96,7 @@ func (api *API) writeEvent(ctx context.Context, r *http.Request, err error, star
 		if rnd < prob {
 			ev2 := *ev
 			ev2.SampleRate = int64(1 / prob)
-
-			target.eventsMu.Lock()
 			target.events = append(target.events, &ev2)
-			target.eventsMu.Unlock()
 		}
 	}
 }
@@ -169,27 +162,27 @@ func (api *API) buildEvent(ctx context.Context, r *http.Request, err error, star
 	return ev
 }
 
-func (target *eventTarget) writeLoop() {
+func (target *eventTarget) writeLoop(es *eventState) {
 	t := time.NewTicker(time.Duration(target.writePeriodSeconds * float64(time.Second)))
 	defer t.Stop()
 
 	for {
 		select {
 		case <-target.done:
-			target.write()
+			target.write(es)
 			return
 
 		case <-t.C:
-			target.write()
+			target.write(es)
 		}
 	}
 }
 
-func (target *eventTarget) write() {
-	target.eventsMu.Lock()
+func (target *eventTarget) write(es *eventState) {
+	es.mu.Lock()
 	events := target.events
 	target.events = nil
-	target.eventsMu.Unlock()
+	es.mu.Unlock()
 
 	if len(events) == 0 {
 		return

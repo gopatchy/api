@@ -8,6 +8,7 @@ import (
 	"net"
 	"net/http"
 	"reflect"
+	"runtime/debug"
 	"sort"
 	"strings"
 	"sync"
@@ -55,6 +56,7 @@ type (
 )
 
 var (
+	ErrBuildInfoFailed          = errors.New("failed to read build info")
 	ErrHeaderValueMissingQuotes = errors.New("header missing quotes")
 	ErrUnknownAcceptType        = errors.New("unknown Accept type")
 )
@@ -107,6 +109,15 @@ func NewAPI(dbname string) (*API, error) {
 	api.AddBaseEventData("stream", false)
 	api.AddBaseEventData("template", "")
 	api.AddBaseEventData("typeName", "")
+
+	buildInfo, ok := debug.ReadBuildInfo()
+	if !ok {
+		return nil, ErrBuildInfoFailed
+	}
+
+	api.AddBaseEventData("goVersion", buildInfo.GoVersion)
+	api.AddBaseEventData("goPackagePath", buildInfo.Path)
+	api.AddBaseEventData("goMainModuleVersion", buildInfo.Main.Version)
 
 	api.srv.Handler = api
 
