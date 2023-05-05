@@ -621,7 +621,9 @@ type GetStream[T any] struct {
 }
 
 func (gs *GetStream[T]) Close() {
-	gs.body.Close()
+	if gs.body != nil {
+		gs.body.Close()
+	}
 }
 
 func (gs *GetStream[T]) Chan() <-chan *T {
