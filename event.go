@@ -195,11 +195,13 @@ func (target *eventTarget) write(es *eventState) {
 		SetBody(events).
 		Post("")
 	if err != nil {
-		panic(err)
+		log.Printf("HTTP %s", err)
+		return
 	}
 
 	if resp.IsError() {
 		log.Printf("HTTP %d %s: %s", resp.StatusCode(), resp.Status(), resp.String())
+		return
 	}
 }
 

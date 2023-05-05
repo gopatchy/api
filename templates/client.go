@@ -721,7 +721,10 @@ type ListStream[T any] struct {
 
 func (ls *ListStream[T]) Close() {
 	ls.cancel()
-	ls.body.Close()
+
+	if ls.body != nil {
+		ls.body.Close()
+	}
 }
 
 func (ls *ListStream[T]) Chan() <-chan []*T {
