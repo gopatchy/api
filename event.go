@@ -166,6 +166,8 @@ func (es *eventState) flush(target *EventTarget) {
 		return
 	}
 
+	// TODO: Compress this (going to need some manual ugliness)
+
 	resp, err := target.client.R().
 		SetBody(events).
 		Post("")
