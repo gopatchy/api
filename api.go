@@ -314,7 +314,7 @@ func (api *API) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// TODO: Add lastRequestHost for queries & other
-	ev := api.NewEvent(
+	ev := api.newEvent("httpRequest",
 		"httpProto", r.Proto,
 		"requestHost", r.Host,
 		"requestMethod", r.Method,

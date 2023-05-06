@@ -2,6 +2,7 @@ package patchy
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"math"
 	"math/rand"
@@ -78,13 +79,34 @@ func (api *API) SetEventData(ctx context.Context, vals ...any) {
 	ev.(*Event).Set(vals...)
 }
 
-func (api *API) NewEvent(vals ...any) *Event {
+func (api *API) Log(ctx context.Context, eventType string, vals ...any) {
+	if len(vals)%2 != 0 {
+		panic(vals)
+	}
+
+	ev := api.newEvent(eventType, vals...)
+	api.eventState.WriteEvent(ctx, ev)
+
+	parts := []string{
+		fmt.Sprintf("type=%s", eventType),
+	}
+
+	for i := 0; i < len(vals); i += 2 {
+		parts = append(parts, fmt.Sprintf("%s=%s", vals[i], vals[i+1]))
+	}
+
+	log.Print(strings.Join(parts, " "))
+}
+
+func (api *API) newEvent(eventType string, vals ...any) *Event {
 	now := time.Now()
 
 	ev := &Event{
 		start: now,
 		Time:  now.Format(time.RFC3339Nano),
-		Data:  map[string]any{},
+		Data: map[string]any{
+			"type": eventType,
+		},
 	}
 
 	ev.Set(vals...)
@@ -102,8 +124,6 @@ func (es *eventState) Close() {
 }
 
 func (es *eventState) WriteEvent(ctx context.Context, ev *Event) {
-	// TODO: Expose this to clients
-	// TODO: Take an event type; not all events are queries
 	ev.Set("durationMS", time.Since(ev.start).Milliseconds())
 
 	rnd := rand.Float64() //nolint:gosec
@@ -120,6 +140,7 @@ func (es *eventState) WriteEvent(ctx context.Context, ev *Event) {
 
 	for _, target := range es.targets {
 		// TODO: Reserve some portion for errors if we're over
+		// TODO: Separate rates for successes, errors, logs
 		prob := target.eventsPerSecond / eventsPerSecond
 
 		if rnd < prob {
