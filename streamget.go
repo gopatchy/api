@@ -17,10 +17,12 @@ var ErrStreamingNotSupported = errors.New("streaming not supported")
 func (api *API) streamGet(cfg *config, id string, w http.ResponseWriter, r *http.Request) error {
 	ctx := r.Context()
 
-	api.AddEventData(ctx, "operation", "get")
-	api.AddEventData(ctx, "typeName", cfg.apiName)
-	api.AddEventData(ctx, "id", id)
-	api.AddEventData(ctx, "stream", true)
+	api.SetEventData(ctx,
+		"operation", "get",
+		"typeName", cfg.apiName,
+		"id", id,
+		"stream", true,
+	)
 
 	opts := parseGetOpts(r)
 

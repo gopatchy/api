@@ -10,9 +10,11 @@ import (
 func (api *API) getList(cfg *config, w http.ResponseWriter, r *http.Request) error {
 	ctx := r.Context()
 
-	api.AddEventData(ctx, "operation", "list")
-	api.AddEventData(ctx, "typeName", cfg.apiName)
-	api.AddEventData(ctx, "stream", false)
+	api.SetEventData(ctx,
+		"operation", "list",
+		"typeName", cfg.apiName,
+		"stream", false,
+	)
 
 	opts, err := api.parseListOpts(r)
 	if err != nil {

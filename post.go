@@ -9,8 +9,10 @@ import (
 func (api *API) post(cfg *config, w http.ResponseWriter, r *http.Request) error {
 	ctx := r.Context()
 
-	api.AddEventData(ctx, "operation", "create")
-	api.AddEventData(ctx, "typeName", cfg.apiName)
+	api.SetEventData(ctx,
+		"operation", "create",
+		"typeName", cfg.apiName,
+	)
 
 	obj := cfg.factory()
 

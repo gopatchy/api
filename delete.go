@@ -9,9 +9,11 @@ import (
 func (api *API) delete(cfg *config, id string, w http.ResponseWriter, r *http.Request) error {
 	ctx := r.Context()
 
-	api.AddEventData(ctx, "operation", "delete")
-	api.AddEventData(ctx, "typeName", cfg.apiName)
-	api.AddEventData(ctx, "id", id)
+	api.SetEventData(ctx,
+		"operation", "delete",
+		"typeName", cfg.apiName,
+		"id", id,
+	)
 
 	opts := parseUpdateOpts(r)
 

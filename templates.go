@@ -78,8 +78,10 @@ func (api *API) writeTemplate(name string) func(http.ResponseWriter, *http.Reque
 	return func(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 		ctx := r.Context()
 
-		api.AddEventData(ctx, "operation", "template")
-		api.AddEventData(ctx, "template", name)
+		api.SetEventData(ctx,
+			"operation", "template",
+			"template", name,
+		)
 
 		input := &templateInput{
 			Info:       api.openAPI.info,

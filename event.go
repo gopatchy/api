@@ -5,7 +5,7 @@ import (
 	"log"
 	"math"
 	"math/rand"
-	"net/http"
+	"runtime/debug"
 	"runtime/metrics"
 	"strings"
 	"sync"
@@ -14,13 +14,11 @@ import (
 	"unicode"
 
 	"github.com/go-resty/resty/v2"
-	"github.com/gopatchy/jsrest"
 )
 
 type eventState struct {
-	baseEventData map[string]any
-
 	targets []*eventTarget
+	hooks   []EventHook
 
 	lastEvent              time.Time
 	successEventsPerSecond float64
@@ -34,14 +32,18 @@ type eventTarget struct {
 	eventsPerSecond    float64
 	writePeriodSeconds float64
 	done               chan bool
-	events             []*event
+	events             []*Event
 }
 
-type event struct {
+type Event struct {
+	start time.Time
+
 	Time       string         `json:"time"`
 	SampleRate int64          `json:"samplerate"`
 	Data       map[string]any `json:"data"`
 }
+
+type EventHook func(context.Context, *Event)
 
 func (api *API) AddEventTarget(url string, headers map[string]string, eventsPerSecond, writePeriodSeconds float64) {
 	target := &eventTarget{
@@ -51,7 +53,7 @@ func (api *API) AddEventTarget(url string, headers map[string]string, eventsPerS
 		done:               make(chan bool),
 	}
 
-	go target.writeLoop(&api.eventState)
+	go api.eventState.flushLoop(target)
 
 	api.eventState.mu.Lock()
 	defer api.eventState.mu.Unlock()
@@ -59,44 +61,64 @@ func (api *API) AddEventTarget(url string, headers map[string]string, eventsPerS
 	api.eventState.targets = append(api.eventState.targets, target)
 }
 
-func (api *API) AddBaseEventData(k string, v any) {
+func (api *API) AddEventHook(hook EventHook) {
 	api.eventState.mu.Lock()
 	defer api.eventState.mu.Unlock()
 
-	api.eventState.baseEventData[k] = v
+	api.eventState.hooks = append(api.eventState.hooks, hook)
 }
 
-func (api *API) AddEventData(ctx context.Context, k string, v any) {
-	data := ctx.Value(ContextEventData)
-	if data == nil {
+func (api *API) SetEventData(ctx context.Context, vals ...any) {
+	ev := ctx.Value(ContextEvent)
+
+	if ev == nil {
 		return
 	}
 
-	data.(map[string]any)[k] = v
+	ev.(*Event).Set(vals...)
 }
 
-func (api *API) closeEventTargets() {
-	api.eventState.mu.Lock()
-	defer api.eventState.mu.Unlock()
+func (api *API) NewEvent(vals ...any) *Event {
+	now := time.Now()
 
-	for _, target := range api.eventState.targets {
+	ev := &Event{
+		start: now,
+		Time:  now.Format(time.RFC3339Nano),
+		Data:  map[string]any{},
+	}
+
+	ev.Set(vals...)
+
+	return ev
+}
+
+func (es *eventState) Close() {
+	es.mu.Lock()
+	defer es.mu.Unlock()
+
+	for _, target := range es.targets {
 		close(target.done)
 	}
 }
 
-func (api *API) writeEvent(ctx context.Context, r *http.Request, err error, start time.Time) {
+func (es *eventState) WriteEvent(ctx context.Context, ev *Event) {
 	// TODO: Expose this to clients
 	// TODO: Take an event type; not all events are queries
-	ev := api.buildEvent(ctx, r, err, start)
+	ev.Set("durationMS", time.Since(ev.start).Milliseconds())
+
 	rnd := rand.Float64() //nolint:gosec
 
-	api.eventState.mu.Lock()
-	defer api.eventState.mu.Unlock()
+	es.mu.Lock()
+	defer es.mu.Unlock()
 
-	api.updateEventRates(err)
-	eventsPerSecond := api.eventState.successEventsPerSecond + api.eventState.failureEventsPerSecond
+	for _, hook := range es.hooks {
+		hook(ctx, ev)
+	}
 
-	for _, target := range api.eventState.targets {
+	es.updateEventRates(ev)
+	eventsPerSecond := es.successEventsPerSecond + es.failureEventsPerSecond
+
+	for _, target := range es.targets {
 		// TODO: Reserve some portion for errors if we're over
 		prob := target.eventsPerSecond / eventsPerSecond
 
@@ -108,85 +130,40 @@ func (api *API) writeEvent(ctx context.Context, r *http.Request, err error, star
 	}
 }
 
-func (api *API) updateEventRates(err error) {
-	bucket := &api.eventState.successEventsPerSecond
-	if err != nil {
-		bucket = &api.eventState.failureEventsPerSecond
+func (es *eventState) updateEventRates(ev *Event) {
+	bucket := &es.successEventsPerSecond
+	if ev.Data["responseError"] != nil {
+		bucket = &es.failureEventsPerSecond
 	}
 
 	*bucket++
 
 	now := time.Now()
 
-	if !api.eventState.lastEvent.IsZero() {
-		*bucket /= (now.Sub(api.eventState.lastEvent).Seconds() + 1)
+	if !es.lastEvent.IsZero() {
+		*bucket /= (now.Sub(es.lastEvent).Seconds() + 1)
 	}
 
-	api.eventState.lastEvent = now
+	es.lastEvent = now
 }
 
-func (api *API) buildEvent(ctx context.Context, r *http.Request, err error, start time.Time) *event {
-	// TODO: Add lastRequestHost for queries & other
-	ev := &event{
-		Time: time.Now().Format(time.RFC3339Nano),
-		Data: map[string]any{
-			"httpProto":     r.Proto,
-			"requestHost":   r.Host,
-			"requestMethod": r.Method,
-			"requestPath":   r.URL.Path,
-			"remoteAddr":    r.RemoteAddr,
-			"responseCode":  200,
-			"durationMS":    time.Since(start).Milliseconds(),
-		},
-	}
-
-	if err != nil {
-		hErr := jsrest.GetHTTPError(err)
-		if hErr != nil {
-			ev.Data["responseCode"] = hErr.Code
-		}
-
-		ev.Data["responseError"] = err.Error()
-	}
-
-	spanID := ctx.Value(ContextSpanID)
-
-	if spanID != nil {
-		ev.Data["spanID"] = spanID.(string)
-	}
-
-	ev.addMetrics()
-	ev.addRUsage()
-
-	// TODO: Replace ContextEventData, metrics, rusage with event data hooks
-	data := ctx.Value(ContextEventData)
-
-	if data != nil {
-		for k, v := range data.(map[string]any) {
-			ev.Data[k] = v
-		}
-	}
-
-	return ev
-}
-
-func (target *eventTarget) writeLoop(es *eventState) {
+func (es *eventState) flushLoop(target *eventTarget) {
 	t := time.NewTicker(time.Duration(target.writePeriodSeconds * float64(time.Second)))
 	defer t.Stop()
 
 	for {
 		select {
 		case <-target.done:
-			target.write(es)
+			es.flush(target)
 			return
 
 		case <-t.C:
-			target.write(es)
+			es.flush(target)
 		}
 	}
 }
 
-func (target *eventTarget) write(es *eventState) {
+func (es *eventState) flush(target *eventTarget) {
 	es.mu.Lock()
 	events := target.events
 	target.events = nil
@@ -210,7 +187,38 @@ func (target *eventTarget) write(es *eventState) {
 	}
 }
 
-func (ev *event) addMetrics() {
+func (ev *Event) Set(vals ...any) {
+	if len(vals)%2 != 0 {
+		panic(vals)
+	}
+
+	for i := 0; i < len(vals); i += 2 {
+		ev.Data[vals[i].(string)] = vals[i+1]
+	}
+}
+
+func EventHookBuildInfo(_ context.Context, ev *Event) {
+	buildInfo, ok := debug.ReadBuildInfo()
+	if !ok {
+		panic("ReadBuildInfo() failed")
+	}
+
+	ev.Set(
+		"goVersion", buildInfo.GoVersion,
+		"goPackagePath", buildInfo.Path,
+		"goMainModuleVersion", buildInfo.Main.Version,
+	)
+}
+
+func EventHookSpanID(ctx context.Context, ev *Event) {
+	spanID := ctx.Value(ContextSpanID)
+
+	if spanID != nil {
+		ev.Set("spanID", spanID.(string))
+	}
+}
+
+func EventHookMetrics(_ context.Context, ev *Event) {
 	descs := metrics.All()
 
 	samples := make([]metrics.Sample, len(descs))
@@ -225,14 +233,14 @@ func (ev *event) addMetrics() {
 
 		switch sample.Value.Kind() { //nolint:exhaustive
 		case metrics.KindUint64:
-			ev.Data[name] = sample.Value.Uint64()
+			ev.Set(name, sample.Value.Uint64())
 		case metrics.KindFloat64:
-			ev.Data[name] = sample.Value.Float64()
+			ev.Set(name, sample.Value.Float64())
 		}
 	}
 }
 
-func (ev *event) addRUsage() {
+func EventHookRUsage(_ context.Context, ev *Event) {
 	rusage := &syscall.Rusage{}
 
 	err := syscall.Getrusage(syscall.RUSAGE_SELF, rusage)
@@ -240,8 +248,10 @@ func (ev *event) addRUsage() {
 		panic(err)
 	}
 
-	ev.Data["rUsageUTime"] = time.Duration(rusage.Utime.Nano()).Seconds()
-	ev.Data["rUsageSTime"] = time.Duration(rusage.Stime.Nano()).Seconds()
+	ev.Set(
+		"rUsageUTime", time.Duration(rusage.Utime.Nano()).Seconds(),
+		"rUsageSTime", time.Duration(rusage.Stime.Nano()).Seconds(),
+	)
 }
 
 func convertMetricName(in string) string {

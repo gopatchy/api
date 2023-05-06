@@ -1,10 +1,12 @@
 package patchy
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 	"reflect"
 	"strings"
+	"sync"
 
 	"github.com/getkin/kin-openapi/openapi3"
 	"github.com/getkin/kin-openapi/openapi3gen"
@@ -19,25 +21,42 @@ type (
 )
 
 type openAPI struct {
-	info *OpenAPIInfo
+	info  *OpenAPIInfo
+	hooks []OpenAPIHook
+
+	mu sync.RWMutex
 }
 
+type OpenAPIHook func(context.Context, *OpenAPI)
+
 func (api *API) SetOpenAPIInfo(info *OpenAPIInfo) {
-	api.openAPI.info = info
+	api.AddOpenAPIHook(func(_ context.Context, t *OpenAPI) {
+		t.Info = info
+	})
+}
+
+func (api *API) AddOpenAPIHook(hook OpenAPIHook) {
+	api.openAPI.mu.Lock()
+	defer api.openAPI.mu.Unlock()
+
+	api.openAPI.hooks = append(api.openAPI.hooks, hook)
 }
 
 func (api *API) handleOpenAPI(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
-	api.AddEventData(ctx, "operation", "openapi")
+	api.SetEventData(ctx, "operation", "openapi")
 
-	err := api.handleOpenAPIInt(w, r)
+	err := api.handleOpenAPIInt(ctx, w, r)
 	if err != nil {
 		jsrest.WriteError(w, err)
 	}
 }
 
-func (api *API) handleOpenAPIInt(w http.ResponseWriter, r *http.Request) error {
+func (api *API) handleOpenAPIInt(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
+	api.openAPI.mu.RLock()
+	defer api.openAPI.mu.RUnlock()
+
 	t, err := api.buildOpenAPIGlobal(r)
 	if err != nil {
 		return err
@@ -48,6 +67,10 @@ func (api *API) handleOpenAPIInt(w http.ResponseWriter, r *http.Request) error {
 		if err != nil {
 			return err
 		}
+	}
+
+	for _, hook := range api.openAPI.hooks {
+		hook(ctx, t)
 	}
 
 	js, err := t.MarshalJSON()
@@ -419,33 +442,6 @@ func (api *API) buildOpenAPIGlobal(r *http.Request) (*openapi3.T, error) {
 				URL: baseURL,
 			},
 		},
-	}
-
-	if api.openAPI.info != nil {
-		t.Info = api.openAPI.info
-	}
-
-	if api.authBasic {
-		t.Components.SecuritySchemes["basicAuth"] = &openapi3.SecuritySchemeRef{
-			Value: &openapi3.SecurityScheme{
-				Type:   "http",
-				Scheme: "basic",
-			},
-		}
-
-		t.Security = append(t.Security, openapi3.SecurityRequirement{"basicAuth": []string{}})
-	}
-
-	if api.authBearer {
-		t.Components.SecuritySchemes["bearerAuth"] = &openapi3.SecuritySchemeRef{
-			Value: &openapi3.SecurityScheme{
-				Type:         "http",
-				Scheme:       "bearer",
-				BearerFormat: "secret-token:*",
-			},
-		}
-
-		t.Security = append(t.Security, openapi3.SecurityRequirement{"bearerAuth": []string{}})
 	}
 
 	return t, nil

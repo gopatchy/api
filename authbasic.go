@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/getkin/kin-openapi/openapi3"
 	"github.com/gopatchy/header"
 	"github.com/gopatchy/jsrest"
 	"github.com/gopatchy/metadata"
@@ -72,9 +73,6 @@ func authBasic[T any](_ http.ResponseWriter, r *http.Request, api *API, name, pa
 				return nil, jsrest.Errorf(jsrest.ErrInternalServerError, "clear user password hash failed (%w)", err)
 			}
 
-			api.AddEventData(ctx, "authMethod", "basic")
-			api.AddEventData(ctx, "userID", metadata.GetMetadata(user).ID)
-
 			return r.WithContext(context.WithValue(ctx, ContextAuthBasic, user)), nil
 		}
 	}
@@ -87,9 +85,36 @@ func AddAuthBasicName[T any](api *API, name, pathUser, pathPass string) {
 		return authBasic[T](w, r, a, name, pathUser, pathPass)
 	})
 
+	api.AddEventHook(EventHookAuthBasic)
+	api.AddOpenAPIHook(OpenAPIHookAuthBasic)
+
 	api.authBasic = true
 }
 
 func AddAuthBasic[T any](api *API, pathUser, pathPass string) {
 	AddAuthBasicName[T](api, apiName[T](), pathUser, pathPass)
+}
+
+func EventHookAuthBasic(ctx context.Context, ev *Event) {
+	ctxUser := ctx.Value(ContextAuthBasic)
+
+	if ctxUser == nil {
+		return
+	}
+
+	ev.Set(
+		"authMethod", "basic",
+		"userID", metadata.GetMetadata(ctxUser).ID,
+	)
+}
+
+func OpenAPIHookAuthBasic(_ context.Context, t *OpenAPI) {
+	t.Components.SecuritySchemes["basicAuth"] = &openapi3.SecuritySchemeRef{
+		Value: &openapi3.SecurityScheme{
+			Type:   "http",
+			Scheme: "basic",
+		},
+	}
+
+	t.Security = append(t.Security, openapi3.SecurityRequirement{"basicAuth": []string{}})
 }

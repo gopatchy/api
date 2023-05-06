@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/getkin/kin-openapi/openapi3"
 	"github.com/gopatchy/header"
 	"github.com/gopatchy/jsrest"
 	"github.com/gopatchy/metadata"
@@ -49,9 +50,6 @@ func authBearer[T any](_ http.ResponseWriter, r *http.Request, api *API, name, p
 		return nil, jsrest.Errorf(jsrest.ErrInternalServerError, "clear token failed (%w)", err)
 	}
 
-	api.AddEventData(ctx, "authMethod", "bearer")
-	api.AddEventData(ctx, "tokenID", metadata.GetMetadata(bearer).ID)
-
 	return r.WithContext(context.WithValue(ctx, ContextAuthBearer, bearer)), nil
 }
 
@@ -60,9 +58,37 @@ func AddAuthBearerName[T any](api *API, name, pathToken string) {
 		return authBearer[T](w, r, a, name, pathToken)
 	})
 
+	api.AddEventHook(EventHookAuthBearer)
+	api.AddOpenAPIHook(OpenAPIHookAuthBearer)
+
 	api.authBearer = true
 }
 
 func AddAuthBearer[T any](api *API, pathToken string) {
 	AddAuthBearerName[T](api, apiName[T](), pathToken)
+}
+
+func EventHookAuthBearer(ctx context.Context, ev *Event) {
+	ctxToken := ctx.Value(ContextAuthBearer)
+
+	if ctxToken == nil {
+		return
+	}
+
+	ev.Set(
+		"authMethod", "bearer",
+		"tokenID", metadata.GetMetadata(ctxToken).ID,
+	)
+}
+
+func OpenAPIHookAuthBearer(_ context.Context, t *OpenAPI) {
+	t.Components.SecuritySchemes["bearerAuth"] = &openapi3.SecuritySchemeRef{
+		Value: &openapi3.SecurityScheme{
+			Type:         "http",
+			Scheme:       "bearer",
+			BearerFormat: "secret-token:*",
+		},
+	}
+
+	t.Security = append(t.Security, openapi3.SecurityRequirement{"bearerAuth": []string{}})
 }

@@ -12,10 +12,12 @@ import (
 func (api *API) getObject(cfg *config, id string, w http.ResponseWriter, r *http.Request) error {
 	ctx := r.Context()
 
-	api.AddEventData(ctx, "operation", "get")
-	api.AddEventData(ctx, "typeName", cfg.apiName)
-	api.AddEventData(ctx, "id", id)
-	api.AddEventData(ctx, "stream", false)
+	api.SetEventData(ctx,
+		"operation", "get",
+		"typeName", cfg.apiName,
+		"id", id,
+		"stream", false,
+	)
 
 	opts := parseGetOpts(r)
 

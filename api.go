@@ -8,7 +8,6 @@ import (
 	"net"
 	"net/http"
 	"reflect"
-	"runtime/debug"
 	"sort"
 	"strings"
 	"sync"
@@ -75,7 +74,8 @@ const (
 	ContextWriteGeneration
 
 	ContextSpanID
-	ContextEventData
+
+	ContextEvent
 )
 
 func NewAPI(dbname string) (*API, error) {
@@ -97,21 +97,14 @@ func NewAPI(dbname string) (*API, error) {
 			ReadHeaderTimeout: 30 * time.Second,
 		},
 		contextValues: map[any]any{},
-		eventState: eventState{
-			baseEventData: map[string]any{},
-		},
 	}
 
 	api.SetBaseContext(context.Background())
 
-	buildInfo, ok := debug.ReadBuildInfo()
-	if !ok {
-		return nil, ErrBuildInfoFailed
-	}
-
-	api.AddBaseEventData("goVersion", buildInfo.GoVersion)
-	api.AddBaseEventData("goPackagePath", buildInfo.Path)
-	api.AddBaseEventData("goMainModuleVersion", buildInfo.Main.Version)
+	api.AddEventHook(EventHookBuildInfo)
+	api.AddEventHook(EventHookSpanID)
+	api.AddEventHook(EventHookMetrics)
+	api.AddEventHook(EventHookRUsage)
 
 	api.srv.Handler = api
 
@@ -299,7 +292,7 @@ func (api *API) Shutdown(ctx context.Context) error {
 		return err
 	}
 
-	api.closeEventTargets()
+	api.eventState.Close()
 	api.sb.Close()
 
 	return nil
@@ -308,22 +301,7 @@ func (api *API) Shutdown(ctx context.Context) error {
 func (api *API) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
-	start := time.Now()
-	spanID := uniuri.New()
-	eventData := map[string]any{}
-
-	{
-		api.eventState.mu.Lock()
-
-		for k, v := range api.eventState.baseEventData {
-			eventData[k] = v
-		}
-
-		api.eventState.mu.Unlock()
-	}
-
-	ctx = context.WithValue(ctx, ContextSpanID, spanID)
-	ctx = context.WithValue(ctx, ContextEventData, eventData)
+	ctx = context.WithValue(ctx, ContextSpanID, uniuri.New())
 
 	{
 		api.contextValuesMu.RLock()
@@ -335,14 +313,33 @@ func (api *API) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		api.contextValuesMu.RUnlock()
 	}
 
+	// TODO: Add lastRequestHost for queries & other
+	ev := api.NewEvent(
+		"httpProto", r.Proto,
+		"requestHost", r.Host,
+		"requestMethod", r.Method,
+		"requestPath", r.URL.Path,
+		"remoteAddr", r.RemoteAddr,
+		"responseCode", 200,
+	)
+
+	ctx = context.WithValue(ctx, ContextEvent, ev)
+
 	r = r.WithContext(ctx)
 
 	err := api.serveHTTP(w, r)
 	if err != nil {
 		jsrest.WriteError(w, err)
+
+		hErr := jsrest.GetHTTPError(err)
+		if hErr != nil {
+			ev.Set("responseCode", hErr.Code)
+		}
+
+		ev.Set("responseError", err.Error())
 	}
 
-	api.writeEvent(ctx, r, err, start)
+	api.eventState.WriteEvent(ctx, ev)
 }
 
 func (api *API) serveHTTP(w http.ResponseWriter, r *http.Request) error {

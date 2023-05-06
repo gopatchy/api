@@ -9,9 +9,11 @@ import (
 func (api *API) patch(cfg *config, id string, w http.ResponseWriter, r *http.Request) error {
 	ctx := r.Context()
 
-	api.AddEventData(ctx, "operation", "update")
-	api.AddEventData(ctx, "typeName", cfg.apiName)
-	api.AddEventData(ctx, "id", id)
+	api.SetEventData(ctx,
+		"operation", "update",
+		"typeName", cfg.apiName,
+		"id", id,
+	)
 
 	patch := map[string]any{}
 	opts := parseUpdateOpts(r)
