@@ -292,7 +292,7 @@ func (api *API) Shutdown(ctx context.Context) error {
 		return err
 	}
 
-	api.eventState.Close()
+	api.eventState.close()
 	api.sb.Close()
 
 	return nil
@@ -313,8 +313,7 @@ func (api *API) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		api.contextValuesMu.RUnlock()
 	}
 
-	// TODO: Add lastRequestHost for queries & other
-	ev := api.newEvent("httpRequest",
+	ev := api.eventState.newEvent("httpSuccess",
 		"httpProto", r.Proto,
 		"requestHost", r.Host,
 		"requestMethod", r.Method,
@@ -331,15 +330,18 @@ func (api *API) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		jsrest.WriteError(w, err)
 
+		ev.Set(
+			"type", "httpError",
+			"responseError", err.Error(),
+		)
+
 		hErr := jsrest.GetHTTPError(err)
 		if hErr != nil {
 			ev.Set("responseCode", hErr.Code)
 		}
-
-		ev.Set("responseError", err.Error())
 	}
 
-	api.eventState.WriteEvent(ctx, ev)
+	api.eventState.writeEvent(ctx, ev)
 }
 
 func (api *API) serveHTTP(w http.ResponseWriter, r *http.Request) error {

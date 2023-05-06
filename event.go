@@ -17,22 +17,13 @@ import (
 	"github.com/go-resty/resty/v2"
 )
 
-type eventState struct {
-	targets []*eventTarget
-	hooks   []EventHook
-
-	lastEvent              time.Time
-	successEventsPerSecond float64
-	failureEventsPerSecond float64
-
-	mu sync.Mutex
-}
-
-type eventTarget struct {
+type EventTarget struct {
 	client             *resty.Client
-	eventsPerSecond    float64
 	writePeriodSeconds float64
+	windowSeconds      float64
+	rateClasses        []*eventRateClass
 	done               chan bool
+	lastEvent          time.Time
 	events             []*Event
 }
 
@@ -46,12 +37,27 @@ type Event struct {
 
 type EventHook func(context.Context, *Event)
 
-func (api *API) AddEventTarget(url string, headers map[string]string, eventsPerSecond, writePeriodSeconds float64) {
-	target := &eventTarget{
+type eventState struct {
+	targets []*EventTarget
+	hooks   []EventHook
+
+	mu sync.Mutex
+}
+
+type eventRateClass struct {
+	grantRate float64
+	criteria  map[string]any
+
+	eventRate float64
+}
+
+func (api *API) AddEventTarget(url string, headers map[string]string, writePeriodSeconds float64) *EventTarget {
+	target := &EventTarget{
 		client:             resty.New().SetBaseURL(url).SetHeaders(headers),
-		eventsPerSecond:    eventsPerSecond,
 		writePeriodSeconds: writePeriodSeconds,
+		windowSeconds:      100.0,
 		done:               make(chan bool),
+		lastEvent:          time.Now(),
 	}
 
 	go api.eventState.flushLoop(target)
@@ -60,6 +66,8 @@ func (api *API) AddEventTarget(url string, headers map[string]string, eventsPerS
 	defer api.eventState.mu.Unlock()
 
 	api.eventState.targets = append(api.eventState.targets, target)
+
+	return target
 }
 
 func (api *API) AddEventHook(hook EventHook) {
@@ -79,17 +87,11 @@ func (api *API) SetEventData(ctx context.Context, vals ...any) {
 	ev.(*Event).Set(vals...)
 }
 
-func (api *API) Log(ctx context.Context, eventType string, vals ...any) {
-	if len(vals)%2 != 0 {
-		panic(vals)
-	}
+func (api *API) Log(ctx context.Context, vals ...any) {
+	ev := api.eventState.newEvent("log", vals...)
+	api.eventState.writeEvent(ctx, ev)
 
-	ev := api.newEvent(eventType, vals...)
-	api.eventState.WriteEvent(ctx, ev)
-
-	parts := []string{
-		fmt.Sprintf("type=%s", eventType),
-	}
+	parts := []string{}
 
 	for i := 0; i < len(vals); i += 2 {
 		parts = append(parts, fmt.Sprintf("%s=%s", vals[i], vals[i+1]))
@@ -98,7 +100,7 @@ func (api *API) Log(ctx context.Context, eventType string, vals ...any) {
 	log.Print(strings.Join(parts, " "))
 }
 
-func (api *API) newEvent(eventType string, vals ...any) *Event {
+func (es *eventState) newEvent(eventType string, vals ...any) *Event {
 	now := time.Now()
 
 	ev := &Event{
@@ -114,7 +116,7 @@ func (api *API) newEvent(eventType string, vals ...any) *Event {
 	return ev
 }
 
-func (es *eventState) Close() {
+func (es *eventState) close() {
 	es.mu.Lock()
 	defer es.mu.Unlock()
 
@@ -123,10 +125,8 @@ func (es *eventState) Close() {
 	}
 }
 
-func (es *eventState) WriteEvent(ctx context.Context, ev *Event) {
+func (es *eventState) writeEvent(ctx context.Context, ev *Event) {
 	ev.Set("durationMS", time.Since(ev.start).Milliseconds())
-
-	rnd := rand.Float64() //nolint:gosec
 
 	es.mu.Lock()
 	defer es.mu.Unlock()
@@ -135,40 +135,12 @@ func (es *eventState) WriteEvent(ctx context.Context, ev *Event) {
 		hook(ctx, ev)
 	}
 
-	es.updateEventRates(ev)
-	eventsPerSecond := es.successEventsPerSecond + es.failureEventsPerSecond
-
 	for _, target := range es.targets {
-		// TODO: Reserve some portion for errors if we're over
-		// TODO: Separate rates for successes, errors, logs
-		prob := target.eventsPerSecond / eventsPerSecond
-
-		if rnd < prob {
-			ev2 := *ev
-			ev2.SampleRate = int64(math.Round(1 / prob))
-			target.events = append(target.events, &ev2)
-		}
+		target.writeEvent(ev)
 	}
 }
 
-func (es *eventState) updateEventRates(ev *Event) {
-	bucket := &es.successEventsPerSecond
-	if ev.Data["responseError"] != nil {
-		bucket = &es.failureEventsPerSecond
-	}
-
-	*bucket++
-
-	now := time.Now()
-
-	if !es.lastEvent.IsZero() {
-		*bucket /= (now.Sub(es.lastEvent).Seconds() + 1)
-	}
-
-	es.lastEvent = now
-}
-
-func (es *eventState) flushLoop(target *eventTarget) {
+func (es *eventState) flushLoop(target *EventTarget) {
 	t := time.NewTicker(time.Duration(target.writePeriodSeconds * float64(time.Second)))
 	defer t.Stop()
 
@@ -184,7 +156,7 @@ func (es *eventState) flushLoop(target *eventTarget) {
 	}
 }
 
-func (es *eventState) flush(target *eventTarget) {
+func (es *eventState) flush(target *EventTarget) {
 	es.mu.Lock()
 	events := target.events
 	target.events = nil
@@ -198,14 +170,65 @@ func (es *eventState) flush(target *eventTarget) {
 		SetBody(events).
 		Post("")
 	if err != nil {
-		log.Printf("HTTP %s", err)
+		log.Printf("failed write to event target: %s", err)
 		return
 	}
 
 	if resp.IsError() {
-		log.Printf("HTTP %d %s: %s", resp.StatusCode(), resp.Status(), resp.String())
+		log.Printf("failed write to event target: %d %s: %s", resp.StatusCode(), resp.Status(), resp.String())
 		return
 	}
+}
+
+func (target *EventTarget) AddRateClass(grantRate float64, vals ...any) {
+	if len(vals)%2 != 0 {
+		panic(vals)
+	}
+
+	erc := &eventRateClass{
+		grantRate: grantRate * target.windowSeconds,
+		criteria:  map[string]any{},
+	}
+
+	for i := 0; i < len(vals); i += 2 {
+		erc.criteria[vals[i].(string)] = vals[i+1]
+	}
+
+	target.rateClasses = append(target.rateClasses, erc)
+}
+
+func (target *EventTarget) writeEvent(ev *Event) {
+	now := time.Now()
+	secondsSinceLastEvent := now.Sub(target.lastEvent).Seconds()
+	target.lastEvent = now
+
+	// Example:
+	//   windowSeconds = 100
+	//   secondsSinceLastEvent = 25
+	//   eventRateMultiplier = 0.75
+	eventRateMultiplier := (target.windowSeconds - secondsSinceLastEvent) / target.windowSeconds
+
+	maxProb := 0.0
+
+	for _, erc := range target.rateClasses {
+		if !erc.match(ev) {
+			continue
+		}
+
+		erc.eventRate++
+		erc.eventRate *= eventRateMultiplier
+
+		classProb := erc.grantRate / erc.eventRate
+		maxProb = math.Max(maxProb, classProb)
+	}
+
+	if maxProb <= 0.0 || rand.Float64() > maxProb { //nolint:gosec
+		return
+	}
+
+	ev2 := *ev
+	ev2.SampleRate = int64(math.Max(math.Round(1.0/maxProb), 1.0))
+	target.events = append(target.events, &ev2)
 }
 
 func (ev *Event) Set(vals ...any) {
@@ -216,6 +239,16 @@ func (ev *Event) Set(vals ...any) {
 	for i := 0; i < len(vals); i += 2 {
 		ev.Data[vals[i].(string)] = vals[i+1]
 	}
+}
+
+func (erc *eventRateClass) match(ev *Event) bool {
+	for k, v := range erc.criteria {
+		if ev.Data[k] != v {
+			return false
+		}
+	}
+
+	return true
 }
 
 func EventHookBuildInfo(_ context.Context, ev *Event) {
