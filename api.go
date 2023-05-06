@@ -159,6 +159,7 @@ func RegisterName[T any](api *API, apiName, camelName string) {
 }
 
 func (api *API) SetBaseContext(ctx context.Context) {
+	// TODO: Replace this with context hooks
 	// ContextStub exists to force the stored type to context.valueCtx
 	api.baseContext.Store(context.WithValue(ctx, ContextStub, true))
 }
@@ -299,6 +300,8 @@ func (api *API) Shutdown(ctx context.Context) error {
 }
 
 func (api *API) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	var err error
+
 	ctx := r.Context()
 
 	ctx = context.WithValue(ctx, ContextSpanID, uniuri.New())
@@ -323,10 +326,9 @@ func (api *API) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	)
 
 	ctx = context.WithValue(ctx, ContextEvent, ev)
-
 	r = r.WithContext(ctx)
 
-	err := api.serveHTTP(w, r)
+	r, err = api.serveHTTP(w, r)
 	if err != nil {
 		jsrest.WriteError(w, err)
 
@@ -341,10 +343,10 @@ func (api *API) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	api.eventState.writeEvent(ctx, ev)
+	api.eventState.writeEvent(r.Context(), ev) //nolint:contextcheck
 }
 
-func (api *API) serveHTTP(w http.ResponseWriter, r *http.Request) error {
+func (api *API) serveHTTP(w http.ResponseWriter, r *http.Request) (*http.Request, error) {
 	w.Header().Set("Cache-Control", "no-store")
 	w.Header().Set("Access-Control-Allow-Origin", "*")
 	w.Header().Set("Access-Control-Expose-Headers", "*")
@@ -357,26 +359,26 @@ func (api *API) serveHTTP(w http.ResponseWriter, r *http.Request) error {
 
 		w.WriteHeader(http.StatusNoContent)
 
-		return nil
+		return r, nil
 	}
 
 	err := r.ParseForm()
 	if err != nil {
-		return jsrest.Errorf(jsrest.ErrUnauthorized, "parse form failed (%w)", err)
+		return r, jsrest.Errorf(jsrest.ErrUnauthorized, "parse form failed (%w)", err)
 	}
 
 	for _, hook := range api.requestHooks {
-		var err error
-
-		r, err = hook(w, r, api)
+		newR, err := hook(w, r, api)
 		if err != nil {
-			return jsrest.Errorf(jsrest.ErrInternalServerError, "request hook failed (%w)", err)
+			return r, jsrest.Errorf(jsrest.ErrInternalServerError, "request hook failed (%w)", err)
 		}
+
+		r = newR
 	}
 
 	api.potency.ServeHTTP(w, r)
 
-	return nil
+	return r, nil
 }
 
 func (api *API) registerHandlers(base string, cfg *config) {
