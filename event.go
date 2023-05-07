@@ -1,7 +1,10 @@
 package patchy
 
 import (
+	"bytes"
+	"compress/gzip"
 	"context"
+	"encoding/json"
 	"fmt"
 	"log"
 	"math"
@@ -166,10 +169,24 @@ func (es *eventState) flush(target *EventTarget) {
 		return
 	}
 
-	// TODO: Compress this (going to need some manual ugliness)
+	buf := &bytes.Buffer{}
+	g := gzip.NewWriter(buf)
+	enc := json.NewEncoder(g)
+
+	err := enc.Encode(events)
+	if err != nil {
+		panic(err)
+	}
+
+	err = g.Close()
+	if err != nil {
+		panic(err)
+	}
 
 	resp, err := target.client.R().
-		SetBody(events).
+		SetHeader("Content-Type", "application/json").
+		SetHeader("Content-Encoding", "gzip").
+		SetBody(buf).
 		Post("")
 	if err != nil {
 		log.Printf("failed write to event target: %s", err)
