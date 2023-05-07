@@ -10,8 +10,6 @@ import (
 	"reflect"
 	"sort"
 	"strings"
-	"sync"
-	"sync/atomic"
 	"time"
 
 	"github.com/dchest/uniuri"
@@ -36,14 +34,10 @@ type API struct {
 
 	openAPI      openAPI
 	prefix       string
-	baseContext  atomic.Value
 	requestHooks []RequestHook
 
 	authBasic  bool
 	authBearer bool
-
-	contextValues   map[any]any
-	contextValuesMu sync.RWMutex
 
 	eventState eventState
 }
@@ -96,10 +90,7 @@ func NewAPI(dbname string) (*API, error) {
 		srv: &http.Server{
 			ReadHeaderTimeout: 30 * time.Second,
 		},
-		contextValues: map[any]any{},
 	}
-
-	api.SetBaseContext(context.Background())
 
 	api.AddEventHook(EventHookBuildInfo)
 	api.AddEventHook(EventHookSpanID)
@@ -107,10 +98,6 @@ func NewAPI(dbname string) (*API, error) {
 	api.AddEventHook(EventHookRUsage)
 
 	api.srv.Handler = api
-
-	api.srv.BaseContext = func(_ net.Listener) context.Context {
-		return api.baseContext.Load().(context.Context)
-	}
 
 	api.router.GET(
 		"/_debug",
@@ -158,19 +145,6 @@ func RegisterName[T any](api *API, apiName, camelName string) {
 	}
 }
 
-func (api *API) SetBaseContext(ctx context.Context) {
-	// TODO: Replace this with context hooks
-	// ContextStub exists to force the stored type to context.valueCtx
-	api.baseContext.Store(context.WithValue(ctx, ContextStub, true))
-}
-
-func (api *API) SetContextValue(key, val any) {
-	api.contextValuesMu.Lock()
-	defer api.contextValuesMu.Unlock()
-
-	api.contextValues[key] = val
-}
-
 func (api *API) SetStripPrefix(prefix string) {
 	api.prefix = prefix
 
@@ -184,8 +158,6 @@ func (api *API) SetStripPrefix(prefix string) {
 		return r, nil
 	})
 }
-
-// TODO: Provide a way for internal auth request hooks to always happen first
 
 func (api *API) AddRequestHook(hook RequestHook) {
 	api.requestHooks = append(api.requestHooks, hook)
@@ -304,18 +276,6 @@ func (api *API) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	ctx := r.Context()
 
-	ctx = context.WithValue(ctx, ContextSpanID, uniuri.New())
-
-	{
-		api.contextValuesMu.RLock()
-
-		for k, v := range api.contextValues {
-			ctx = context.WithValue(ctx, k, v)
-		}
-
-		api.contextValuesMu.RUnlock()
-	}
-
 	ev := api.eventState.newEvent("httpSuccess",
 		"httpProto", r.Proto,
 		"requestHost", r.Host,
@@ -325,6 +285,7 @@ func (api *API) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		"responseCode", 200,
 	)
 
+	ctx = context.WithValue(ctx, ContextSpanID, uniuri.New())
 	ctx = context.WithValue(ctx, ContextEvent, ev)
 	r = r.WithContext(ctx)
 
