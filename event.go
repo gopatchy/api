@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"compress/gzip"
 	"context"
+	"crypto/tls"
 	"encoding/json"
 	"fmt"
 	"log"
@@ -41,8 +42,9 @@ type Event struct {
 type EventHook func(context.Context, *Event)
 
 type eventState struct {
-	targets []*EventTarget
-	hooks   []EventHook
+	targets         []*EventTarget
+	hooks           []EventHook
+	tlsClientConfig *tls.Config
 
 	mu sync.Mutex
 }
@@ -54,6 +56,10 @@ type eventRateClass struct {
 	eventRate float64
 }
 
+func (api *API) SetEventTLSClientConfig(config *tls.Config) {
+	api.eventState.tlsClientConfig = config
+}
+
 func (api *API) AddEventTarget(url string, headers map[string]string, writePeriodSeconds float64) *EventTarget {
 	target := &EventTarget{
 		client:             resty.New().SetBaseURL(url).SetHeaders(headers),
@@ -61,6 +67,10 @@ func (api *API) AddEventTarget(url string, headers map[string]string, writePerio
 		windowSeconds:      100.0,
 		done:               make(chan bool),
 		lastEvent:          time.Now(),
+	}
+
+	if api.eventState.tlsClientConfig != nil {
+		target.client.SetTLSClientConfig(api.eventState.tlsClientConfig)
 	}
 
 	go api.eventState.flushLoop(target)
