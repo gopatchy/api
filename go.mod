@@ -3,24 +3,24 @@ module github.com/gopatchy/patchy
 go 1.19
 
 require (
-	cloud.google.com/go v0.110.1
+	cloud.google.com/go v0.110.2
 	github.com/dchest/uniuri v1.2.0
 	github.com/getkin/kin-openapi v0.116.0
 	github.com/go-resty/resty/v2 v2.7.0
-	github.com/gopatchy/header v0.0.0-20230430231118-c7818e9e2b67
-	github.com/gopatchy/jsrest v0.0.0-20230430221623-9f19b9d8dace
+	github.com/gopatchy/header v0.0.0-20230511134024-ced45cf43f45
+	github.com/gopatchy/jsrest v0.0.0-20230511133808-abcf8276d1ad
 	github.com/gopatchy/metadata v0.0.0-20230424223338-33e58fee42bf
-	github.com/gopatchy/path v0.0.0-20230505055749-b787868754cc
-	github.com/gopatchy/potency v0.0.0-20230430231153-d71eb284ae4d
+	github.com/gopatchy/path v0.0.0-20230511134051-0d0d87c8dec3
+	github.com/gopatchy/potency v0.0.0-20230511134059-818e74434c25
 	github.com/gopatchy/proxy v0.0.0-20230425224044-bfe64d67fcae
-	github.com/gopatchy/selfcert v0.0.0-20230424223354-2910841ecc96
-	github.com/gopatchy/storebus v0.0.0-20230430231202-67e1319ac46f
+	github.com/gopatchy/selfcert v0.0.0-20230511135707-565c10700223
+	github.com/gopatchy/storebus v0.0.0-20230511134112-174858b96a83
 	github.com/julienschmidt/httprouter v1.3.0
 	github.com/stretchr/testify v1.8.2
 	github.com/vfaronov/httpheader v0.1.0
 	go.uber.org/goleak v1.2.1
-	golang.org/x/crypto v0.8.0
-	golang.org/x/net v0.9.0
+	golang.org/x/crypto v0.9.0
+	golang.org/x/net v0.10.0
 )
 
 require (
@@ -36,7 +36,7 @@ require (
 	github.com/mohae/deepcopy v0.0.0-20170929034955-c48cc78d4826 // indirect
 	github.com/perimeterx/marshmallow v1.1.4 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
-	golang.org/x/exp v0.0.0-20230425010034-47ecfdc1ba53 // indirect
+	golang.org/x/exp v0.0.0-20230510235704-dd950f8aeaea // indirect
 	golang.org/x/text v0.9.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
