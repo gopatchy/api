@@ -14,7 +14,7 @@ require (
 	github.com/gopatchy/potency v0.0.0-20230511134059-818e74434c25
 	github.com/gopatchy/proxy v0.0.0-20230425224044-bfe64d67fcae
 	github.com/gopatchy/selfcert v0.0.0-20230511135707-565c10700223
-	github.com/gopatchy/storebus v0.0.0-20230511134112-174858b96a83
+	github.com/gopatchy/storebus v0.0.0-20230511135721-9a7fa1cb9c07
 	github.com/julienschmidt/httprouter v1.3.0
 	github.com/stretchr/testify v1.8.2
 	github.com/vfaronov/httpheader v0.1.0
