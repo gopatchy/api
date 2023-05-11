@@ -21,6 +21,9 @@ import (
 	"github.com/go-resty/resty/v2"
 )
 
+// TODO: Switch to opentelemetry protocol
+// TODO: Split event publisher out to its own library
+
 type EventTarget struct {
 	client             *resty.Client
 	writePeriodSeconds float64
