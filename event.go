@@ -23,6 +23,7 @@ import (
 
 // TODO: Switch to opentelemetry protocol
 // TODO: Split event publisher out to its own library
+// TODO: Add protocol-level tests
 
 type EventTarget struct {
 	client             *resty.Client
