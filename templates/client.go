@@ -104,7 +104,7 @@ func NewClient(baseURL string) *Client {
 
 	c.SetBaseURL(baseURL)
 
-	// TODO: SetTimeout()
+	// TODO: Call SetTimeout()
 
 	return c
 }
