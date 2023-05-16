@@ -12,7 +12,7 @@ require (
 	github.com/gopatchy/metadata v0.0.0-20230516044939-eed23a0903d5
 	github.com/gopatchy/path v0.0.0-20230516050244-e14518e0a367
 	github.com/gopatchy/potency v0.0.0-20230516050245-b5ba7df24f60
-	github.com/gopatchy/proxy v0.0.0-20230516045004-1cf43ff95773
+	github.com/gopatchy/proxy v0.0.0-20230516052217-6bd60dc034fd
 	github.com/gopatchy/selfcert v0.0.0-20230516045005-fdb89abe7b70
 	github.com/gopatchy/storebus v0.0.0-20230516050308-90e23d5bfa0d
 	github.com/julienschmidt/httprouter v1.3.0

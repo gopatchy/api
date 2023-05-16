@@ -31,8 +31,8 @@ github.com/gopatchy/path v0.0.0-20230516050244-e14518e0a367 h1:7Jwbghtgj5oLRp88o
 github.com/gopatchy/path v0.0.0-20230516050244-e14518e0a367/go.mod h1:vsBslN3DgCqiiwfcNaJZdW2UFhwIOaVQF3ny3f4cRoE=
 github.com/gopatchy/potency v0.0.0-20230516050245-b5ba7df24f60 h1:CaDvX99WRRSWUaMPLPnGAcuSgnnn9kHm7o8Ds2X5Ig8=
 github.com/gopatchy/potency v0.0.0-20230516050245-b5ba7df24f60/go.mod h1:iBjl0lzjZpIg8XDe82uvW7KdSsfc7CM8AZMB2xx0fpE=
-github.com/gopatchy/proxy v0.0.0-20230516045004-1cf43ff95773 h1:CAb+eyrgsKPmeoovC/z4q7XMGc1QIBRdCJQulzZ/Cgw=
-github.com/gopatchy/proxy v0.0.0-20230516045004-1cf43ff95773/go.mod h1:KzL3DePH2QgRe2QskCWhh+a+ZehmMQR265CpY/NepCM=
+github.com/gopatchy/proxy v0.0.0-20230516052217-6bd60dc034fd h1:Rm/fP7egHToCF8ma7VNTeRR61kD4DGjqA/LIk/r5RBI=
+github.com/gopatchy/proxy v0.0.0-20230516052217-6bd60dc034fd/go.mod h1:KzL3DePH2QgRe2QskCWhh+a+ZehmMQR265CpY/NepCM=
 github.com/gopatchy/selfcert v0.0.0-20230516045005-fdb89abe7b70 h1:T5XE+Vw9td153LxeRddXQ/xf4cYvfC61SxyCff6par0=
 github.com/gopatchy/selfcert v0.0.0-20230516045005-fdb89abe7b70/go.mod h1:AppJivuJCdpViZ5LakavcpYG8OMI/EvUJf+MlxoYJDQ=
 github.com/gopatchy/store v0.0.0-20230516050249-3177bab7eab8 h1:ZMGwZKQOuCSqNzXEb9ote5sZkqUvYA2niuEBLh5lUUk=
