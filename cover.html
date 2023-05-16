@@ -1,0 +1,4517 @@
+
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+		<title>patchy: Go Coverage Report</title>
+		<style>
+			body {
+				background: black;
+				color: rgb(80, 80, 80);
+			}
+			body, pre, #legend span {
+				font-family: Menlo, monospace;
+				font-weight: bold;
+			}
+			#topbar {
+				background: black;
+				position: fixed;
+				top: 0; left: 0; right: 0;
+				height: 42px;
+				border-bottom: 1px solid rgb(80, 80, 80);
+			}
+			#content {
+				margin-top: 50px;
+			}
+			#nav, #legend {
+				float: left;
+				margin-left: 10px;
+			}
+			#legend {
+				margin-top: 12px;
+			}
+			#nav {
+				margin-top: 10px;
+			}
+			#legend span {
+				margin: 0 5px;
+			}
+			.cov0 { color: rgb(192, 0, 0) }
+.cov1 { color: rgb(128, 128, 128) }
+.cov2 { color: rgb(116, 140, 131) }
+.cov3 { color: rgb(104, 152, 134) }
+.cov4 { color: rgb(92, 164, 137) }
+.cov5 { color: rgb(80, 176, 140) }
+.cov6 { color: rgb(68, 188, 143) }
+.cov7 { color: rgb(56, 200, 146) }
+.cov8 { color: rgb(44, 212, 149) }
+.cov9 { color: rgb(32, 224, 152) }
+.cov10 { color: rgb(20, 236, 155) }
+
+		</style>
+	</head>
+	<body>
+		<div id="topbar">
+			<div id="nav">
+				<select id="files">
+				
+				<option value="file0">github.com/gopatchy/patchy/api.go (86.5%)</option>
+				
+				<option value="file1">github.com/gopatchy/patchy/authbasic.go (80.0%)</option>
+				
+				<option value="file2">github.com/gopatchy/patchy/authbearer.go (88.5%)</option>
+				
+				<option value="file3">github.com/gopatchy/patchy/config.go (93.4%)</option>
+				
+				<option value="file4">github.com/gopatchy/patchy/debug.go (100.0%)</option>
+				
+				<option value="file5">github.com/gopatchy/patchy/delete.go (100.0%)</option>
+				
+				<option value="file6">github.com/gopatchy/patchy/direct.go (87.6%)</option>
+				
+				<option value="file7">github.com/gopatchy/patchy/event.go (41.2%)</option>
+				
+				<option value="file8">github.com/gopatchy/patchy/get.go (100.0%)</option>
+				
+				<option value="file9">github.com/gopatchy/patchy/getlist.go (83.3%)</option>
+				
+				<option value="file10">github.com/gopatchy/patchy/getobject.go (94.1%)</option>
+				
+				<option value="file11">github.com/gopatchy/patchy/internal.go (88.4%)</option>
+				
+				<option value="file12">github.com/gopatchy/patchy/list.go (87.0%)</option>
+				
+				<option value="file13">github.com/gopatchy/patchy/openapi.go (83.0%)</option>
+				
+				<option value="file14">github.com/gopatchy/patchy/patch.go (85.7%)</option>
+				
+				<option value="file15">github.com/gopatchy/patchy/post.go (84.6%)</option>
+				
+				<option value="file16">github.com/gopatchy/patchy/put.go (85.7%)</option>
+				
+				<option value="file17">github.com/gopatchy/patchy/sse.go (88.2%)</option>
+				
+				<option value="file18">github.com/gopatchy/patchy/stream.go (100.0%)</option>
+				
+				<option value="file19">github.com/gopatchy/patchy/streamget.go (81.8%)</option>
+				
+				<option value="file20">github.com/gopatchy/patchy/streamlist.go (80.0%)</option>
+				
+				<option value="file21">github.com/gopatchy/patchy/swaggerui.go (75.0%)</option>
+				
+				<option value="file22">github.com/gopatchy/patchy/templates.go (78.9%)</option>
+				
+				<option value="file23">github.com/gopatchy/patchy/update.go (100.0%)</option>
+				
+				<option value="file24">github.com/gopatchy/patchy/util.go (9.1%)</option>
+				
+				</select>
+			</div>
+			<div id="legend">
+				<span>not tracked</span>
+			
+				<span class="cov0">no coverage</span>
+				<span class="cov1">low coverage</span>
+				<span class="cov2">*</span>
+				<span class="cov3">*</span>
+				<span class="cov4">*</span>
+				<span class="cov5">*</span>
+				<span class="cov6">*</span>
+				<span class="cov7">*</span>
+				<span class="cov8">*</span>
+				<span class="cov9">*</span>
+				<span class="cov10">high coverage</span>
+			
+			</div>
+		</div>
+		<div id="content">
+		
+		<pre class="file" id="file0" style="display: none">package patchy
+
+import (
+        "context"
+        "crypto/tls"
+        "errors"
+        "fmt"
+        "net"
+        "net/http"
+        "reflect"
+        "sort"
+        "strings"
+        "time"
+
+        "github.com/dchest/uniuri"
+        "github.com/gopatchy/jsrest"
+        "github.com/gopatchy/metadata"
+        "github.com/gopatchy/path"
+        "github.com/gopatchy/potency"
+        "github.com/gopatchy/selfcert"
+        "github.com/gopatchy/storebus"
+        "github.com/julienschmidt/httprouter"
+        "github.com/vfaronov/httpheader"
+)
+
+type API struct {
+        router   *httprouter.Router
+        sb       *storebus.StoreBus
+        potency  *potency.Potency
+        registry map[string]*config
+
+        listener net.Listener
+        srv      *http.Server
+
+        openAPI      openAPI
+        prefix       string
+        requestHooks []RequestHook
+
+        authBasic  bool
+        authBearer bool
+
+        eventState eventState
+}
+
+type (
+        RequestHook func(http.ResponseWriter, *http.Request, *API) (*http.Request, error)
+        ContextKey  int
+        Metadata    = metadata.Metadata
+)
+
+var (
+        ErrBuildInfoFailed          = errors.New("failed to read build info")
+        ErrHeaderValueMissingQuotes = errors.New("header missing quotes")
+        ErrUnknownAcceptType        = errors.New("unknown Accept type")
+)
+
+const (
+        ContextStub ContextKey = iota
+
+        ContextAuthBasicLookup
+        ContextAuthBearerLookup
+        ContextReplicate
+
+        ContextAuthBearer
+        ContextAuthBasic
+
+        ContextWriteID
+        ContextWriteGeneration
+
+        ContextSpanID
+
+        ContextEvent
+)
+
+func NewAPI(dbname string) (*API, error) <span class="cov6" title="213">{
+        router := httprouter.New()
+        router.RedirectTrailingSlash = false
+        router.RedirectFixedPath = false
+
+        sb, err := storebus.NewStoreBus(dbname)
+        if err != nil </span><span class="cov0" title="0">{
+                return nil, err
+        }</span>
+
+        <span class="cov6" title="213">api := &amp;API{
+                router:   router,
+                sb:       sb,
+                potency:  potency.NewPotency(router),
+                registry: map[string]*config{},
+                srv: &amp;http.Server{
+                        ReadHeaderTimeout: 30 * time.Second,
+                },
+        }
+
+        api.AddEventHook(EventHookBuildInfo)
+        api.AddEventHook(EventHookSpanID)
+        api.AddEventHook(EventHookMetrics)
+        api.AddEventHook(EventHookRUsage)
+
+        api.srv.Handler = api
+
+        api.router.GET(
+                "/_debug",
+                func(w http.ResponseWriter, r *http.Request, _ httprouter.Params) </span><span class="cov2" title="4">{ api.handleDebug(w, r) }</span>,
+        )
+
+        <span class="cov6" title="213">api.router.GET(
+                "/_openapi",
+                func(w http.ResponseWriter, r *http.Request, _ httprouter.Params) </span><span class="cov1" title="1">{ api.handleOpenAPI(w, r) }</span>,
+        )
+
+        <span class="cov6" title="213">api.router.ServeFiles(
+                "/_swaggerui/*filepath",
+                http.FS(swaggerUI),
+        )
+
+        api.registerTemplates()
+
+        return api, nil</span>
+}
+
+func Register[T any](api *API) <span class="cov8" title="831">{
+        RegisterName[T](api, apiName[T](), camelName[T]())
+}</span>
+
+func RegisterName[T any](api *API, apiName, camelName string) <span class="cov8" title="1037">{
+        // TODO: Support nested types
+        cfg := newConfig[T](apiName, camelName)
+        api.registry[cfg.apiName] = cfg
+        api.registerHandlers(fmt.Sprintf("/%s", cfg.apiName), cfg)
+
+        authBasicUserPath, ok := path.FindTagValueType(cfg.typeOf, "patchy", "authBasicUser")
+        if ok </span><span class="cov6" title="206">{
+                authBasicPassPath, ok := path.FindTagValueType(cfg.typeOf, "patchy", "authBasicPass")
+                if !ok </span><span class="cov0" title="0">{
+                        panic("patchy:authBasicUser without patchy:authBasicPass")</span>
+                }
+
+                <span class="cov6" title="206">AddAuthBasicName[T](api, apiName, authBasicUserPath, authBasicPassPath)</span>
+        }
+
+        <span class="cov8" title="1036">authBearerTokenPath, ok := path.FindTagValueType(cfg.typeOf, "patchy", "authBearerToken")
+        if ok </span><span class="cov6" title="206">{
+                AddAuthBearerName[T](api, apiName, authBearerTokenPath)
+        }</span>
+}
+
+func (api *API) SetStripPrefix(prefix string) <span class="cov6" title="206">{
+        api.prefix = prefix
+
+        api.AddRequestHook(func(_ http.ResponseWriter, r *http.Request, _ *API) (*http.Request, error) </span><span class="cov8" title="901">{
+                if !strings.HasPrefix(r.URL.Path, prefix) </span><span class="cov0" title="0">{
+                        return nil, jsrest.Errorf(jsrest.ErrNotFound, "not found")
+                }</span>
+
+                <span class="cov8" title="901">r.URL.Path = strings.TrimPrefix(r.URL.Path, prefix)
+
+                return r, nil</span>
+        })
+}
+
+func (api *API) AddRequestHook(hook RequestHook) <span class="cov8" title="825">{
+        api.requestHooks = append(api.requestHooks, hook)
+}</span>
+
+func (api *API) IsSafe() error <span class="cov3" title="10">{
+        for _, cfg := range api.registry </span><span class="cov2" title="6">{
+                err := cfg.isSafe()
+                if err != nil </span><span class="cov2" title="4">{
+                        return err
+                }</span>
+        }
+
+        <span class="cov2" title="6">return nil</span>
+}
+
+func (api *API) CheckSafe() <span class="cov2" title="5">{
+        err := api.IsSafe()
+        if err != nil </span><span class="cov1" title="2">{
+                panic(err)</span>
+        }
+}
+
+func (api *API) Handle(method, path string, handler httprouter.Handle) <span class="cov0" title="0">{
+        api.router.Handle(method, path, handler)
+}</span>
+
+func (api *API) Handler(method, path string, handler http.Handler) <span class="cov0" title="0">{
+        api.router.Handler(method, path, handler)
+}</span>
+
+func (api *API) HandlerFunc(method, path string, handler http.HandlerFunc) <span class="cov6" title="206">{
+        api.router.HandlerFunc(method, path, handler)
+}</span>
+
+func (api *API) ServeFiles(path string, fs http.FileSystem) <span class="cov0" title="0">{
+        api.router.ServeFiles(path, fs)
+}</span>
+
+func (api *API) ListenSelfCert(bind string) error <span class="cov6" title="143">{
+        tlsConfig, err := selfcert.NewTLSConfigFromHostPort(bind)
+        if err != nil </span><span class="cov0" title="0">{
+                return err
+        }</span>
+
+        <span class="cov6" title="143">api.listener, err = tls.Listen("tcp", bind, tlsConfig)
+        if err != nil </span><span class="cov0" title="0">{
+                return err
+        }</span>
+
+        <span class="cov6" title="143">return nil</span>
+}
+
+func (api *API) ListenTLS(bind, certFile, keyFile string) error <span class="cov0" title="0">{
+        cert, err := tls.LoadX509KeyPair(certFile, keyFile)
+        if err != nil </span><span class="cov0" title="0">{
+                return err
+        }</span>
+
+        <span class="cov0" title="0">cfg := &amp;tls.Config{
+                Certificates: []tls.Certificate{cert},
+                MinVersion:   tls.VersionTLS13,
+                NextProtos:   []string{"h2"},
+        }
+
+        api.listener, err = tls.Listen("tcp", bind, cfg)
+        if err != nil </span><span class="cov0" title="0">{
+                return err
+        }</span>
+
+        <span class="cov0" title="0">return nil</span>
+}
+
+func (api *API) ListenInsecure(bind string) error <span class="cov5" title="63">{
+        var err error
+
+        api.listener, err = net.Listen("tcp", bind)
+        if err != nil </span><span class="cov0" title="0">{
+                return err
+        }</span>
+
+        <span class="cov5" title="63">return nil</span>
+}
+
+func (api *API) Addr() *net.TCPAddr <span class="cov6" title="206">{
+        return api.listener.Addr().(*net.TCPAddr)
+}</span>
+
+func (api *API) Serve() error <span class="cov6" title="206">{
+        if api.listener == nil </span><span class="cov0" title="0">{
+                return jsrest.Errorf(jsrest.ErrInternalServerError, "Serve() called before Listen*()")
+        }</span>
+
+        <span class="cov6" title="206">err := api.srv.Serve(api.listener)
+        if err != nil &amp;&amp; !errors.Is(err, http.ErrServerClosed) </span><span class="cov0" title="0">{
+                return err
+        }</span>
+
+        <span class="cov6" title="206">return nil</span>
+}
+
+func (api *API) Shutdown(ctx context.Context) error <span class="cov6" title="213">{
+        err := api.srv.Shutdown(ctx)
+        if err != nil </span><span class="cov0" title="0">{
+                return err
+        }</span>
+
+        <span class="cov6" title="213">api.eventState.close()
+        api.sb.Close()
+
+        return nil</span>
+}
+
+func (api *API) ServeHTTP(w http.ResponseWriter, r *http.Request) <span class="cov8" title="993">{
+        var err error
+
+        ctx := r.Context()
+
+        ev := api.eventState.newEvent("httpSuccess",
+                "httpProto", r.Proto,
+                "requestHost", r.Host,
+                "requestMethod", r.Method,
+                "requestPath", r.URL.Path,
+                "remoteAddr", r.RemoteAddr,
+                "responseCode", 200,
+        )
+
+        ctx = context.WithValue(ctx, ContextSpanID, uniuri.New())
+        ctx = context.WithValue(ctx, ContextEvent, ev)
+        r = r.WithContext(ctx)
+
+        r, err = api.serveHTTP(w, r)
+        if err != nil </span><span class="cov2" title="4">{
+                jsrest.WriteError(w, err)
+
+                ev.Set(
+                        "type", "httpError",
+                        "responseError", err.Error(),
+                )
+
+                hErr := jsrest.GetHTTPError(err)
+                if hErr != nil </span><span class="cov2" title="4">{
+                        ev.Set("responseCode", hErr.Code)
+                }</span>
+        }
+
+        <span class="cov8" title="993">api.eventState.writeEvent(r.Context(), ev)</span> //nolint:contextcheck
+}
+
+func (api *API) serveHTTP(w http.ResponseWriter, r *http.Request) (*http.Request, error) <span class="cov8" title="993">{
+        w.Header().Set("Cache-Control", "no-store")
+        w.Header().Set("Access-Control-Allow-Origin", "*")
+        w.Header().Set("Access-Control-Expose-Headers", "*")
+        w.Header().Set("Timing-Allow-Origin", "*")
+
+        if r.Method == http.MethodOptions </span><span class="cov5" title="92">{
+                w.Header().Set("Access-Control-Allow-Methods", "*")
+                w.Header().Set("Access-Control-Allow-Headers", "*")
+                w.Header().Set("Access-Control-Max-Age", "86400")
+
+                w.WriteHeader(http.StatusNoContent)
+
+                return r, nil
+        }</span>
+
+        <span class="cov8" title="901">err := r.ParseForm()
+        if err != nil </span><span class="cov0" title="0">{
+                return r, jsrest.Errorf(jsrest.ErrUnauthorized, "parse form failed (%w)", err)
+        }</span>
+
+        <span class="cov8" title="901">for _, hook := range api.requestHooks </span><span class="cov10" title="3604">{
+                newR, err := hook(w, r, api)
+                if err != nil </span><span class="cov2" title="4">{
+                        return r, jsrest.Errorf(jsrest.ErrInternalServerError, "request hook failed (%w)", err)
+                }</span>
+
+                <span class="cov9" title="3600">r = newR</span>
+        }
+
+        <span class="cov8" title="897">api.potency.ServeHTTP(w, r)
+
+        return r, nil</span>
+}
+
+func (api *API) registerHandlers(base string, cfg *config) <span class="cov8" title="1036">{
+        api.router.GET(
+                base,
+                func(w http.ResponseWriter, r *http.Request, _ httprouter.Params) </span><span class="cov6" title="96">{
+                        api.wrapError(api.routeListGET, cfg, w, r)
+                }</span>,
+        )
+
+        <span class="cov8" title="1036">api.router.POST(
+                base,
+                func(w http.ResponseWriter, r *http.Request, _ httprouter.Params) </span><span class="cov6" title="215">{
+                        api.wrapError(api.post, cfg, w, r)
+                }</span>,
+        )
+
+        <span class="cov8" title="1036">single := fmt.Sprintf("%s/:id", base)
+
+        api.router.PUT(
+                single,
+                func(w http.ResponseWriter, r *http.Request, ps httprouter.Params) </span><span class="cov4" title="21">{
+                        api.wrapErrorID(api.put, cfg, ps[0].Value, w, r)
+                }</span>,
+        )
+
+        <span class="cov8" title="1036">api.router.PATCH(
+                single,
+                func(w http.ResponseWriter, r *http.Request, ps httprouter.Params) </span><span class="cov5" title="53">{
+                        api.wrapErrorID(api.patch, cfg, ps[0].Value, w, r)
+                }</span>,
+        )
+
+        <span class="cov8" title="1036">api.router.DELETE(
+                single,
+                func(w http.ResponseWriter, r *http.Request, ps httprouter.Params) </span><span class="cov4" title="17">{
+                        api.wrapErrorID(api.delete, cfg, ps[0].Value, w, r)
+                }</span>,
+        )
+
+        <span class="cov8" title="1036">api.router.GET(
+                single,
+                func(w http.ResponseWriter, r *http.Request, ps httprouter.Params) </span><span class="cov5" title="89">{
+                        api.wrapErrorID(api.routeSingleGET, cfg, ps[0].Value, w, r)
+                }</span>,
+        )
+}
+
+func (api *API) routeListGET(cfg *config, w http.ResponseWriter, r *http.Request) error <span class="cov6" title="96">{
+        ac := httpheader.Accept(r.Header)
+
+        if m := httpheader.MatchAccept(ac, "application/json"); m.Type != "" </span><span class="cov5" title="49">{
+                return api.getList(cfg, w, r)
+        }</span>
+
+        <span class="cov5" title="47">if m := httpheader.MatchAccept(ac, "text/event-stream"); m.Type != "" </span><span class="cov5" title="46">{
+                return api.streamList(cfg, w, r)
+        }</span>
+
+        <span class="cov1" title="1">return jsrest.Errorf(jsrest.ErrNotAcceptable, "Accept: %s (%w)", r.Header.Get("Accept"), ErrUnknownAcceptType)</span>
+}
+
+func (api *API) routeSingleGET(cfg *config, id string, w http.ResponseWriter, r *http.Request) error <span class="cov5" title="89">{
+        ac := httpheader.Accept(r.Header)
+
+        if m := httpheader.MatchAccept(ac, "application/json"); m.Type != "" </span><span class="cov5" title="69">{
+                return api.getObject(cfg, id, w, r)
+        }</span>
+
+        <span class="cov4" title="20">if m := httpheader.MatchAccept(ac, "text/event-stream"); m.Type != "" </span><span class="cov4" title="19">{
+                return api.streamGet(cfg, id, w, r)
+        }</span>
+
+        <span class="cov1" title="1">return jsrest.Errorf(jsrest.ErrNotAcceptable, "Accept: %s (%w)", r.Header.Get("Accept"), ErrUnknownAcceptType)</span>
+}
+
+func (api *API) wrapError(cb func(*config, http.ResponseWriter, *http.Request) error, cfg *config, w http.ResponseWriter, r *http.Request) <span class="cov7" title="311">{
+        err := cb(cfg, w, r)
+        if err != nil </span><span class="cov2" title="4">{
+                jsrest.WriteError(w, err)
+        }</span>
+}
+
+func (api *API) wrapErrorID(cb func(*config, string, http.ResponseWriter, *http.Request) error, cfg *config, id string, w http.ResponseWriter, r *http.Request) <span class="cov6" title="180">{
+        err := cb(cfg, id, w, r)
+        if err != nil </span><span class="cov4" title="28">{
+                jsrest.WriteError(w, err)
+        }</span>
+}
+
+func (api *API) names() []string <span class="cov2" title="5">{
+        names := []string{}
+        for name := range api.registry </span><span class="cov4" title="25">{
+                names = append(names, name)
+        }</span>
+
+        <span class="cov2" title="5">sort.Strings(names)
+
+        return names</span>
+}
+
+func apiName[T any]() string <span class="cov8" title="1316">{
+        return strings.ToLower(reflect.TypeOf(new(T)).Elem().Name())
+}</span>
+
+func camelName[T any]() string <span class="cov8" title="831">{
+        return upperFirst(reflect.TypeOf(new(T)).Elem().Name())
+}</span>
+</pre>
+		
+		<pre class="file" id="file1" style="display: none">package patchy
+
+import (
+        "context"
+        "net/http"
+        "strings"
+
+        "github.com/getkin/kin-openapi/openapi3"
+        "github.com/gopatchy/header"
+        "github.com/gopatchy/jsrest"
+        "github.com/gopatchy/metadata"
+        "github.com/gopatchy/path"
+        "golang.org/x/crypto/bcrypt"
+)
+
+func authBasic[T any](_ http.ResponseWriter, r *http.Request, api *API, name, pathUser, pathPass string) (*http.Request, error) <span class="cov9" title="900">{
+        ctx := r.Context()
+
+        scheme, val := header.ParseAuthorization(r)
+
+        if strings.ToLower(scheme) != "basic" </span><span class="cov9" title="897">{
+                return r, nil
+        }</span>
+
+        <span class="cov2" title="3">reqUser, reqPass, err := header.ParseBasic(val)
+        if err != nil </span><span class="cov0" title="0">{
+                return nil, jsrest.Errorf(jsrest.ErrBadRequest, "Authorization Basic data parsing failed (%w)", err)
+        }</span>
+
+        <span class="cov2" title="3">users, err := ListName[T](
+                context.WithValue(ctx, ContextAuthBasicLookup, true),
+                api,
+                name,
+                &amp;ListOpts{
+                        Filters: []Filter{
+                                {
+                                        Path:  pathUser,
+                                        Op:    "eq",
+                                        Value: reqUser,
+                                },
+                        },
+                },
+        )
+        if err != nil </span><span class="cov0" title="0">{
+                return nil, jsrest.Errorf(jsrest.ErrInternalServerError, "list users for auth failed (%w)", err)
+        }</span>
+
+        <span class="cov2" title="3">for _, user := range users </span><span class="cov1" title="2">{
+                userPass, err := path.Get(user, pathPass)
+                if err != nil </span><span class="cov0" title="0">{
+                        return nil, jsrest.Errorf(jsrest.ErrInternalServerError, "get user password hash failed (%w)", err)
+                }</span>
+
+                <span class="cov1" title="2">if userPass == nil </span><span class="cov0" title="0">{
+                        continue</span>
+                }
+
+                <span class="cov1" title="2">var strPass string
+
+                switch v := userPass.(type) </span>{
+                case string:<span class="cov1" title="2">
+                        strPass = v</span>
+                case *string:<span class="cov0" title="0">
+                        strPass = *v</span>
+                default:<span class="cov0" title="0">
+                        return nil, jsrest.Errorf(jsrest.ErrInternalServerError, "user password hash has invalid type %T", v)</span>
+                }
+
+                <span class="cov1" title="2">err = bcrypt.CompareHashAndPassword([]byte(strPass), []byte(reqPass))
+                if err == nil </span><span class="cov1" title="1">{
+                        err = path.Set(user, pathPass, "")
+                        if err != nil </span><span class="cov0" title="0">{
+                                return nil, jsrest.Errorf(jsrest.ErrInternalServerError, "clear user password hash failed (%w)", err)
+                        }</span>
+
+                        <span class="cov1" title="1">return r.WithContext(context.WithValue(ctx, ContextAuthBasic, user)), nil</span>
+                }
+        }
+
+        <span class="cov1" title="2">return nil, jsrest.Errorf(jsrest.ErrUnauthorized, "user not found or password mismatch")</span>
+}
+
+func AddAuthBasicName[T any](api *API, name, pathUser, pathPass string) <span class="cov7" title="206">{
+        api.AddRequestHook(func(w http.ResponseWriter, r *http.Request, a *API) (*http.Request, error) </span><span class="cov9" title="900">{
+                return authBasic[T](w, r, a, name, pathUser, pathPass)
+        }</span>)
+
+        <span class="cov7" title="206">api.AddEventHook(EventHookAuthBasic)
+        api.AddOpenAPIHook(OpenAPIHookAuthBasic)
+
+        api.authBasic = true</span>
+}
+
+func AddAuthBasic[T any](api *API, pathUser, pathPass string) <span class="cov0" title="0">{
+        AddAuthBasicName[T](api, apiName[T](), pathUser, pathPass)
+}</span>
+
+func EventHookAuthBasic(ctx context.Context, ev *Event) <span class="cov10" title="993">{
+        ctxUser := ctx.Value(ContextAuthBasic)
+
+        if ctxUser == nil </span><span class="cov9" title="992">{
+                return
+        }</span>
+
+        <span class="cov1" title="1">ev.Set(
+                "authMethod", "basic",
+                "userID", metadata.GetMetadata(ctxUser).ID,
+        )</span>
+}
+
+func OpenAPIHookAuthBasic(_ context.Context, t *OpenAPI) <span class="cov1" title="1">{
+        t.Components.SecuritySchemes["basicAuth"] = &amp;openapi3.SecuritySchemeRef{
+                Value: &amp;openapi3.SecurityScheme{
+                        Type:   "http",
+                        Scheme: "basic",
+                },
+        }
+
+        t.Security = append(t.Security, openapi3.SecurityRequirement{"basicAuth": []string{}})
+}</span>
+</pre>
+		
+		<pre class="file" id="file2" style="display: none">package patchy
+
+import (
+        "context"
+        "net/http"
+        "strings"
+
+        "github.com/getkin/kin-openapi/openapi3"
+        "github.com/gopatchy/header"
+        "github.com/gopatchy/jsrest"
+        "github.com/gopatchy/metadata"
+        "github.com/gopatchy/path"
+)
+
+func authBearer[T any](_ http.ResponseWriter, r *http.Request, api *API, name, pathToken string) (*http.Request, error) <span class="cov9" title="901">{
+        ctx := r.Context()
+
+        scheme, val := header.ParseAuthorization(r)
+
+        if strings.ToLower(scheme) != "bearer" </span><span class="cov9" title="899">{
+                return r, nil
+        }</span>
+
+        <span class="cov1" title="2">bearers, err := ListName[T](
+                context.WithValue(ctx, ContextAuthBearerLookup, true),
+                api,
+                name,
+                &amp;ListOpts{
+                        Filters: []Filter{
+                                {
+                                        Path:  pathToken,
+                                        Op:    "eq",
+                                        Value: val,
+                                },
+                        },
+                },
+        )
+        if err != nil </span><span class="cov0" title="0">{
+                return nil, jsrest.Errorf(jsrest.ErrInternalServerError, "list tokens for auth failed (%w)", err)
+        }</span>
+
+        <span class="cov1" title="2">if len(bearers) != 1 </span><span class="cov1" title="1">{
+                return r, jsrest.Errorf(jsrest.ErrUnauthorized, "token not found")
+        }</span>
+
+        <span class="cov1" title="1">bearer := bearers[0]
+
+        err = path.Set(bearer, pathToken, "")
+        if err != nil </span><span class="cov0" title="0">{
+                return nil, jsrest.Errorf(jsrest.ErrInternalServerError, "clear token failed (%w)", err)
+        }</span>
+
+        <span class="cov1" title="1">return r.WithContext(context.WithValue(ctx, ContextAuthBearer, bearer)), nil</span>
+}
+
+func AddAuthBearerName[T any](api *API, name, pathToken string) <span class="cov7" title="206">{
+        api.AddRequestHook(func(w http.ResponseWriter, r *http.Request, a *API) (*http.Request, error) </span><span class="cov9" title="901">{
+                return authBearer[T](w, r, a, name, pathToken)
+        }</span>)
+
+        <span class="cov7" title="206">api.AddEventHook(EventHookAuthBearer)
+        api.AddOpenAPIHook(OpenAPIHookAuthBearer)
+
+        api.authBearer = true</span>
+}
+
+func AddAuthBearer[T any](api *API, pathToken string) <span class="cov0" title="0">{
+        AddAuthBearerName[T](api, apiName[T](), pathToken)
+}</span>
+
+func EventHookAuthBearer(ctx context.Context, ev *Event) <span class="cov10" title="993">{
+        ctxToken := ctx.Value(ContextAuthBearer)
+
+        if ctxToken == nil </span><span class="cov9" title="992">{
+                return
+        }</span>
+
+        <span class="cov1" title="1">ev.Set(
+                "authMethod", "bearer",
+                "tokenID", metadata.GetMetadata(ctxToken).ID,
+        )</span>
+}
+
+func OpenAPIHookAuthBearer(_ context.Context, t *OpenAPI) <span class="cov1" title="1">{
+        t.Components.SecuritySchemes["bearerAuth"] = &amp;openapi3.SecuritySchemeRef{
+                Value: &amp;openapi3.SecurityScheme{
+                        Type:         "http",
+                        Scheme:       "bearer",
+                        BearerFormat: "secret-token:*",
+                },
+        }
+
+        t.Security = append(t.Security, openapi3.SecurityRequirement{"bearerAuth": []string{}})
+}</span>
+</pre>
+		
+		<pre class="file" id="file3" style="display: none">package patchy
+
+import (
+        "context"
+        "encoding/json"
+        "errors"
+        "fmt"
+        "reflect"
+        "sync"
+
+        "github.com/gopatchy/jsrest"
+        "github.com/gopatchy/metadata"
+)
+
+var ErrMissingAuthCheck = errors.New("missing auth check")
+
+type ListHook func(context.Context, *ListOpts, *API) error
+
+type config struct {
+        apiName   string
+        camelName string
+        typeOf    reflect.Type
+
+        factory func() any
+
+        mayRead  func(context.Context, any, *API) error
+        mayWrite func(context.Context, any, any, *API) error
+        listHook ListHook
+
+        // Per-key read/modify/write (update and replace) operation locking
+        // This ensures monotonic generation numbers
+        mu    sync.Mutex
+        locks map[string]*lock
+}
+
+type lock struct {
+        mu  sync.Mutex
+        ref int
+}
+
+type mayRead interface {
+        MayRead(context.Context, *API) error
+}
+
+type mayWrite[T any] interface {
+        MayWrite(context.Context, *T, *API) error
+}
+
+func newConfig[T any](apiName, camelName string) *config <span class="cov8" title="1037">{
+        cfg := &amp;config{
+                apiName:   apiName,
+                camelName: camelName,
+                typeOf:    reflect.TypeOf(new(T)).Elem(),
+                factory:   func() any </span><span class="cov10" title="3656">{ return new(T) }</span>,
+                locks:     map[string]*lock{},
+        }
+
+        <span class="cov8" title="1037">typ := cfg.factory()
+
+        if !metadata.HasMetadata(typ) </span><span class="cov1" title="1">{
+                panic("struct missing patchy.Metadata field")</span>
+        }
+
+        <span class="cov8" title="1036">if _, has := typ.(mayRead); has </span><span class="cov8" title="622">{
+                cfg.mayRead = func(ctx context.Context, obj any, api *API) error </span><span class="cov8" title="658">{
+                        obj = convert[T](obj)
+                        return obj.(mayRead).MayRead(ctx, api)
+                }</span>
+        }
+
+        <span class="cov8" title="1036">if _, has := typ.(mayWrite[T]); has </span><span class="cov6" title="210">{
+                cfg.mayWrite = func(ctx context.Context, obj any, prev any, api *API) error </span><span class="cov5" title="48">{
+                        obj = convert[T](obj)
+                        return obj.(mayWrite[T]).MayWrite(ctx, convert[T](prev), api)
+                }</span>
+        }
+
+        <span class="cov8" title="1036">return cfg</span>
+}
+
+func (cfg *config) isSafe() error <span class="cov2" title="6">{
+        if cfg.mayRead == nil </span><span class="cov1" title="2">{
+                return fmt.Errorf("%s: MayRead (%w)", cfg.apiName, ErrMissingAuthCheck)
+        }</span>
+
+        <span class="cov2" title="4">if cfg.mayWrite == nil </span><span class="cov1" title="2">{
+                return fmt.Errorf("%s: MayWrite (%w)", cfg.apiName, ErrMissingAuthCheck)
+        }</span>
+
+        <span class="cov1" title="2">return nil</span>
+}
+
+func (cfg *config) checkRead(ctx context.Context, obj any, api *API) (any, error) <span class="cov8" title="1079">{
+        ret, err := cfg.clone(obj)
+        if err != nil </span><span class="cov0" title="0">{
+                return nil, jsrest.Errorf(jsrest.ErrInternalServerError, "clone failed (%w)", err)
+        }</span>
+
+        <span class="cov8" title="1079">if cfg.mayRead != nil </span><span class="cov8" title="658">{
+                err := cfg.mayRead(ctx, ret, api)
+                if err != nil </span><span class="cov3" title="7">{
+                        return nil, jsrest.Errorf(jsrest.ErrUnauthorized, "not authorized to read (%w)", err)
+                }</span>
+        }
+
+        <span class="cov8" title="1072">return ret, nil</span>
+}
+
+func (cfg *config) checkReadList(ctx context.Context, list []any, api *API) ([]any, error) <span class="cov6" title="159">{ //nolint:unparam
+        ret := []any{}
+
+        for _, obj := range list </span><span class="cov7" title="249">{
+                obj, err := cfg.checkRead(ctx, obj, api)
+                if err != nil </span><span class="cov1" title="2">{
+                        continue</span>
+                }
+
+                <span class="cov7" title="247">ret = append(ret, obj)</span>
+        }
+
+        <span class="cov6" title="159">return ret, nil</span>
+}
+
+func (cfg *config) checkWrite(ctx context.Context, obj, prev any, api *API) (any, error) <span class="cov8" title="747">{
+        var ret any
+
+        if obj != nil </span><span class="cov8" title="732">{
+                var err error
+
+                ret, err = cfg.clone(obj)
+                if err != nil </span><span class="cov0" title="0">{
+                        return nil, jsrest.Errorf(jsrest.ErrInternalServerError, "clone failed (%w)", err)
+                }</span>
+        }
+
+        <span class="cov8" title="747">if cfg.mayWrite != nil </span><span class="cov5" title="48">{
+                err := cfg.mayWrite(ctx, ret, prev, api)
+                if err != nil </span><span class="cov2" title="4">{
+                        return nil, jsrest.Errorf(jsrest.ErrUnauthorized, "not authorized to write (%w)", err)
+                }</span>
+        }
+
+        <span class="cov8" title="743">return ret, nil</span>
+}
+
+func (cfg *config) clone(src any) (any, error) <span class="cov9" title="1880">{
+        js, err := json.Marshal(src)
+        if err != nil </span><span class="cov0" title="0">{
+                return nil, jsrest.Errorf(jsrest.ErrInternalServerError, "JSON marshal (%w)", err)
+        }</span>
+
+        <span class="cov9" title="1880">dst := cfg.factory()
+
+        err = json.Unmarshal(js, dst)
+        if err != nil </span><span class="cov0" title="0">{
+                return nil, jsrest.Errorf(jsrest.ErrInternalServerError, "JSON unmarhsal (%w)", err)
+        }</span>
+
+        <span class="cov9" title="1880">return dst, nil</span>
+}
+
+func (cfg *config) lock(id string) <span class="cov5" title="79">{
+        cfg.mu.Lock()
+
+        entry := cfg.locks[id]
+        if entry == nil </span><span class="cov5" title="79">{
+                entry = &amp;lock{}
+                cfg.locks[id] = entry
+        }</span>
+        <span class="cov5" title="79">entry.ref++
+
+        cfg.mu.Unlock()
+
+        entry.mu.Lock()</span>
+}
+
+func (cfg *config) unlock(id string) <span class="cov5" title="79">{
+        cfg.mu.Lock()
+
+        entry := cfg.locks[id]
+
+        entry.ref--
+        if entry.ref == 0 </span><span class="cov5" title="79">{
+                delete(cfg.locks, id)
+        }</span>
+
+        <span class="cov5" title="79">cfg.mu.Unlock()
+
+        entry.mu.Unlock()</span>
+}
+
+func SetListHookName[T any](api *API, name string, hook ListHook) <span class="cov1" title="1">{
+        cfg := api.registry[name]
+        if cfg == nil </span><span class="cov0" title="0">{
+                panic(name)</span>
+        }
+
+        <span class="cov1" title="1">cfg.listHook = hook</span>
+}
+
+func SetListHook[T any](api *API, hook ListHook) <span class="cov1" title="1">{
+        SetListHookName[T](api, apiName[T](), hook)
+}</span>
+
+func convert[T any](obj any) *T <span class="cov8" title="776">{
+        // Like cast but supports untyped nil
+        if obj == nil </span><span class="cov4" title="38">{
+                return nil
+        }</span>
+
+        <span class="cov8" title="738">return obj.(*T)</span>
+}
+</pre>
+		
+		<pre class="file" id="file4" style="display: none">package patchy
+
+import (
+        "crypto/tls"
+        "encoding/json"
+        "net/http"
+        "os"
+)
+
+type DebugInfo struct {
+        Server *ServerInfo `json:"server"`
+        IP     *IPInfo     `json:"ip"`
+        HTTP   *HTTPInfo   `json:"http"`
+        TLS    *TLSInfo    `json:"tls"`
+}
+
+type ServerInfo struct {
+        Hostname string `json:"hostname"`
+}
+
+type IPInfo struct {
+        RemoteAddr string `json:"remoteAddr"`
+}
+
+type HTTPInfo struct {
+        Protocol string      `json:"protocol"`
+        Method   string      `json:"method"`
+        Header   http.Header `json:"header"`
+        URL      string      `json:"url"`
+}
+
+type TLSInfo struct {
+        Version            uint16 `json:"version"`
+        DidResume          bool   `json:"didResume"`
+        CipherSuite        uint16 `json:"cipherSuite"`
+        NegotiatedProtocol string `json:"negotiatedProtocol"`
+        ServerName         string `json:"serverName"`
+}
+
+func (api *API) handleDebug(w http.ResponseWriter, r *http.Request) <span class="cov10" title="4">{
+        ctx := r.Context()
+
+        api.SetEventData(ctx, "operation", "debug")
+
+        w.Header().Add("Content-Type", "application/json")
+
+        enc := json.NewEncoder(w)
+        enc.SetEscapeHTML(false)
+        enc.SetIndent("", "\t")
+
+        if r.TLS == nil </span><span class="cov8" title="3">{
+                r.TLS = &amp;tls.ConnectionState{}
+        }</span>
+
+        <span class="cov10" title="4">_ = enc.Encode(&amp;DebugInfo{ //nolint:errchkjson
+                Server: buildServerInfo(),
+                IP:     buildIPInfo(r),
+                HTTP:   buildHTTPInfo(r),
+                TLS:    buildTLSInfo(r),
+        })</span>
+}
+
+func buildServerInfo() *ServerInfo <span class="cov10" title="4">{
+        hostname, _ := os.Hostname()
+
+        return &amp;ServerInfo{
+                Hostname: hostname,
+        }
+}</span>
+
+func buildIPInfo(r *http.Request) *IPInfo <span class="cov10" title="4">{
+        return &amp;IPInfo{
+                RemoteAddr: r.RemoteAddr,
+        }
+}</span>
+
+func buildHTTPInfo(r *http.Request) *HTTPInfo <span class="cov10" title="4">{
+        return &amp;HTTPInfo{
+                Protocol: r.Proto,
+                Method:   r.Method,
+                Header:   r.Header,
+                URL:      r.URL.String(),
+        }
+}</span>
+
+func buildTLSInfo(r *http.Request) *TLSInfo <span class="cov10" title="4">{
+        return &amp;TLSInfo{
+                Version:            r.TLS.Version,
+                DidResume:          r.TLS.DidResume,
+                CipherSuite:        r.TLS.CipherSuite,
+                NegotiatedProtocol: r.TLS.NegotiatedProtocol,
+                ServerName:         r.TLS.ServerName,
+        }
+}</span>
+</pre>
+		
+		<pre class="file" id="file5" style="display: none">package patchy
+
+import (
+        "net/http"
+
+        "github.com/gopatchy/jsrest"
+)
+
+func (api *API) delete(cfg *config, id string, w http.ResponseWriter, r *http.Request) error <span class="cov10" title="17">{
+        ctx := r.Context()
+
+        api.SetEventData(ctx,
+                "operation", "delete",
+                "typeName", cfg.apiName,
+                "id", id,
+        )
+
+        opts := parseUpdateOpts(r)
+
+        err := api.deleteInt(ctx, cfg, id, opts)
+        if err != nil </span><span class="cov7" title="7">{
+                return jsrest.Errorf(jsrest.ErrInternalServerError, "delete failed (%w)", err)
+        }</span>
+
+        <span class="cov8" title="10">w.WriteHeader(http.StatusNoContent)
+
+        return nil</span>
+}
+</pre>
+		
+		<pre class="file" id="file6" style="display: none">package patchy
+
+import (
+        "context"
+        "fmt"
+        "io"
+
+        "github.com/gopatchy/jsrest"
+        "github.com/gopatchy/metadata"
+        "github.com/gopatchy/path"
+        "github.com/gopatchy/storebus"
+)
+
+var ErrEndOfStream = fmt.Errorf("end of stream")
+
+func CreateName[T any](ctx context.Context, api *API, name string, obj *T) (*T, error) <span class="cov10" title="449">{
+        cfg := api.registry[name]
+        if cfg == nil </span><span class="cov1" title="1">{
+                return nil, jsrest.Errorf(jsrest.ErrInternalServerError, "unknown type: %s", name)
+        }</span>
+
+        <span class="cov9" title="448">created, err := api.createInt(ctx, cfg, obj)
+        if err != nil </span><span class="cov0" title="0">{
+                return nil, jsrest.Errorf(jsrest.ErrInternalServerError, "create failed (%w)", err)
+        }</span>
+
+        <span class="cov9" title="448">return created.(*T), nil</span>
+}
+
+func Create[T any](ctx context.Context, api *API, obj *T) (*T, error) <span class="cov9" title="445">{
+        return CreateName[T](ctx, api, apiName[T](), obj)
+}</span>
+
+func DeleteName[T any](ctx context.Context, api *API, name, id string, opts *UpdateOpts) error <span class="cov3" title="6">{
+        cfg := api.registry[name]
+        if cfg == nil </span><span class="cov1" title="1">{
+                return jsrest.Errorf(jsrest.ErrInternalServerError, "unknown type: %s", name)
+        }</span>
+
+        <span class="cov3" title="5">err := api.deleteInt(ctx, cfg, id, opts)
+        if err != nil </span><span class="cov1" title="1">{
+                return jsrest.Errorf(jsrest.ErrInternalServerError, "delete failed (%w)", err)
+        }</span>
+
+        <span class="cov3" title="4">return nil</span>
+}
+
+func Delete[T any](ctx context.Context, api *API, id string, opts *UpdateOpts) error <span class="cov3" title="4">{
+        return DeleteName[T](ctx, api, apiName[T](), id, opts)
+}</span>
+
+func FindName[T any](ctx context.Context, api *API, name, shortID string) (*T, error) <span class="cov2" title="3">{
+        listOpts := &amp;ListOpts{
+                Filters: []Filter{
+                        {
+                                Path:  "id",
+                                Op:    "hp",
+                                Value: shortID,
+                        },
+                },
+        }
+
+        objs, err := ListName[T](ctx, api, name, listOpts)
+        if err != nil </span><span class="cov0" title="0">{
+                return nil, err
+        }</span>
+
+        <span class="cov2" title="3">if len(objs) == 0 </span><span class="cov1" title="1">{
+                return nil, jsrest.Errorf(jsrest.ErrNotFound, "no object found with short ID: %s", shortID)
+        }</span>
+
+        <span class="cov2" title="2">if len(objs) &gt; 1 </span><span class="cov1" title="1">{
+                return nil, jsrest.Errorf(jsrest.ErrBadRequest, "multiple objects found with short ID: %s", shortID)
+        }</span>
+
+        <span class="cov1" title="1">return objs[0], nil</span>
+}
+
+func Find[T any](ctx context.Context, api *API, shortID string) (*T, error) <span class="cov2" title="3">{
+        return FindName[T](ctx, api, apiName[T](), shortID)
+}</span>
+
+func GetName[T any](ctx context.Context, api *API, name, id string, opts *GetOpts) (*T, error) <span class="cov4" title="10">{
+        cfg := api.registry[name]
+        if cfg == nil </span><span class="cov1" title="1">{
+                return nil, jsrest.Errorf(jsrest.ErrInternalServerError, "unknown type: %s", name)
+        }</span>
+
+        <span class="cov4" title="9">obj, err := api.getInt(ctx, cfg, id)
+        if err != nil </span><span class="cov0" title="0">{
+                return nil, jsrest.Errorf(jsrest.ErrInternalServerError, "get failed (%w)", err)
+        }</span>
+
+        <span class="cov4" title="9">return convert[T](obj), nil</span>
+}
+
+func Get[T any](ctx context.Context, api *API, id string, opts *GetOpts) (*T, error) <span class="cov4" title="9">{
+        return GetName[T](ctx, api, apiName[T](), id, opts)
+}</span>
+
+func ListName[T any](ctx context.Context, api *API, name string, opts *ListOpts) ([]*T, error) <span class="cov5" title="21">{
+        cfg := api.registry[name]
+        if cfg == nil </span><span class="cov1" title="1">{
+                return nil, jsrest.Errorf(jsrest.ErrInternalServerError, "unknown type: %s", name)
+        }</span>
+
+        <span class="cov5" title="20">list, err := api.listInt(ctx, cfg, opts)
+        if err != nil </span><span class="cov0" title="0">{
+                return nil, jsrest.Errorf(jsrest.ErrInternalServerError, "list failed (%w)", err)
+        }</span>
+
+        <span class="cov5" title="20">ret := []*T{}
+        for _, obj := range list </span><span class="cov4" title="14">{
+                ret = append(ret, obj.(*T))
+        }</span>
+
+        <span class="cov5" title="20">return ret, nil</span>
+}
+
+func List[T any](ctx context.Context, api *API, opts *ListOpts) ([]*T, error) <span class="cov3" title="6">{
+        return ListName[T](ctx, api, apiName[T](), opts)
+}</span>
+
+func ReplaceName[T any](ctx context.Context, api *API, name, id string, obj *T, opts *UpdateOpts) (*T, error) <span class="cov2" title="2">{
+        cfg := api.registry[name]
+        if cfg == nil </span><span class="cov1" title="1">{
+                return nil, jsrest.Errorf(jsrest.ErrInternalServerError, "unknown type: %s", name)
+        }</span>
+
+        <span class="cov1" title="1">replaced, err := api.replaceInt(ctx, cfg, id, obj, opts)
+        if err != nil </span><span class="cov0" title="0">{
+                return nil, jsrest.Errorf(jsrest.ErrInternalServerError, "replace failed (%w)", err)
+        }</span>
+
+        <span class="cov1" title="1">return replaced.(*T), nil</span>
+}
+
+func Replace[T any](ctx context.Context, api *API, id string, obj *T, opts *UpdateOpts) (*T, error) <span class="cov1" title="1">{
+        return ReplaceName[T](ctx, api, apiName[T](), id, obj, opts)
+}</span>
+
+func UpdateNameMap[T any](ctx context.Context, api *API, name, id string, patch map[string]any, opts *UpdateOpts) (*T, error) <span class="cov3" title="5">{
+        cfg := api.registry[name]
+        if cfg == nil </span><span class="cov1" title="1">{
+                return nil, jsrest.Errorf(jsrest.ErrInternalServerError, "unknown type: %s", name)
+        }</span>
+
+        <span class="cov3" title="4">updated, err := api.updateInt(ctx, cfg, id, patch, opts)
+        if err != nil </span><span class="cov0" title="0">{
+                return nil, jsrest.Errorf(jsrest.ErrInternalServerError, "update failed (%w)", err)
+        }</span>
+
+        <span class="cov3" title="4">return updated.(*T), nil</span>
+}
+
+func UpdateName[T any](ctx context.Context, api *API, name, id string, obj *T, opts *UpdateOpts) (*T, error) <span class="cov3" title="4">{
+        patch, err := path.ToMap(obj)
+        if err != nil </span><span class="cov0" title="0">{
+                return nil, jsrest.Errorf(jsrest.ErrBadRequest, "invalid patch content (%w)", err)
+        }</span>
+
+        <span class="cov3" title="4">return UpdateNameMap[T](ctx, api, name, id, patch, opts)</span>
+}
+
+func UpdateMap[T any](ctx context.Context, api *API, id string, patch map[string]any, opts *UpdateOpts) (*T, error) <span class="cov1" title="1">{
+        return UpdateNameMap[T](ctx, api, apiName[T](), id, patch, opts)
+}</span>
+
+func Update[T any](ctx context.Context, api *API, id string, obj *T, opts *UpdateOpts) (*T, error) <span class="cov2" title="2">{
+        return UpdateName[T](ctx, api, apiName[T](), id, obj, opts)
+}</span>
+
+func StreamGetName[T any](ctx context.Context, api *API, name, id string) (*GetStream[T], error) <span class="cov3" title="4">{
+        cfg := api.registry[name]
+        if cfg == nil </span><span class="cov1" title="1">{
+                return nil, jsrest.Errorf(jsrest.ErrInternalServerError, "unknown type: %s", name)
+        }</span>
+
+        <span class="cov2" title="3">gsi, err := api.streamGetInt(ctx, cfg, id)
+        if err != nil </span><span class="cov0" title="0">{
+                return nil, jsrest.Errorf(jsrest.ErrInternalServerError, "stream get failed (%w)", err)
+        }</span>
+
+        <span class="cov2" title="3">stream := &amp;GetStream[T]{
+                ch:  make(chan *T, 100),
+                gsi: gsi,
+        }
+
+        go func() </span><span class="cov2" title="3">{
+                for obj := range gsi.Chan() </span><span class="cov3" title="4">{
+                        stream.writeEvent(convert[T](obj))
+                }</span>
+
+                <span class="cov2" title="3">stream.writeError(io.EOF)</span>
+        }()
+
+        <span class="cov2" title="3">return stream, nil</span>
+}
+
+func StreamGet[T any](ctx context.Context, api *API, id string) (*GetStream[T], error) <span class="cov2" title="3">{
+        return StreamGetName[T](ctx, api, apiName[T](), id)
+}</span>
+
+func StreamListName[T any](ctx context.Context, api *API, name string, opts *ListOpts) (*ListStream[T], error) <span class="cov4" title="8">{
+        cfg := api.registry[name]
+        if cfg == nil </span><span class="cov1" title="1">{
+                return nil, jsrest.Errorf(jsrest.ErrInternalServerError, "unknown type: %s", name)
+        }</span>
+
+        <span class="cov3" title="7">lsi, err := api.streamListInt(ctx, cfg, opts)
+        if err != nil </span><span class="cov0" title="0">{
+                return nil, jsrest.Errorf(jsrest.ErrInternalServerError, "stream list failed (%w)", err)
+        }</span>
+
+        <span class="cov3" title="7">stream := &amp;ListStream[T]{
+                ch:  make(chan []*T, 100),
+                lsi: lsi,
+        }
+
+        go func() </span><span class="cov3" title="7">{
+                for list := range lsi.Chan() </span><span class="cov4" title="12">{
+                        typeList := []*T{}
+
+                        for _, obj := range list </span><span class="cov4" title="9">{
+                                typeList = append(typeList, convert[T](obj))
+                        }</span>
+
+                        <span class="cov4" title="12">stream.writeEvent(typeList)</span>
+                }
+
+                <span class="cov3" title="7">stream.writeError(io.EOF)</span>
+        }()
+
+        <span class="cov3" title="7">return stream, nil</span>
+}
+
+func StreamList[T any](ctx context.Context, api *API, opts *ListOpts) (*ListStream[T], error) <span class="cov3" title="7">{
+        return StreamListName[T](ctx, api, apiName[T](), opts)
+}</span>
+
+func ReplicateInName[TIn, TOut any](ctx context.Context, api *API, name string, in &lt;-chan []*TIn, transform func(in *TIn) (*TOut, error), opts *ListOpts) error <span class="cov2" title="3">{
+        for </span><span class="cov4" title="9">{
+                err := ReplicateInNameOnce[TIn, TOut](ctx, api, name, in, transform, opts)
+                if err != nil </span><span class="cov2" title="3">{
+                        return err
+                }</span>
+        }
+}
+
+func ReplicateIn[TIn, TOut any](ctx context.Context, api *API, in &lt;-chan []*TIn, transform func(in *TIn) (*TOut, error), opts *ListOpts) error <span class="cov2" title="3">{
+        return ReplicateInName[TIn, TOut](ctx, api, apiName[TOut](), in, transform, opts)
+}</span>
+
+func ReplicateInNameOnce[TIn, TOut any](ctx context.Context, api *API, name string, in &lt;-chan []*TIn, transform func(in *TIn) (*TOut, error), opts *ListOpts) error <span class="cov4" title="9">{
+        inList := &lt;-in
+        if inList == nil </span><span class="cov2" title="3">{
+                return ErrEndOfStream
+        }</span>
+
+        <span class="cov3" title="6">transList := []*TOut{}
+
+        for _, inObj := range inList </span><span class="cov3" title="4">{
+                transObj, err := transform(inObj)
+                if err != nil </span><span class="cov0" title="0">{
+                        return err
+                }</span>
+
+                <span class="cov3" title="4">err = storebus.UpdateHash(transObj)
+                if err != nil </span><span class="cov0" title="0">{
+                        return err
+                }</span>
+
+                <span class="cov3" title="4">transList = append(transList, transObj)</span>
+        }
+
+        <span class="cov3" title="6">return SyncListName[TOut](ctx, api, name, transList, opts)</span>
+}
+
+func ReplicateInOnce[TIn, TOut any](ctx context.Context, api *API, in &lt;-chan []*TIn, transform func(in *TIn) (*TOut, error), opts *ListOpts) error <span class="cov0" title="0">{
+        return ReplicateInNameOnce[TIn, TOut](ctx, api, apiName[TOut](), in, transform, opts)
+}</span>
+
+func SyncListName[T any](ctx context.Context, api *API, name string, list []*T, opts *ListOpts) error <span class="cov3" title="6">{
+        ctx = context.WithValue(ctx, ContextReplicate, true)
+        ctx = context.WithValue(ctx, ContextWriteID, true)
+        ctx = context.WithValue(ctx, ContextWriteGeneration, true)
+
+        curList, err := ListName[T](ctx, api, name, opts)
+        if err != nil </span><span class="cov0" title="0">{
+                return err
+        }</span>
+
+        <span class="cov3" title="6">curByID := map[string]*T{}
+
+        for _, curObj := range curList </span><span class="cov2" title="2">{
+                curMD := metadata.GetMetadata(curObj)
+                curByID[curMD.ID] = curObj
+        }</span>
+
+        <span class="cov3" title="6">for _, newObj := range list </span><span class="cov3" title="4">{
+                newMD := metadata.GetMetadata(newObj)
+
+                curObj := curByID[newMD.ID]
+
+                if curObj == nil </span><span class="cov2" title="3">{
+                        _, err = CreateName[T](ctx, api, name, newObj)
+                        if err != nil </span><span class="cov0" title="0">{
+                                return err
+                        }</span>
+
+                        <span class="cov2" title="3">continue</span>
+                }
+
+                <span class="cov1" title="1">delete(curByID, newMD.ID)
+
+                curMD := metadata.GetMetadata(curObj)
+
+                if newMD.ETag == curMD.ETag </span><span class="cov0" title="0">{
+                        continue</span>
+                }
+
+                <span class="cov1" title="1">_, err = UpdateName[T](ctx, api, name, curMD.ID, newObj, nil)
+                if err != nil </span><span class="cov0" title="0">{
+                        return err
+                }</span>
+        }
+
+        <span class="cov3" title="6">for curID := range curByID </span><span class="cov1" title="1">{
+                err = DeleteName[T](ctx, api, name, curID, nil)
+                if err != nil </span><span class="cov0" title="0">{
+                        return err
+                }</span>
+        }
+
+        <span class="cov3" title="6">return nil</span>
+}
+
+func SyncList[T any](ctx context.Context, api *API, list []*T, opts *ListOpts) error <span class="cov0" title="0">{
+        return SyncListName[T](ctx, api, apiName[T](), list, opts)
+}</span>
+</pre>
+		
+		<pre class="file" id="file7" style="display: none">package patchy
+
+import (
+        "bytes"
+        "compress/gzip"
+        "context"
+        "crypto/tls"
+        "encoding/json"
+        "fmt"
+        "log"
+        "math"
+        "math/rand"
+        "runtime/debug"
+        "runtime/metrics"
+        "strings"
+        "sync"
+        "syscall"
+        "time"
+        "unicode"
+
+        "github.com/go-resty/resty/v2"
+)
+
+// TODO: Switch to opentelemetry protocol
+// TODO: Split event publisher out to its own library
+
+type EventTarget struct {
+        client             *resty.Client
+        writePeriodSeconds float64
+        windowSeconds      float64
+        rateClasses        []*eventRateClass
+        done               chan bool
+        lastEvent          time.Time
+        events             []*Event
+}
+
+type Event struct {
+        start time.Time
+
+        Time       string         `json:"time"`
+        SampleRate int64          `json:"samplerate"`
+        Data       map[string]any `json:"data"`
+}
+
+type EventHook func(context.Context, *Event)
+
+type eventState struct {
+        targets         []*EventTarget
+        hooks           []EventHook
+        tlsClientConfig *tls.Config
+
+        mu sync.Mutex
+}
+
+type eventRateClass struct {
+        grantRate float64
+        criteria  map[string]any
+
+        eventRate float64
+}
+
+func (api *API) SetEventTLSClientConfig(config *tls.Config) <span class="cov0" title="0">{
+        api.eventState.tlsClientConfig = config
+}</span>
+
+func (api *API) AddEventTarget(url string, headers map[string]string, writePeriodSeconds float64) *EventTarget <span class="cov0" title="0">{
+        target := &amp;EventTarget{
+                client:             resty.New().SetBaseURL(url).SetHeaders(headers),
+                writePeriodSeconds: writePeriodSeconds,
+                windowSeconds:      100.0,
+                done:               make(chan bool),
+                lastEvent:          time.Now(),
+        }
+
+        if api.eventState.tlsClientConfig != nil </span><span class="cov0" title="0">{
+                target.client.SetTLSClientConfig(api.eventState.tlsClientConfig)
+        }</span>
+
+        <span class="cov0" title="0">go api.eventState.flushLoop(target)
+
+        api.eventState.mu.Lock()
+        defer api.eventState.mu.Unlock()
+
+        api.eventState.targets = append(api.eventState.targets, target)
+
+        return target</span>
+}
+
+func (api *API) AddEventHook(hook EventHook) <span class="cov5" title="1264">{
+        api.eventState.mu.Lock()
+        defer api.eventState.mu.Unlock()
+
+        api.eventState.hooks = append(api.eventState.hooks, hook)
+}</span>
+
+func (api *API) SetEventData(ctx context.Context, vals ...any) <span class="cov4" title="498">{
+        ev := ctx.Value(ContextEvent)
+
+        if ev == nil </span><span class="cov0" title="0">{
+                return
+        }</span>
+
+        <span class="cov4" title="498">ev.(*Event).Set(vals...)</span>
+}
+
+func (api *API) Log(ctx context.Context, vals ...any) <span class="cov0" title="0">{
+        ev := api.eventState.newEvent("log", vals...)
+        api.eventState.writeEvent(ctx, ev)
+
+        parts := []string{}
+
+        for i := 0; i &lt; len(vals); i += 2 </span><span class="cov0" title="0">{
+                parts = append(parts, fmt.Sprintf("%s=%s", vals[i], vals[i+1]))
+        }</span>
+
+        <span class="cov0" title="0">log.Print(strings.Join(parts, " "))</span>
+}
+
+func (es *eventState) newEvent(eventType string, vals ...any) *Event <span class="cov5" title="993">{
+        now := time.Now()
+
+        ev := &amp;Event{
+                start: now,
+                Time:  now.Format(time.RFC3339Nano),
+                Data: map[string]any{
+                        "type": eventType,
+                },
+        }
+
+        ev.Set(vals...)
+
+        return ev
+}</span>
+
+func (es *eventState) close() <span class="cov4" title="213">{
+        es.mu.Lock()
+        defer es.mu.Unlock()
+
+        for _, target := range es.targets </span><span class="cov0" title="0">{
+                close(target.done)
+        }</span>
+}
+
+func (es *eventState) writeEvent(ctx context.Context, ev *Event) <span class="cov5" title="993">{
+        ev.Set("durationMS", time.Since(ev.start).Milliseconds())
+
+        es.mu.Lock()
+        defer es.mu.Unlock()
+
+        for _, hook := range es.hooks </span><span class="cov6" title="5958">{
+                hook(ctx, ev)
+        }</span>
+
+        <span class="cov5" title="993">for _, target := range es.targets </span><span class="cov0" title="0">{
+                target.writeEvent(ev)
+        }</span>
+}
+
+func (es *eventState) flushLoop(target *EventTarget) <span class="cov0" title="0">{
+        t := time.NewTicker(time.Duration(target.writePeriodSeconds * float64(time.Second)))
+        defer t.Stop()
+
+        for </span><span class="cov0" title="0">{
+                select </span>{
+                case &lt;-target.done:<span class="cov0" title="0">
+                        es.flush(target)
+                        return</span>
+
+                case &lt;-t.C:<span class="cov0" title="0">
+                        es.flush(target)</span>
+                }
+        }
+}
+
+func (es *eventState) flush(target *EventTarget) <span class="cov0" title="0">{
+        es.mu.Lock()
+        events := target.events
+        target.events = nil
+        es.mu.Unlock()
+
+        if len(events) == 0 </span><span class="cov0" title="0">{
+                return
+        }</span>
+
+        <span class="cov0" title="0">buf := &amp;bytes.Buffer{}
+        g := gzip.NewWriter(buf)
+        enc := json.NewEncoder(g)
+
+        err := enc.Encode(events)
+        if err != nil </span><span class="cov0" title="0">{
+                panic(err)</span>
+        }
+
+        <span class="cov0" title="0">err = g.Close()
+        if err != nil </span><span class="cov0" title="0">{
+                panic(err)</span>
+        }
+
+        <span class="cov0" title="0">resp, err := target.client.R().
+                SetHeader("Content-Type", "application/json").
+                SetHeader("Content-Encoding", "gzip").
+                SetBody(buf).
+                Post("")
+        if err != nil </span><span class="cov0" title="0">{
+                log.Printf("failed write to event target: %s", err)
+                return
+        }</span>
+
+        <span class="cov0" title="0">if resp.IsError() </span><span class="cov0" title="0">{
+                log.Printf("failed write to event target: %d %s: %s", resp.StatusCode(), resp.Status(), resp.String())
+                return
+        }</span>
+}
+
+func (target *EventTarget) AddRateClass(grantRate float64, vals ...any) <span class="cov0" title="0">{
+        if len(vals)%2 != 0 </span><span class="cov0" title="0">{
+                panic(vals)</span>
+        }
+
+        <span class="cov0" title="0">erc := &amp;eventRateClass{
+                grantRate: grantRate * target.windowSeconds,
+                criteria:  map[string]any{},
+        }
+
+        for i := 0; i &lt; len(vals); i += 2 </span><span class="cov0" title="0">{
+                erc.criteria[vals[i].(string)] = vals[i+1]
+        }</span>
+
+        <span class="cov0" title="0">target.rateClasses = append(target.rateClasses, erc)</span>
+}
+
+func (target *EventTarget) writeEvent(ev *Event) <span class="cov0" title="0">{
+        now := time.Now()
+        secondsSinceLastEvent := now.Sub(target.lastEvent).Seconds()
+        target.lastEvent = now
+
+        // Example:
+        //   windowSeconds = 100
+        //   secondsSinceLastEvent = 25
+        //   eventRateMultiplier = 0.75
+        eventRateMultiplier := (target.windowSeconds - secondsSinceLastEvent) / target.windowSeconds
+
+        maxProb := 0.0
+
+        for _, erc := range target.rateClasses </span><span class="cov0" title="0">{
+                if !erc.match(ev) </span><span class="cov0" title="0">{
+                        continue</span>
+                }
+
+                <span class="cov0" title="0">erc.eventRate++
+                erc.eventRate *= eventRateMultiplier
+
+                classProb := erc.grantRate / erc.eventRate
+                maxProb = math.Max(maxProb, classProb)</span>
+        }
+
+        <span class="cov0" title="0">if maxProb &lt;= 0.0 || rand.Float64() &gt; maxProb </span><span class="cov0" title="0">{ //nolint:gosec
+                return
+        }</span>
+
+        <span class="cov0" title="0">ev2 := *ev
+        ev2.SampleRate = int64(math.Max(math.Round(1.0/maxProb), 1.0))
+        target.events = append(target.events, &amp;ev2)</span>
+}
+
+func (ev *Event) Set(vals ...any) <span class="cov7" title="46186">{
+        if len(vals)%2 != 0 </span><span class="cov0" title="0">{
+                panic(vals)</span>
+        }
+
+        <span class="cov7" title="46186">for i := 0; i &lt; len(vals); i += 2 </span><span class="cov7" title="54991">{
+                ev.Data[vals[i].(string)] = vals[i+1]
+        }</span>
+}
+
+func (erc *eventRateClass) match(ev *Event) bool <span class="cov0" title="0">{
+        for k, v := range erc.criteria </span><span class="cov0" title="0">{
+                if ev.Data[k] != v </span><span class="cov0" title="0">{
+                        return false
+                }</span>
+        }
+
+        <span class="cov0" title="0">return true</span>
+}
+
+func EventHookBuildInfo(_ context.Context, ev *Event) <span class="cov5" title="993">{
+        buildInfo, ok := debug.ReadBuildInfo()
+        if !ok </span><span class="cov0" title="0">{
+                panic("ReadBuildInfo() failed")</span>
+        }
+
+        <span class="cov5" title="993">ev.Set(
+                "goVersion", buildInfo.GoVersion,
+                "goPackagePath", buildInfo.Path,
+                "goMainModuleVersion", buildInfo.Main.Version,
+        )</span>
+}
+
+func EventHookSpanID(ctx context.Context, ev *Event) <span class="cov5" title="993">{
+        spanID := ctx.Value(ContextSpanID)
+
+        if spanID != nil </span><span class="cov5" title="993">{
+                ev.Set("spanID", spanID.(string))
+        }</span>
+}
+
+func EventHookMetrics(_ context.Context, ev *Event) <span class="cov5" title="993">{
+        descs := metrics.All()
+
+        samples := make([]metrics.Sample, len(descs))
+        for i := range samples </span><span class="cov7" title="44685">{
+                samples[i].Name = descs[i].Name
+        }</span>
+
+        <span class="cov5" title="993">metrics.Read(samples)
+
+        for _, sample := range samples </span><span class="cov7" title="44685">{
+                name := convertMetricName(sample.Name)
+
+                switch sample.Value.Kind() </span>{ //nolint:exhaustive
+                case metrics.KindUint64:<span class="cov7" title="28797">
+                        ev.Set(name, sample.Value.Uint64())</span>
+                case metrics.KindFloat64:<span class="cov6" title="11916">
+                        ev.Set(name, sample.Value.Float64())</span>
+                }
+        }
+}
+
+func EventHookRUsage(_ context.Context, ev *Event) <span class="cov5" title="993">{
+        rusage := &amp;syscall.Rusage{}
+
+        err := syscall.Getrusage(syscall.RUSAGE_SELF, rusage)
+        if err != nil </span><span class="cov0" title="0">{
+                panic(err)</span>
+        }
+
+        <span class="cov5" title="993">ev.Set(
+                "rUsageUTime", time.Duration(rusage.Utime.Nano()).Seconds(),
+                "rUsageSTime", time.Duration(rusage.Stime.Nano()).Seconds(),
+        )</span>
+}
+
+func convertMetricName(in string) string <span class="cov7" title="44685">{
+        upperNext := false
+
+        in = strings.TrimLeft(in, "/")
+
+        ret := strings.Builder{}
+
+        for _, r := range in </span><span class="cov10" title="1342536">{
+                if !unicode.IsLetter(r) &amp;&amp; !unicode.IsDigit(r) </span><span class="cov8" title="181719">{
+                        upperNext = true
+                        continue</span>
+                }
+
+                <span class="cov9" title="1160817">if upperNext </span><span class="cov8" title="181719">{
+                        r = unicode.ToUpper(r)
+                        upperNext = false
+                }</span>
+
+                <span class="cov9" title="1160817">ret.WriteRune(r)</span>
+        }
+
+        <span class="cov7" title="44685">return ret.String()</span>
+}
+</pre>
+		
+		<pre class="file" id="file8" style="display: none">package patchy
+
+import (
+        "errors"
+        "fmt"
+        "net/http"
+
+        "github.com/vfaronov/httpheader"
+)
+
+type GetOpts struct {
+        IfNoneMatch []httpheader.EntityTag
+
+        // This is "any" because making GetOpts generic complicates too many things
+        Prev any
+}
+
+var (
+        ErrInvalidIfNoneMatch           = errors.New("invalid If-None-Match")
+        ErrIfNoneMatchUnknownType       = fmt.Errorf("unknown type (%w)", ErrInvalidIfNoneMatch)
+        ErrIfNoneMatchInvalidGeneration = fmt.Errorf("invalid generation (%w)", ErrInvalidIfNoneMatch)
+)
+
+func parseGetOpts(r *http.Request) *GetOpts <span class="cov10" title="88">{
+        return &amp;GetOpts{
+                IfNoneMatch: httpheader.IfNoneMatch(r.Header),
+        }
+}</span>
+</pre>
+		
+		<pre class="file" id="file9" style="display: none">package patchy
+
+import (
+        "net/http"
+
+        "github.com/gopatchy/jsrest"
+        "github.com/vfaronov/httpheader"
+)
+
+func (api *API) getList(cfg *config, w http.ResponseWriter, r *http.Request) error <span class="cov10" title="49">{
+        ctx := r.Context()
+
+        api.SetEventData(ctx,
+                "operation", "list",
+                "typeName", cfg.apiName,
+                "stream", false,
+        )
+
+        opts, err := api.parseListOpts(r)
+        if err != nil </span><span class="cov1" title="1">{
+                return jsrest.Errorf(jsrest.ErrBadRequest, "parse list parameters failed (%w)", err)
+        }</span>
+
+        <span class="cov9" title="48">list, err := api.listInt(ctx, cfg, opts)
+        if err != nil </span><span class="cov0" title="0">{
+                return jsrest.Errorf(jsrest.ErrInternalServerError, "list failed (%w)", err)
+        }</span>
+
+        <span class="cov9" title="48">etag, err := hashList(list)
+        if err != nil </span><span class="cov0" title="0">{
+                return jsrest.Errorf(jsrest.ErrInternalServerError, "hash list failed (%w)", err)
+        }</span>
+
+        <span class="cov9" title="48">if httpheader.MatchWeak(opts.IfNoneMatch, httpheader.EntityTag{Opaque: etag}) </span><span class="cov4" title="4">{
+                w.WriteHeader(http.StatusNotModified)
+                return nil
+        }</span>
+
+        <span class="cov9" title="44">err = jsrest.WriteList(w, list, etag)
+        if err != nil </span><span class="cov0" title="0">{
+                return jsrest.Errorf(jsrest.ErrInternalServerError, "write list failed (%w)", err)
+        }</span>
+
+        <span class="cov9" title="44">return nil</span>
+}
+</pre>
+		
+		<pre class="file" id="file10" style="display: none">package patchy
+
+import (
+        "fmt"
+        "net/http"
+
+        "github.com/gopatchy/jsrest"
+        "github.com/gopatchy/metadata"
+        "github.com/vfaronov/httpheader"
+)
+
+func (api *API) getObject(cfg *config, id string, w http.ResponseWriter, r *http.Request) error <span class="cov10" title="69">{
+        ctx := r.Context()
+
+        api.SetEventData(ctx,
+                "operation", "get",
+                "typeName", cfg.apiName,
+                "id", id,
+                "stream", false,
+        )
+
+        opts := parseGetOpts(r)
+
+        obj, err := api.getInt(ctx, cfg, id)
+        if err != nil </span><span class="cov1" title="1">{
+                return jsrest.Errorf(jsrest.ErrInternalServerError, "get failed (%w)", err)
+        }</span>
+
+        <span class="cov9" title="68">if obj == nil </span><span class="cov4" title="5">{
+                return jsrest.Errorf(jsrest.ErrNotFound, "%s", id)
+        }</span>
+
+        <span class="cov9" title="63">md := metadata.GetMetadata(obj)
+        gen := fmt.Sprintf("generation:%d", md.Generation)
+
+        if httpheader.MatchWeak(opts.IfNoneMatch, httpheader.EntityTag{Opaque: md.ETag}) ||
+                httpheader.MatchWeak(opts.IfNoneMatch, httpheader.EntityTag{Opaque: gen}) </span><span class="cov3" title="4">{
+                w.WriteHeader(http.StatusNotModified)
+                return nil
+        }</span>
+
+        <span class="cov9" title="59">err = jsrest.Write(w, obj)
+        if err != nil </span><span class="cov0" title="0">{
+                return jsrest.Errorf(jsrest.ErrInternalServerError, "write response failed (%w)", err)
+        }</span>
+
+        <span class="cov9" title="59">return nil</span>
+}
+</pre>
+		
+		<pre class="file" id="file11" style="display: none">package patchy
+
+import (
+        "context"
+
+        "github.com/dchest/uniuri"
+        "github.com/gopatchy/jsrest"
+        "github.com/gopatchy/metadata"
+        "github.com/gopatchy/path"
+)
+
+type getStreamInt struct {
+        ch &lt;-chan any
+
+        api    *API
+        cfg    *config
+        id     string
+        sbChan &lt;-chan any
+}
+
+type listStreamInt struct {
+        ch &lt;-chan []any
+
+        api    *API
+        cfg    *config
+        sbChan &lt;-chan []any
+}
+
+func (api *API) createInt(ctx context.Context, cfg *config, obj any) (any, error) <span class="cov10" title="663">{
+        md := metadata.GetMetadata(obj)
+
+        if ctx.Value(ContextWriteID) == nil || md.ID == "" </span><span class="cov9" title="660">{
+                md.ID = uniuri.New()
+        }</span>
+
+        <span class="cov10" title="663">if ctx.Value(ContextWriteGeneration) == nil || md.Generation == 0 </span><span class="cov9" title="660">{
+                md.Generation = 1
+        }</span>
+
+        <span class="cov10" title="663">obj, err := cfg.checkWrite(ctx, obj, nil, api)
+        if err != nil </span><span class="cov1" title="1">{
+                return nil, jsrest.Errorf(jsrest.ErrForbidden, "write check failed (%w)", err)
+        }</span>
+
+        <span class="cov9" title="662">err = api.sb.Write(ctx, cfg.apiName, obj)
+        if err != nil </span><span class="cov0" title="0">{
+                return nil, jsrest.Errorf(jsrest.ErrInternalServerError, "write failed (%w)", err)
+        }</span>
+
+        <span class="cov9" title="662">obj, err = cfg.checkRead(ctx, obj, api)
+        if err != nil </span><span class="cov1" title="1">{
+                return nil, jsrest.Errorf(jsrest.ErrForbidden, "read check failed (%w)", err)
+        }</span>
+
+        <span class="cov9" title="661">return obj, nil</span>
+}
+
+func (api *API) deleteInt(ctx context.Context, cfg *config, id string, opts *UpdateOpts) error <span class="cov5" title="22">{
+        if opts == nil </span><span class="cov3" title="5">{
+                opts = &amp;UpdateOpts{}
+        }</span>
+
+        <span class="cov5" title="22">obj, err := api.sb.Read(ctx, cfg.apiName, id, cfg.factory)
+        if err != nil </span><span class="cov0" title="0">{
+                return jsrest.Errorf(jsrest.ErrInternalServerError, "read failed: %s (%w)", id, err)
+        }</span>
+
+        <span class="cov5" title="22">if obj == nil </span><span class="cov2" title="3">{
+                return jsrest.Errorf(jsrest.ErrNotFound, "%s", id)
+        }</span>
+
+        <span class="cov5" title="19">err = opts.ifMatch(obj)
+        if err != nil </span><span class="cov2" title="4">{
+                return jsrest.Errorf(jsrest.ErrInternalServerError, "match failed (%w)", err)
+        }</span>
+
+        <span class="cov4" title="15">_, err = cfg.checkWrite(ctx, nil, obj, api)
+        if err != nil </span><span class="cov1" title="1">{
+                return jsrest.Errorf(jsrest.ErrForbidden, "write check failed (%w)", err)
+        }</span>
+
+        <span class="cov4" title="14">err = api.sb.Delete(ctx, cfg.apiName, id)
+        if err != nil </span><span class="cov0" title="0">{
+                return jsrest.Errorf(jsrest.ErrInternalServerError, "delete failed: %s (%w)", id, err)
+        }</span>
+
+        <span class="cov4" title="14">return nil</span>
+}
+
+func (api *API) getInt(ctx context.Context, cfg *config, id string) (any, error) <span class="cov7" title="78">{
+        obj, err := api.sb.Read(ctx, cfg.apiName, id, cfg.factory)
+        if err != nil </span><span class="cov0" title="0">{
+                return nil, jsrest.Errorf(jsrest.ErrInternalServerError, "read failed: %s (%w)", id, err)
+        }</span>
+
+        <span class="cov7" title="78">if obj == nil </span><span class="cov3" title="7">{
+                return nil, nil
+        }</span>
+
+        <span class="cov6" title="71">obj, err = cfg.checkRead(ctx, obj, api)
+        if err != nil </span><span class="cov1" title="1">{
+                return nil, jsrest.Errorf(jsrest.ErrForbidden, "read check failed (%w)", err)
+        }</span>
+
+        <span class="cov6" title="70">return obj, nil</span>
+}
+
+func (api *API) listInt(ctx context.Context, cfg *config, opts *ListOpts) ([]any, error) <span class="cov6" title="68">{
+        // TODO: Add query condition pushdown
+        if opts == nil </span><span class="cov4" title="12">{
+                opts = &amp;ListOpts{}
+        }</span>
+
+        <span class="cov6" title="68">if cfg.listHook != nil </span><span class="cov1" title="1">{
+                err := cfg.listHook(ctx, opts, api)
+                if err != nil </span><span class="cov0" title="0">{
+                        return nil, jsrest.Errorf(jsrest.ErrInternalServerError, "list hook failed (%w)", err)
+                }</span>
+        }
+
+        <span class="cov6" title="68">list, err := api.sb.List(ctx, cfg.apiName, cfg.factory)
+        if err != nil </span><span class="cov0" title="0">{
+                return nil, jsrest.Errorf(jsrest.ErrInternalServerError, "read list failed (%w)", err)
+        }</span>
+
+        <span class="cov6" title="68">list, err = api.filterList(ctx, cfg, opts, list)
+        if err != nil </span><span class="cov0" title="0">{
+                return nil, jsrest.Errorf(jsrest.ErrInternalServerError, "filter list failed (%w)", err)
+        }</span>
+
+        <span class="cov6" title="68">return list, nil</span>
+}
+
+func (api *API) replaceInt(ctx context.Context, cfg *config, id string, replace any, opts *UpdateOpts) (any, error) <span class="cov5" title="22">{
+        if opts == nil </span><span class="cov1" title="1">{
+                opts = &amp;UpdateOpts{}
+        }</span>
+
+        <span class="cov5" title="22">cfg.lock(id)
+        defer cfg.unlock(id)
+
+        obj, err := api.sb.Read(ctx, cfg.apiName, id, cfg.factory)
+        if err != nil </span><span class="cov0" title="0">{
+                return nil, jsrest.Errorf(jsrest.ErrInternalServerError, "read failed: %s (%w)", id, err)
+        }</span>
+
+        <span class="cov5" title="22">if obj == nil </span><span class="cov1" title="1">{
+                return nil, jsrest.Errorf(jsrest.ErrNotFound, "%s", id)
+        }</span>
+
+        <span class="cov5" title="21">err = opts.ifMatch(obj)
+        if err != nil </span><span class="cov2" title="4">{
+                return nil, jsrest.Errorf(jsrest.ErrInternalServerError, "match failed (%w)", err)
+        }</span>
+
+        <span class="cov4" title="17">prev, err := cfg.clone(obj)
+        if err != nil </span><span class="cov0" title="0">{
+                return nil, jsrest.Errorf(jsrest.ErrInternalServerError, "clone failed (%w)", err)
+        }</span>
+
+        // Metadata is immutable or server-owned
+        <span class="cov4" title="17">metadata.ClearMetadata(replace)
+        objMD := metadata.GetMetadata(obj)
+        replaceMD := metadata.GetMetadata(replace)
+        replaceMD.ID = id
+        replaceMD.Generation = objMD.Generation + 1
+
+        replace, err = cfg.checkWrite(ctx, replace, prev, api)
+        if err != nil </span><span class="cov1" title="1">{
+                return nil, jsrest.Errorf(jsrest.ErrForbidden, "write check failed (%w)", err)
+        }</span>
+
+        <span class="cov4" title="16">err = api.sb.Write(ctx, cfg.apiName, replace)
+        if err != nil </span><span class="cov0" title="0">{
+                return nil, jsrest.Errorf(jsrest.ErrInternalServerError, "write failed: %s (%w)", id, err)
+        }</span>
+
+        <span class="cov4" title="16">replace, err = cfg.checkRead(ctx, replace, api)
+        if err != nil </span><span class="cov1" title="1">{
+                return nil, jsrest.Errorf(jsrest.ErrForbidden, "read check failed (%w)", err)
+        }</span>
+
+        <span class="cov4" title="15">return replace, nil</span>
+}
+
+func (api *API) updateInt(ctx context.Context, cfg *config, id string, patch map[string]any, opts *UpdateOpts) (any, error) <span class="cov6" title="57">{
+        if opts == nil </span><span class="cov2" title="4">{
+                opts = &amp;UpdateOpts{}
+        }</span>
+
+        <span class="cov6" title="57">cfg.lock(id)
+        defer cfg.unlock(id)
+
+        // Metadata is immutable or server-owned
+        delete(patch, "id")
+        delete(patch, "etag")
+        delete(patch, "generation")
+
+        obj, err := api.sb.Read(ctx, cfg.apiName, id, cfg.factory)
+        if err != nil </span><span class="cov0" title="0">{
+                return nil, jsrest.Errorf(jsrest.ErrInternalServerError, "read failed: %s (%w)", id, err)
+        }</span>
+
+        <span class="cov6" title="57">if obj == nil </span><span class="cov1" title="1">{
+                return nil, jsrest.Errorf(jsrest.ErrNotFound, "%s", id)
+        }</span>
+
+        <span class="cov6" title="56">err = opts.ifMatch(obj)
+        if err != nil </span><span class="cov2" title="4">{
+                return nil, jsrest.Errorf(jsrest.ErrInternalServerError, "match failed (%w)", err)
+        }</span>
+
+        <span class="cov6" title="52">prev, err := cfg.clone(obj)
+        if err != nil </span><span class="cov0" title="0">{
+                return nil, jsrest.Errorf(jsrest.ErrInternalServerError, "clone failed (%w)", err)
+        }</span>
+
+        <span class="cov6" title="52">err = path.MergeMap(obj, patch)
+        if err != nil </span><span class="cov0" title="0">{
+                return nil, jsrest.Errorf(jsrest.ErrBadRequest, "merge failed (%w)", err)
+        }</span>
+
+        <span class="cov6" title="52">metadata.GetMetadata(obj).Generation++
+
+        obj, err = cfg.checkWrite(ctx, obj, prev, api)
+        if err != nil </span><span class="cov1" title="1">{
+                return nil, jsrest.Errorf(jsrest.ErrForbidden, "write check failed (%w)", err)
+        }</span>
+
+        <span class="cov6" title="51">err = api.sb.Write(ctx, cfg.apiName, obj)
+        if err != nil </span><span class="cov0" title="0">{
+                return nil, jsrest.Errorf(jsrest.ErrInternalServerError, "write failed: %s (%w)", id, err)
+        }</span>
+
+        <span class="cov6" title="51">obj, err = cfg.checkRead(ctx, obj, api)
+        if err != nil </span><span class="cov1" title="1">{
+                return nil, jsrest.Errorf(jsrest.ErrForbidden, "read check failed (%w)", err)
+        }</span>
+
+        <span class="cov6" title="50">return obj, nil</span>
+}
+
+func (api *API) streamGetInt(ctx context.Context, cfg *config, id string) (*getStreamInt, error) <span class="cov5" title="22">{
+        in, err := api.sb.ReadStream(ctx, cfg.apiName, id, cfg.factory)
+        if err != nil </span><span class="cov0" title="0">{
+                return nil, jsrest.Errorf(jsrest.ErrInternalServerError, "read failed: %s (%w)", id, err)
+        }</span>
+
+        <span class="cov5" title="22">out := make(chan any, 100)
+
+        go func() </span><span class="cov5" title="22">{
+                defer close(out)
+
+                for obj := range in </span><span class="cov5" title="30">{
+                        obj, err = cfg.checkRead(ctx, obj, api)
+                        if err != nil </span><span class="cov1" title="1">{
+                                break</span>
+                        }
+
+                        <span class="cov5" title="29">out &lt;- obj</span>
+                }
+        }()
+
+        <span class="cov5" title="22">return &amp;getStreamInt{
+                ch:     out,
+                api:    api,
+                cfg:    cfg,
+                id:     id,
+                sbChan: in,
+        }, nil</span>
+}
+
+func (api *API) streamListInt(ctx context.Context, cfg *config, opts *ListOpts) (*listStreamInt, error) <span class="cov6" title="53">{
+        if opts == nil </span><span class="cov3" title="6">{
+                opts = &amp;ListOpts{}
+        }</span>
+
+        <span class="cov6" title="53">in, err := api.sb.ListStream(ctx, cfg.apiName, cfg.factory)
+        if err != nil </span><span class="cov0" title="0">{
+                return nil, jsrest.Errorf(jsrest.ErrInternalServerError, "read list failed (%w)", err)
+        }</span>
+
+        <span class="cov6" title="53">out := make(chan []any, 100)
+
+        go func() </span><span class="cov6" title="53">{
+                defer close(out)
+
+                for list := range in </span><span class="cov7" title="91">{
+                        list, err = api.filterList(ctx, cfg, opts, list)
+                        if err != nil </span><span class="cov0" title="0">{
+                                break</span>
+                        }
+
+                        <span class="cov7" title="91">out &lt;- list</span>
+                }
+        }()
+
+        <span class="cov6" title="53">return &amp;listStreamInt{
+                ch:     out,
+                api:    api,
+                cfg:    cfg,
+                sbChan: in,
+        }, nil</span>
+}
+
+func (gsi *getStreamInt) Close() <span class="cov5" title="22">{
+        gsi.api.sb.CloseReadStream(gsi.cfg.apiName, gsi.id, gsi.sbChan)
+}</span>
+
+func (gsi *getStreamInt) Chan() &lt;-chan any <span class="cov2" title="3">{
+        return gsi.ch
+}</span>
+
+func (lsi *listStreamInt) Close() <span class="cov6" title="53">{
+        lsi.api.sb.CloseListStream(lsi.cfg.apiName, lsi.sbChan)
+}</span>
+
+func (lsi *listStreamInt) Chan() &lt;-chan []any <span class="cov7" title="133">{
+        return lsi.ch
+}</span>
+</pre>
+		
+		<pre class="file" id="file12" style="display: none">package patchy
+
+import (
+        "context"
+        "crypto/sha256"
+        "errors"
+        "fmt"
+        "math"
+        "net/http"
+        "reflect"
+        "regexp"
+        "strconv"
+        "strings"
+
+        "github.com/gopatchy/jsrest"
+        "github.com/gopatchy/metadata"
+        "github.com/gopatchy/path"
+        "github.com/vfaronov/httpheader"
+)
+
+type ListOpts struct {
+        Stream  string
+        Limit   int64
+        Offset  int64
+        After   string
+        Sorts   []string
+        Filters []Filter
+
+        IfNoneMatch []httpheader.EntityTag
+
+        // This is "any" because making ListOpts generic complicates too many things
+        Prev any
+}
+
+type Filter struct {
+        Path  string
+        Op    string
+        Value string
+}
+
+var (
+        opMatch     = regexp.MustCompile(`^([^\[]+)\[(.+)\]$`)
+        validStream = map[string]bool{
+                "full": true,
+                "diff": true,
+        }
+        validOps = map[string]bool{
+                "eq":  true,
+                "gt":  true,
+                "gte": true,
+                "hp":  true,
+                "in":  true,
+                "lt":  true,
+                "lte": true,
+        }
+        ErrInvalidFilterOp     = errors.New("invalid filter operator")
+        ErrInvalidSort         = errors.New("invalid _sort")
+        ErrInvalidStreamFormat = errors.New("invalid _stream")
+)
+
+func ApplySorts[T any](list []T, opts *ListOpts) ([]T, error) <span class="cov9" title="159">{
+        for _, srt := range opts.Sorts </span><span class="cov6" title="35">{
+                switch </span>{
+                case strings.HasPrefix(srt, "+"):<span class="cov6" title="29">
+                        err := path.Sort(list, strings.TrimPrefix(srt, "+"))
+                        if err != nil </span><span class="cov0" title="0">{
+                                return nil, err
+                        }</span>
+
+                case strings.HasPrefix(srt, "-"):<span class="cov1" title="1">
+                        err := path.SortReverse(list, strings.TrimPrefix(srt, "-"))
+                        if err != nil </span><span class="cov0" title="0">{
+                                return nil, err
+                        }</span>
+
+                default:<span class="cov3" title="5">
+                        err := path.Sort(list, srt)
+                        if err != nil </span><span class="cov0" title="0">{
+                                return nil, err
+                        }</span>
+                }
+        }
+
+        <span class="cov9" title="159">return list, nil</span>
+}
+
+func ApplyFilters[T any](list []T, opts *ListOpts) ([]T, error) <span class="cov9" title="159">{
+        ret := []T{}
+
+        for _, obj := range list </span><span class="cov10" title="247">{
+                isMatch, err := match(obj, opts.Filters)
+                if err != nil </span><span class="cov0" title="0">{
+                        return nil, jsrest.Errorf(jsrest.ErrBadRequest, "match failed (%w)", err)
+                }</span>
+
+                <span class="cov10" title="247">if isMatch </span><span class="cov9" title="233">{
+                        ret = append(ret, obj)
+                }</span>
+        }
+
+        <span class="cov9" title="159">return ret, nil</span>
+}
+
+func ApplyWindow[T any](list []T, opts *ListOpts) ([]T, error) <span class="cov9" title="159">{
+        ret := []T{}
+
+        after := opts.After
+        offset := opts.Offset
+        limit := opts.Limit
+
+        if limit == 0 </span><span class="cov9" title="144">{
+                limit = math.MaxInt64
+        }</span>
+
+        <span class="cov9" title="159">for _, obj := range list </span><span class="cov9" title="233">{
+                if after != "" </span><span class="cov1" title="1">{
+                        if metadata.GetMetadata(obj).ID == after </span><span class="cov1" title="1">{
+                                after = ""
+                        }</span>
+
+                        <span class="cov1" title="1">continue</span>
+                }
+
+                <span class="cov9" title="232">if offset &gt; 0 </span><span class="cov3" title="5">{
+                        offset--
+
+                        continue</span>
+                }
+
+                <span class="cov9" title="227">limit--
+                if limit &lt; 0 </span><span class="cov5" title="14">{
+                        break</span>
+                }
+
+                <span class="cov9" title="213">ret = append(ret, obj)</span>
+        }
+
+        <span class="cov9" title="159">return ret, nil</span>
+}
+
+func hashList(list any) (string, error) <span class="cov8" title="127">{
+        hash := sha256.New()
+
+        v := reflect.ValueOf(list)
+
+        for i := 0; i &lt; v.Len(); i++ </span><span class="cov9" title="190">{
+                iter := v.Index(i)
+
+                md := metadata.GetMetadata(iter.Interface())
+
+                _, err := hash.Write([]byte(md.ETag + "\n"))
+                if err != nil </span><span class="cov0" title="0">{
+                        return "", jsrest.Errorf(jsrest.ErrInternalServerError, "hash write failed (%w)", err)
+                }</span>
+        }
+
+        <span class="cov8" title="127">return fmt.Sprintf("etag:%x", hash.Sum(nil)), nil</span>
+}
+
+func (api *API) parseListOpts(r *http.Request) (*ListOpts, error) <span class="cov8" title="95">{
+        var err error
+
+        ret := &amp;ListOpts{
+                Stream: "full",
+        }
+
+        if r.Header.Get("If-None-Match") != "" </span><span class="cov5" title="13">{
+                ret.IfNoneMatch = httpheader.IfNoneMatch(r.Header)
+        }</span>
+
+        <span class="cov8" title="95">if r.Form.Has("_stream") </span><span class="cov6" title="23">{
+                ret.Stream = r.Form.Get("_stream")
+        }</span>
+
+        <span class="cov8" title="95">if _, valid := validStream[ret.Stream]; !valid </span><span class="cov0" title="0">{
+                return nil, jsrest.Errorf(jsrest.ErrBadRequest, "%s (%w)", ret.Stream, ErrInvalidStreamFormat)
+        }</span>
+
+        <span class="cov8" title="95">if r.Form.Has("_limit") </span><span class="cov4" title="9">{
+                ret.Limit, err = strconv.ParseInt(r.Form.Get("_limit"), 10, 64)
+                if err != nil </span><span class="cov0" title="0">{
+                        return nil, jsrest.Errorf(jsrest.ErrBadRequest, "parse _limit value failed: %s (%w)", r.Form.Get("_limit"), err)
+                }</span>
+        }
+
+        <span class="cov8" title="95">if r.Form.Has("_offset") </span><span class="cov3" title="5">{
+                ret.Offset, err = strconv.ParseInt(r.Form.Get("_offset"), 10, 64)
+                if err != nil </span><span class="cov0" title="0">{
+                        return nil, jsrest.Errorf(jsrest.ErrBadRequest, "parse _offset value failed: %s (%w)", r.Form.Get("_offset"), err)
+                }</span>
+        }
+
+        <span class="cov8" title="95">if r.Form.Has("_after") </span><span class="cov1" title="1">{
+                ret.After = r.Form.Get("_after")
+        }</span>
+
+        <span class="cov8" title="95">sorts := r.Form["_sort"]
+        for i := len(sorts) - 1; i &gt;= 0; i-- </span><span class="cov5" title="18">{
+                srt := sorts[i]
+                if len(srt) == 0 </span><span class="cov0" title="0">{
+                        return nil, jsrest.Errorf(jsrest.ErrBadRequest, "%s (%w)", srt, ErrInvalidSort)
+                }</span>
+
+                <span class="cov5" title="18">ret.Sorts = append(ret.Sorts, srt)</span>
+        }
+
+        <span class="cov8" title="95">for path, vals := range r.Form </span><span class="cov7" title="70">{
+                if strings.HasPrefix(path, "_") </span><span class="cov7" title="56">{
+                        continue</span>
+                }
+
+                <span class="cov5" title="14">for _, val := range vals </span><span class="cov5" title="14">{
+                        f := Filter{
+                                Path:  path,
+                                Op:    "eq",
+                                Value: val,
+                        }
+
+                        matches := opMatch.FindStringSubmatch(f.Path)
+                        if matches != nil </span><span class="cov5" title="14">{
+                                f.Path = matches[1]
+                                f.Op = matches[2]
+                        }</span>
+
+                        <span class="cov5" title="14">if _, valid := validOps[f.Op]; !valid </span><span class="cov1" title="1">{
+                                return nil, jsrest.Errorf(jsrest.ErrBadRequest, "%s (%w)", f.Op, ErrInvalidFilterOp)
+                        }</span>
+
+                        <span class="cov5" title="13">ret.Filters = append(ret.Filters, f)</span>
+                }
+        }
+
+        <span class="cov8" title="94">return ret, nil</span>
+}
+
+func (api *API) filterList(ctx context.Context, cfg *config, opts *ListOpts, list []any) ([]any, error) <span class="cov9" title="159">{
+        list, err := cfg.checkReadList(ctx, list, api)
+        if err != nil </span><span class="cov0" title="0">{
+                return nil, jsrest.Errorf(jsrest.ErrInternalServerError, "check read list failed (%w)", err)
+        }</span>
+
+        <span class="cov9" title="159">list, err = ApplyFilters(list, opts)
+        if err != nil </span><span class="cov0" title="0">{
+                return nil, jsrest.Errorf(jsrest.ErrBadRequest, "filter failed (%w)", err)
+        }</span>
+
+        <span class="cov9" title="159">list, err = ApplySorts(list, opts)
+        if err != nil </span><span class="cov0" title="0">{
+                return nil, jsrest.Errorf(jsrest.ErrBadRequest, "sort failed (%w)", err)
+        }</span>
+
+        <span class="cov9" title="159">list, err = ApplyWindow(list, opts)
+        if err != nil </span><span class="cov0" title="0">{
+                return nil, jsrest.Errorf(jsrest.ErrBadRequest, "window failed (%w)", err)
+        }</span>
+
+        <span class="cov9" title="159">return list, nil</span>
+}
+
+func match(obj any, filters []Filter) (bool, error) <span class="cov10" title="247">{
+        for _, filter := range filters </span><span class="cov7" title="43">{
+                var matches bool
+
+                var err error
+
+                switch filter.Op </span>{
+                case "eq":<span class="cov4" title="7">
+                        matches, err = path.Equal(obj, filter.Path, filter.Value)</span>
+
+                case "gt":<span class="cov5" title="17">
+                        matches, err = path.Greater(obj, filter.Path, filter.Value)</span>
+
+                case "gte":<span class="cov2" title="3">
+                        matches, err = path.GreaterEqual(obj, filter.Path, filter.Value)</span>
+
+                case "hp":<span class="cov4" title="9">
+                        matches, err = path.HasPrefix(obj, filter.Path, filter.Value)</span>
+
+                case "in":<span class="cov2" title="2">
+                        matches, err = path.In(obj, filter.Path, filter.Value)</span>
+
+                case "lt":<span class="cov2" title="2">
+                        matches, err = path.Less(obj, filter.Path, filter.Value)</span>
+
+                case "lte":<span class="cov2" title="3">
+                        matches, err = path.LessEqual(obj, filter.Path, filter.Value)</span>
+
+                default:<span class="cov0" title="0">
+                        return false, jsrest.Errorf(jsrest.ErrBadRequest, "%s (%w)", filter.Op, ErrInvalidFilterOp)</span>
+                }
+
+                <span class="cov7" title="43">if err != nil </span><span class="cov0" title="0">{
+                        return false, jsrest.Errorf(jsrest.ErrBadRequest, "match operation failed: %s[%s] (%w)", filter.Path, filter.Op, err)
+                }</span>
+
+                <span class="cov7" title="43">if !matches </span><span class="cov5" title="14">{
+                        return false, nil
+                }</span>
+        }
+
+        <span class="cov9" title="233">return true, nil</span>
+}
+</pre>
+		
+		<pre class="file" id="file13" style="display: none">package patchy
+
+import (
+        "context"
+        "fmt"
+        "net/http"
+        "reflect"
+        "strings"
+        "sync"
+
+        "github.com/getkin/kin-openapi/openapi3"
+        "github.com/getkin/kin-openapi/openapi3gen"
+        "github.com/gopatchy/jsrest"
+        "github.com/gopatchy/path"
+        "golang.org/x/net/idna"
+)
+
+type (
+        OpenAPI     = openapi3.T
+        OpenAPIInfo = openapi3.Info
+)
+
+type openAPI struct {
+        info  *OpenAPIInfo
+        hooks []OpenAPIHook
+
+        mu sync.RWMutex
+}
+
+type OpenAPIHook func(context.Context, *OpenAPI)
+
+func (api *API) SetOpenAPIInfo(info *OpenAPIInfo) <span class="cov0" title="0">{
+        api.AddOpenAPIHook(func(_ context.Context, t *OpenAPI) </span><span class="cov0" title="0">{
+                t.Info = info
+        }</span>)
+}
+
+func (api *API) AddOpenAPIHook(hook OpenAPIHook) <span class="cov10" title="412">{
+        api.openAPI.mu.Lock()
+        defer api.openAPI.mu.Unlock()
+
+        api.openAPI.hooks = append(api.openAPI.hooks, hook)
+}</span>
+
+func (api *API) handleOpenAPI(w http.ResponseWriter, r *http.Request) <span class="cov1" title="1">{
+        ctx := r.Context()
+
+        api.SetEventData(ctx, "operation", "openapi")
+
+        err := api.handleOpenAPIInt(ctx, w, r)
+        if err != nil </span><span class="cov0" title="0">{
+                jsrest.WriteError(w, err)
+        }</span>
+}
+
+func (api *API) handleOpenAPIInt(ctx context.Context, w http.ResponseWriter, r *http.Request) error <span class="cov1" title="1">{
+        api.openAPI.mu.RLock()
+        defer api.openAPI.mu.RUnlock()
+
+        t, err := api.buildOpenAPIGlobal(r)
+        if err != nil </span><span class="cov0" title="0">{
+                return err
+        }</span>
+
+        <span class="cov1" title="1">for _, name := range api.names() </span><span class="cov3" title="5">{
+                err = api.buildOpenAPIType(t, api.registry[name])
+                if err != nil </span><span class="cov0" title="0">{
+                        return err
+                }</span>
+        }
+
+        <span class="cov1" title="1">for _, hook := range api.openAPI.hooks </span><span class="cov2" title="2">{
+                hook(ctx, t)
+        }</span>
+
+        <span class="cov1" title="1">js, err := t.MarshalJSON()
+        if err != nil </span><span class="cov0" title="0">{
+                return jsrest.Errorf(jsrest.ErrInternalServerError, "marshal JSON failed (%w)", err)
+        }</span>
+
+        <span class="cov1" title="1">w.Header().Set("Content-Type", "application/json")
+        _, _ = w.Write(js)
+
+        return nil</span>
+}
+
+func (api *API) buildOpenAPIGlobal(r *http.Request) (*openapi3.T, error) <span class="cov1" title="1">{
+        baseURL, err := api.requestBaseURL(r)
+        if err != nil </span><span class="cov0" title="0">{
+                return nil, jsrest.Errorf(jsrest.ErrInternalServerError, "get base URL failed (%w)", err)
+        }</span>
+
+        <span class="cov1" title="1">errorSchema, err := generateSchemaRef(reflect.TypeOf(&amp;jsrest.JSONError{}))
+        if err != nil </span><span class="cov0" title="0">{
+                return nil, jsrest.Errorf(jsrest.ErrInternalServerError, "generate schema ref failed (%w)", err)
+        }</span>
+
+        <span class="cov1" title="1">t := &amp;openapi3.T{
+                OpenAPI:  "3.0.3",
+                Paths:    openapi3.Paths{},
+                Tags:     openapi3.Tags{},
+                Security: openapi3.SecurityRequirements{},
+
+                Components: &amp;openapi3.Components{
+                        RequestBodies:   openapi3.RequestBodies{},
+                        SecuritySchemes: openapi3.SecuritySchemes{},
+
+                        Headers: openapi3.Headers{
+                                "etag": &amp;openapi3.HeaderRef{
+                                        Value: &amp;openapi3.Header{
+                                                Parameter: openapi3.Parameter{
+                                                        Name: "ETag",
+                                                        In:   "header",
+                                                        Schema: &amp;openapi3.SchemaRef{
+                                                                Value: &amp;openapi3.Schema{
+                                                                        Type: "string",
+                                                                },
+                                                        },
+                                                },
+                                        },
+                                },
+
+                                "idempotency-key": &amp;openapi3.HeaderRef{
+                                        Value: &amp;openapi3.Header{
+                                                Parameter: openapi3.Parameter{
+                                                        Name: "Idempotency-Key",
+                                                        In:   "header",
+                                                        Schema: &amp;openapi3.SchemaRef{
+                                                                Value: &amp;openapi3.Schema{
+                                                                        Type: "string",
+                                                                },
+                                                        },
+                                                },
+                                        },
+                                },
+
+                                "if-match": &amp;openapi3.HeaderRef{
+                                        Value: &amp;openapi3.Header{
+                                                Parameter: openapi3.Parameter{
+                                                        Name: "If-Match",
+                                                        In:   "header",
+                                                        Schema: &amp;openapi3.SchemaRef{
+                                                                Value: &amp;openapi3.Schema{
+                                                                        Type: "string",
+                                                                },
+                                                        },
+                                                },
+                                        },
+                                },
+
+                                "if-none-match": &amp;openapi3.HeaderRef{
+                                        Value: &amp;openapi3.Header{
+                                                Parameter: openapi3.Parameter{
+                                                        Name: "If-None-Match",
+                                                        In:   "header",
+                                                        Schema: &amp;openapi3.SchemaRef{
+                                                                Value: &amp;openapi3.Schema{
+                                                                        Type: "string",
+                                                                },
+                                                        },
+                                                },
+                                        },
+                                },
+                        },
+
+                        Parameters: openapi3.ParametersMap{
+                                "id": &amp;openapi3.ParameterRef{
+                                        Value: &amp;openapi3.Parameter{
+                                                Name:        "id",
+                                                In:          "path",
+                                                Description: "Object ID",
+                                                Required:    true,
+                                                Schema: &amp;openapi3.SchemaRef{
+                                                        Ref: "#/components/schemas/id",
+                                                },
+                                        },
+                                },
+
+                                "_stream": &amp;openapi3.ParameterRef{
+                                        Value: &amp;openapi3.Parameter{
+                                                Name:        "_stream",
+                                                In:          "query",
+                                                Description: "EventStream (List) format",
+                                                Schema: &amp;openapi3.SchemaRef{
+                                                        Value: &amp;openapi3.Schema{
+                                                                Type: "enum",
+                                                                Enum: []any{
+                                                                        "full",
+                                                                        "diff",
+                                                                },
+                                                        },
+                                                },
+                                        },
+                                },
+
+                                "_limit": &amp;openapi3.ParameterRef{
+                                        Value: &amp;openapi3.Parameter{
+                                                Name:        "_limit",
+                                                In:          "query",
+                                                Description: "Limit number of objects returned",
+                                                Schema: &amp;openapi3.SchemaRef{
+                                                        Value: &amp;openapi3.Schema{
+                                                                Type: "integer",
+                                                        },
+                                                },
+                                        },
+                                },
+
+                                "_offset": &amp;openapi3.ParameterRef{
+                                        Value: &amp;openapi3.Parameter{
+                                                Name:        "_offset",
+                                                In:          "query",
+                                                Description: "Skip number of objects at start of list",
+                                                Schema: &amp;openapi3.SchemaRef{
+                                                        Value: &amp;openapi3.Schema{
+                                                                Type: "integer",
+                                                        },
+                                                },
+                                        },
+                                },
+
+                                "_after": &amp;openapi3.ParameterRef{
+                                        Value: &amp;openapi3.Parameter{
+                                                Name:        "_after",
+                                                In:          "query",
+                                                Description: "Skip objects up to and including this ID",
+                                                Schema: &amp;openapi3.SchemaRef{
+                                                        Ref: "#/components/schemas/id",
+                                                },
+                                        },
+                                },
+                        },
+
+                        Responses: openapi3.Responses{
+                                // 204
+                                "no-content": &amp;openapi3.ResponseRef{
+                                        Value: &amp;openapi3.Response{
+                                                Description: P("No Content"),
+                                        },
+                                },
+
+                                // 304
+                                "not-modified": &amp;openapi3.ResponseRef{
+                                        Value: &amp;openapi3.Response{
+                                                Description: P("Not Modified"),
+                                        },
+                                },
+
+                                // 400
+                                "bad-request": &amp;openapi3.ResponseRef{
+                                        Value: &amp;openapi3.Response{
+                                                Description: P("Bad Request"),
+                                                Content: openapi3.Content{
+                                                        "application/json": &amp;openapi3.MediaType{
+                                                                Schema: &amp;openapi3.SchemaRef{
+                                                                        Ref: "#/components/schemas/error",
+                                                                },
+                                                        },
+                                                },
+                                        },
+                                },
+
+                                // 401
+                                "unauthorized": &amp;openapi3.ResponseRef{
+                                        Value: &amp;openapi3.Response{
+                                                Description: P("Unauthorized"),
+                                                Content: openapi3.Content{
+                                                        "application/json": &amp;openapi3.MediaType{
+                                                                Schema: &amp;openapi3.SchemaRef{
+                                                                        Ref: "#/components/schemas/error",
+                                                                },
+                                                        },
+                                                },
+                                        },
+                                },
+
+                                // 403
+                                "forbidden": &amp;openapi3.ResponseRef{
+                                        Value: &amp;openapi3.Response{
+                                                Description: P("Forbidden"),
+                                                Content: openapi3.Content{
+                                                        "application/json": &amp;openapi3.MediaType{
+                                                                Schema: &amp;openapi3.SchemaRef{
+                                                                        Ref: "#/components/schemas/error",
+                                                                },
+                                                        },
+                                                },
+                                        },
+                                },
+
+                                // 404
+                                "not-found": &amp;openapi3.ResponseRef{
+                                        Value: &amp;openapi3.Response{
+                                                Description: P("Not Found"),
+                                                Content: openapi3.Content{
+                                                        "application/json": &amp;openapi3.MediaType{
+                                                                Schema: &amp;openapi3.SchemaRef{
+                                                                        Ref: "#/components/schemas/error",
+                                                                },
+                                                        },
+                                                },
+                                        },
+                                },
+
+                                // 409
+                                "conflict": &amp;openapi3.ResponseRef{
+                                        Value: &amp;openapi3.Response{
+                                                Description: P("Conflict"),
+                                                Content: openapi3.Content{
+                                                        "application/json": &amp;openapi3.MediaType{
+                                                                Schema: &amp;openapi3.SchemaRef{
+                                                                        Ref: "#/components/schemas/error",
+                                                                },
+                                                        },
+                                                },
+                                        },
+                                },
+
+                                // 412
+                                "precondition-failed": &amp;openapi3.ResponseRef{
+                                        Value: &amp;openapi3.Response{
+                                                Description: P("Precondition Failed"),
+                                                Content: openapi3.Content{
+                                                        "application/json": &amp;openapi3.MediaType{
+                                                                Schema: &amp;openapi3.SchemaRef{
+                                                                        Ref: "#/components/schemas/error",
+                                                                },
+                                                        },
+                                                },
+                                        },
+                                },
+
+                                // 415
+                                "unsupported-media-type": &amp;openapi3.ResponseRef{
+                                        Value: &amp;openapi3.Response{
+                                                Description: P("Unsupported Media Type"),
+                                                Content: openapi3.Content{
+                                                        "application/json": &amp;openapi3.MediaType{
+                                                                Schema: &amp;openapi3.SchemaRef{
+                                                                        Ref: "#/components/schemas/error",
+                                                                },
+                                                        },
+                                                },
+                                        },
+                                },
+                        },
+
+                        Schemas: openapi3.Schemas{
+                                "id": &amp;openapi3.SchemaRef{
+                                        Value: &amp;openapi3.Schema{
+                                                Type: "string",
+                                        },
+                                },
+
+                                "etag": &amp;openapi3.SchemaRef{
+                                        Value: &amp;openapi3.Schema{
+                                                Type: "string",
+                                        },
+                                },
+
+                                "generation": &amp;openapi3.SchemaRef{
+                                        Value: &amp;openapi3.Schema{
+                                                Type:   "integer",
+                                                Format: "int64",
+                                        },
+                                },
+
+                                "prefix": &amp;openapi3.SchemaRef{
+                                        Value: &amp;openapi3.Schema{
+                                                Type: "string",
+                                        },
+                                },
+
+                                "event-stream-object": &amp;openapi3.SchemaRef{
+                                        Value: &amp;openapi3.Schema{
+                                                Title: "EventStream (Object)",
+                                                Type:  "string",
+                                                Extensions: map[string]any{
+                                                        "x-event-types": []string{
+                                                                "notModified",
+                                                                "initial",
+                                                                "update",
+                                                                "delete",
+                                                                "heartbeat",
+                                                                "error",
+                                                        },
+                                                },
+                                        },
+                                },
+
+                                "event-stream-list": &amp;openapi3.SchemaRef{
+                                        Value: &amp;openapi3.Schema{
+                                                Title: "EventStream (List)",
+                                                OneOf: openapi3.SchemaRefs{
+                                                        &amp;openapi3.SchemaRef{
+                                                                Ref: "#/components/schemas/event-stream-list-full",
+                                                        },
+                                                        &amp;openapi3.SchemaRef{
+                                                                Ref: "#/components/schemas/event-stream-list-diff",
+                                                        },
+                                                },
+                                        },
+                                },
+
+                                "event-stream-list-full": &amp;openapi3.SchemaRef{
+                                        Value: &amp;openapi3.Schema{
+                                                Title: "EventStream (List; _stream=full)",
+                                                Extensions: map[string]any{
+                                                        "x-event-types": []string{
+                                                                "notModified",
+                                                                "list",
+                                                                "heartbeat",
+                                                                "error",
+                                                        },
+                                                },
+                                        },
+                                },
+
+                                "event-stream-list-diff": &amp;openapi3.SchemaRef{
+                                        Value: &amp;openapi3.Schema{
+                                                Title: "EventStream (List; _stream=diff)",
+                                                Extensions: map[string]any{
+                                                        "x-event-types": []string{
+                                                                "notModified",
+                                                                "add",
+                                                                "remove",
+                                                                "update",
+                                                                "sync",
+                                                                "heartbeat",
+                                                                "error",
+                                                        },
+                                                },
+                                        },
+                                },
+
+                                "error": errorSchema,
+                        },
+                },
+
+                Servers: openapi3.Servers{
+                        &amp;openapi3.Server{
+                                URL: baseURL,
+                        },
+                },
+        }
+
+        return t, nil</span>
+}
+
+func (api *API) buildOpenAPIType(t *openapi3.T, cfg *config) error <span class="cov3" title="5">{
+        t.Tags = append(t.Tags, &amp;openapi3.Tag{
+                Name: cfg.apiName,
+        })
+
+        </span><span class="cov3" title="5">{
+                responseSchema, err := generateSchemaRef(cfg.typeOf)
+                if err != nil </span><span class="cov0" title="0">{
+                        return jsrest.Errorf(jsrest.ErrInternalServerError, "generate schema ref failed (%w)", err)
+                }</span>
+
+                <span class="cov3" title="5">responseSchema.Ref = ""
+                responseSchema.Value.Title = fmt.Sprintf("%s Response", cfg.apiName)
+
+                responseSchema.Value.Properties["id"] = &amp;openapi3.SchemaRef{Ref: "#/components/schemas/id"}
+                responseSchema.Value.Properties["etag"] = &amp;openapi3.SchemaRef{Ref: "#/components/schemas/etag"}
+                responseSchema.Value.Properties["generation"] = &amp;openapi3.SchemaRef{Ref: "#/components/schemas/generation"}
+
+                t.Components.Schemas[fmt.Sprintf("%s--response", cfg.apiName)] = responseSchema</span>
+        }
+
+        <span class="cov3" title="5">{
+                requestSchema, err := generateSchemaRef(cfg.typeOf)
+                if err != nil </span><span class="cov0" title="0">{
+                        return jsrest.Errorf(jsrest.ErrInternalServerError, "generate schema ref failed (%w)", err)
+                }</span>
+
+                <span class="cov3" title="5">requestSchema.Ref = ""
+                delete(requestSchema.Value.Properties, "id")
+                delete(requestSchema.Value.Properties, "etag")
+                delete(requestSchema.Value.Properties, "generation")
+
+                requestSchema.Value.Title = fmt.Sprintf("%s Request", cfg.apiName)
+
+                t.Components.Schemas[fmt.Sprintf("%s--request", cfg.apiName)] = requestSchema</span>
+        }
+
+        <span class="cov3" title="5">t.Components.RequestBodies[cfg.apiName] = &amp;openapi3.RequestBodyRef{
+                Value: &amp;openapi3.RequestBody{
+                        Required: true,
+                        Content: openapi3.Content{
+                                "application/json": &amp;openapi3.MediaType{
+                                        Schema: &amp;openapi3.SchemaRef{
+                                                Ref: fmt.Sprintf("#/components/schemas/%s--request", cfg.apiName),
+                                        },
+                                },
+                        },
+                },
+        }
+
+        t.Components.Responses[cfg.apiName] = &amp;openapi3.ResponseRef{
+                Value: &amp;openapi3.Response{
+                        Description: P(fmt.Sprintf("OK: `%s`", cfg.apiName)),
+                        Headers: openapi3.Headers{
+                                "ETag": &amp;openapi3.HeaderRef{
+                                        Ref: "#/components/headers/etag",
+                                },
+                        },
+                        Content: openapi3.Content{
+                                "application/json": &amp;openapi3.MediaType{
+                                        Schema: &amp;openapi3.SchemaRef{
+                                                Ref: fmt.Sprintf("#/components/schemas/%s--response", cfg.apiName),
+                                        },
+                                },
+                                "text/event-stream": &amp;openapi3.MediaType{
+                                        Schema: &amp;openapi3.SchemaRef{
+                                                Ref: "#/components/schemas/event-stream-object",
+                                        },
+                                },
+                        },
+                },
+        }
+
+        t.Components.Responses[fmt.Sprintf("%s--list", cfg.apiName)] = &amp;openapi3.ResponseRef{
+                Value: &amp;openapi3.Response{
+                        Description: P(fmt.Sprintf("OK: List of `%s`", cfg.apiName)),
+                        Headers: openapi3.Headers{
+                                "ETag": &amp;openapi3.HeaderRef{
+                                        Ref: "#/components/headers/etag",
+                                },
+                        },
+                        Content: openapi3.Content{
+                                "application/json": &amp;openapi3.MediaType{
+                                        Schema: &amp;openapi3.SchemaRef{
+                                                Value: &amp;openapi3.Schema{
+                                                        Type: "array",
+                                                        Items: &amp;openapi3.SchemaRef{
+                                                                Ref: fmt.Sprintf("#/components/schemas/%s--response", cfg.apiName),
+                                                        },
+                                                },
+                                        },
+                                },
+                                "text/event-stream": &amp;openapi3.MediaType{
+                                        Schema: &amp;openapi3.SchemaRef{
+                                                Ref: "#/components/schemas/event-stream-list",
+                                        },
+                                },
+                        },
+                },
+        }
+
+        paths := path.ListType(cfg.typeOf)
+        sorts := []any{}
+        filters := openapi3.Parameters{}
+
+        for _, pth := range paths </span><span class="cov5" title="24">{
+                sorts = append(sorts, fmt.Sprintf("+%s", pth), fmt.Sprintf("-%s", pth))
+
+                pthSchema, err := generateSchemaRef(path.GetFieldType(cfg.typeOf, pth))
+                if err != nil </span><span class="cov0" title="0">{
+                        return jsrest.Errorf(jsrest.ErrInternalServerError, "generate schema ref failed (%w)", err)
+                }</span>
+
+                <span class="cov5" title="24">filters = append(filters, openapi3.Parameters{
+                        &amp;openapi3.ParameterRef{
+                                Value: &amp;openapi3.Parameter{
+                                        Name:        pth,
+                                        In:          "query",
+                                        Description: fmt.Sprintf("Filter list by `%s` equal to", pth),
+                                        Schema:      pthSchema,
+                                },
+                        },
+
+                        &amp;openapi3.ParameterRef{
+                                Value: &amp;openapi3.Parameter{
+                                        Name:        fmt.Sprintf("%s[gt]", pth),
+                                        In:          "query",
+                                        Description: fmt.Sprintf("Filter list by `%s` greater than", pth),
+                                        Schema:      pthSchema,
+                                },
+                        },
+
+                        &amp;openapi3.ParameterRef{
+                                Value: &amp;openapi3.Parameter{
+                                        Name:        fmt.Sprintf("%s[gte]", pth),
+                                        In:          "query",
+                                        Description: fmt.Sprintf("Filter list by `%s` greater than or equal to", pth),
+                                        Schema:      pthSchema,
+                                },
+                        },
+
+                        &amp;openapi3.ParameterRef{
+                                Value: &amp;openapi3.Parameter{
+                                        Name:        fmt.Sprintf("%s[hp]", pth),
+                                        In:          "query",
+                                        Description: fmt.Sprintf("Filter list by `%s` has prefix", pth),
+                                        Schema: &amp;openapi3.SchemaRef{
+                                                Ref: "#/components/schemas/prefix",
+                                        },
+                                },
+                        },
+
+                        &amp;openapi3.ParameterRef{
+                                Value: &amp;openapi3.Parameter{
+                                        Name:        fmt.Sprintf("%s[in]", pth),
+                                        In:          "query",
+                                        Description: fmt.Sprintf("Filter list by `%s` one of", pth),
+                                        Explode:     P(false),
+                                        Schema: &amp;openapi3.SchemaRef{
+                                                Value: &amp;openapi3.Schema{
+                                                        Type:  "array",
+                                                        Items: pthSchema,
+                                                },
+                                        },
+                                },
+                        },
+
+                        &amp;openapi3.ParameterRef{
+                                Value: &amp;openapi3.Parameter{
+                                        Name:        fmt.Sprintf("%s[lt]", pth),
+                                        In:          "query",
+                                        Description: fmt.Sprintf("Filter list by `%s` less than", pth),
+                                        Schema:      pthSchema,
+                                },
+                        },
+
+                        &amp;openapi3.ParameterRef{
+                                Value: &amp;openapi3.Parameter{
+                                        Name:        fmt.Sprintf("%s[lte]", pth),
+                                        In:          "query",
+                                        Description: fmt.Sprintf("Filter list by `%s` less than or equal to", pth),
+                                        Schema:      pthSchema,
+                                },
+                        },
+                }...)</span>
+        }
+
+        <span class="cov3" title="5">t.Paths[fmt.Sprintf("/%s", cfg.apiName)] = &amp;openapi3.PathItem{
+                Get: &amp;openapi3.Operation{
+                        Tags:    []string{cfg.apiName},
+                        Summary: fmt.Sprintf("List %s objects", cfg.apiName),
+                        Parameters: append(filters, openapi3.Parameters{
+                                &amp;openapi3.ParameterRef{
+                                        Ref: "#/components/headers/if-none-match",
+                                },
+                                &amp;openapi3.ParameterRef{
+                                        Ref: "#/components/parameters/_stream",
+                                },
+                                &amp;openapi3.ParameterRef{
+                                        Ref: "#/components/parameters/_limit",
+                                },
+                                &amp;openapi3.ParameterRef{
+                                        Ref: "#/components/parameters/_offset",
+                                },
+                                &amp;openapi3.ParameterRef{
+                                        Ref: "#/components/parameters/_after",
+                                },
+                                &amp;openapi3.ParameterRef{
+                                        Value: &amp;openapi3.Parameter{
+                                                Name:        "_sort",
+                                                In:          "query",
+                                                Description: "Direction (`+` ascending or `-` descending) and field path to sort by",
+                                                Explode:     P(true),
+                                                Schema: &amp;openapi3.SchemaRef{
+                                                        Value: &amp;openapi3.Schema{
+                                                                Type: "array",
+                                                                Items: &amp;openapi3.SchemaRef{
+                                                                        Value: &amp;openapi3.Schema{
+                                                                                Type: "enum",
+                                                                                Enum: sorts,
+                                                                        },
+                                                                },
+                                                        },
+                                                },
+                                        },
+                                },
+                        }...),
+                        Responses: openapi3.Responses{
+                                "200": &amp;openapi3.ResponseRef{
+                                        Ref: fmt.Sprintf("#/components/responses/%s--list", cfg.apiName),
+                                },
+                                "304": &amp;openapi3.ResponseRef{
+                                        Ref: "#/components/responses/not-modified",
+                                },
+                                "400": &amp;openapi3.ResponseRef{
+                                        Ref: "#/components/responses/bad-request",
+                                },
+                                "401": &amp;openapi3.ResponseRef{
+                                        Ref: "#/components/responses/unauthorized",
+                                },
+                                "403": &amp;openapi3.ResponseRef{
+                                        Ref: "#/components/responses/forbidden",
+                                },
+                        },
+                },
+
+                Post: &amp;openapi3.Operation{
+                        Tags:    []string{cfg.apiName},
+                        Summary: fmt.Sprintf("Create new %s object", cfg.apiName),
+                        Parameters: openapi3.Parameters{
+                                &amp;openapi3.ParameterRef{
+                                        Ref: "#/components/headers/idempotency-key",
+                                },
+                        },
+                        RequestBody: &amp;openapi3.RequestBodyRef{
+                                Ref: fmt.Sprintf("#/components/requestBodies/%s", cfg.apiName),
+                        },
+                        Responses: openapi3.Responses{
+                                "200": &amp;openapi3.ResponseRef{
+                                        Ref: fmt.Sprintf("#/components/responses/%s", cfg.apiName),
+                                },
+                                "400": &amp;openapi3.ResponseRef{
+                                        Ref: "#/components/responses/bad-request",
+                                },
+                                "401": &amp;openapi3.ResponseRef{
+                                        Ref: "#/components/responses/unauthorized",
+                                },
+                                "403": &amp;openapi3.ResponseRef{
+                                        Ref: "#/components/responses/forbidden",
+                                },
+                                "409": &amp;openapi3.ResponseRef{
+                                        Ref: "#/components/responses/conflict",
+                                },
+                                "415": &amp;openapi3.ResponseRef{
+                                        Ref: "#/components/responses/unsupported-media-type",
+                                },
+                        },
+                },
+        }
+
+        t.Paths[fmt.Sprintf("/%s/{id}", cfg.apiName)] = &amp;openapi3.PathItem{
+                Parameters: openapi3.Parameters{
+                        &amp;openapi3.ParameterRef{
+                                Ref: "#/components/parameters/id",
+                        },
+                },
+
+                Get: &amp;openapi3.Operation{
+                        Tags:    []string{cfg.apiName},
+                        Summary: fmt.Sprintf("Get %s object", cfg.apiName),
+                        Parameters: openapi3.Parameters{
+                                &amp;openapi3.ParameterRef{
+                                        Ref: "#/components/headers/if-none-match",
+                                },
+                        },
+                        Responses: openapi3.Responses{
+                                "200": &amp;openapi3.ResponseRef{
+                                        Ref: fmt.Sprintf("#/components/responses/%s", cfg.apiName),
+                                },
+                                "304": &amp;openapi3.ResponseRef{
+                                        Ref: "#/components/responses/not-modified",
+                                },
+                                "400": &amp;openapi3.ResponseRef{
+                                        Ref: "#/components/responses/bad-request",
+                                },
+                                "401": &amp;openapi3.ResponseRef{
+                                        Ref: "#/components/responses/unauthorized",
+                                },
+                                "403": &amp;openapi3.ResponseRef{
+                                        Ref: "#/components/responses/forbidden",
+                                },
+                                "404": &amp;openapi3.ResponseRef{
+                                        Ref: "#/components/responses/not-found",
+                                },
+                        },
+                },
+
+                Put: &amp;openapi3.Operation{
+                        Tags:    []string{cfg.apiName},
+                        Summary: fmt.Sprintf("Replace %s object", cfg.apiName),
+                        Parameters: openapi3.Parameters{
+                                &amp;openapi3.ParameterRef{
+                                        Ref: "#/components/headers/if-match",
+                                },
+                                &amp;openapi3.ParameterRef{
+                                        Ref: "#/components/headers/idempotency-key",
+                                },
+                        },
+                        RequestBody: &amp;openapi3.RequestBodyRef{
+                                Ref: fmt.Sprintf("#/components/requestBodies/%s", cfg.apiName),
+                        },
+                        Responses: openapi3.Responses{
+                                "200": &amp;openapi3.ResponseRef{
+                                        Ref: fmt.Sprintf("#/components/responses/%s", cfg.apiName),
+                                },
+                                "400": &amp;openapi3.ResponseRef{
+                                        Ref: "#/components/responses/bad-request",
+                                },
+                                "401": &amp;openapi3.ResponseRef{
+                                        Ref: "#/components/responses/unauthorized",
+                                },
+                                "403": &amp;openapi3.ResponseRef{
+                                        Ref: "#/components/responses/forbidden",
+                                },
+                                "404": &amp;openapi3.ResponseRef{
+                                        Ref: "#/components/responses/not-found",
+                                },
+                                "409": &amp;openapi3.ResponseRef{
+                                        Ref: "#/components/responses/conflict",
+                                },
+                                "412": &amp;openapi3.ResponseRef{
+                                        Ref: "#/components/responses/precondition-failed",
+                                },
+                                "415": &amp;openapi3.ResponseRef{
+                                        Ref: "#/components/responses/unsupported-media-type",
+                                },
+                        },
+                },
+
+                Patch: &amp;openapi3.Operation{
+                        Tags:    []string{cfg.apiName},
+                        Summary: fmt.Sprintf("Update %s object", cfg.apiName),
+                        Parameters: openapi3.Parameters{
+                                &amp;openapi3.ParameterRef{
+                                        Ref: "#/components/headers/if-match",
+                                },
+                                &amp;openapi3.ParameterRef{
+                                        Ref: "#/components/headers/idempotency-key",
+                                },
+                        },
+                        RequestBody: &amp;openapi3.RequestBodyRef{
+                                Ref: fmt.Sprintf("#/components/requestBodies/%s", cfg.apiName),
+                        },
+                        Responses: openapi3.Responses{
+                                "200": &amp;openapi3.ResponseRef{
+                                        Ref: fmt.Sprintf("#/components/responses/%s", cfg.apiName),
+                                },
+                                "400": &amp;openapi3.ResponseRef{
+                                        Ref: "#/components/responses/bad-request",
+                                },
+                                "401": &amp;openapi3.ResponseRef{
+                                        Ref: "#/components/responses/unauthorized",
+                                },
+                                "403": &amp;openapi3.ResponseRef{
+                                        Ref: "#/components/responses/forbidden",
+                                },
+                                "404": &amp;openapi3.ResponseRef{
+                                        Ref: "#/components/responses/not-found",
+                                },
+                                "409": &amp;openapi3.ResponseRef{
+                                        Ref: "#/components/responses/conflict",
+                                },
+                                "412": &amp;openapi3.ResponseRef{
+                                        Ref: "#/components/responses/precondition-failed",
+                                },
+                                "415": &amp;openapi3.ResponseRef{
+                                        Ref: "#/components/responses/unsupported-media-type",
+                                },
+                        },
+                },
+
+                Delete: &amp;openapi3.Operation{
+                        Tags:    []string{cfg.apiName},
+                        Summary: fmt.Sprintf("Delete %s object", cfg.apiName),
+                        Parameters: openapi3.Parameters{
+                                &amp;openapi3.ParameterRef{
+                                        Ref: "#/components/headers/if-match",
+                                },
+                                &amp;openapi3.ParameterRef{
+                                        Ref: "#/components/headers/idempotency-key",
+                                },
+                        },
+                        Responses: openapi3.Responses{
+                                "204": &amp;openapi3.ResponseRef{
+                                        Ref: "#/components/responses/no-content",
+                                },
+                                "400": &amp;openapi3.ResponseRef{
+                                        Ref: "#/components/responses/bad-request",
+                                },
+                                "401": &amp;openapi3.ResponseRef{
+                                        Ref: "#/components/responses/unauthorized",
+                                },
+                                "403": &amp;openapi3.ResponseRef{
+                                        Ref: "#/components/responses/forbidden",
+                                },
+                                "404": &amp;openapi3.ResponseRef{
+                                        Ref: "#/components/responses/not-found",
+                                },
+                                "409": &amp;openapi3.ResponseRef{
+                                        Ref: "#/components/responses/conflict",
+                                },
+                                "412": &amp;openapi3.ResponseRef{
+                                        Ref: "#/components/responses/precondition-failed",
+                                },
+                        },
+                },
+        }
+
+        return nil</span>
+}
+
+func (api *API) requestBaseURL(r *http.Request) (string, error) <span class="cov1" title="1">{
+        scheme := "https"
+        if r.TLS == nil </span><span class="cov0" title="0">{
+                scheme = "http"
+        }</span>
+
+        <span class="cov1" title="1">host, err := idna.ToUnicode(r.Host)
+        if err != nil </span><span class="cov0" title="0">{
+                return "", jsrest.Errorf(jsrest.ErrInternalServerError, "unicode hostname conversion failed (%w)", err)
+        }</span>
+
+        <span class="cov1" title="1">i := strings.Index(r.RequestURI, "/_openapi")
+        if i == -1 </span><span class="cov0" title="0">{
+                return "", jsrest.Errorf(jsrest.ErrInternalServerError, "missing /_openapi in URL")
+        }</span>
+
+        <span class="cov1" title="1">path := r.RequestURI[:i]
+
+        return fmt.Sprintf("%s://%s%s", scheme, host, path), nil</span>
+}
+
+func generateSchemaRef(t reflect.Type) (*openapi3.SchemaRef, error) <span class="cov6" title="35">{
+        gen := openapi3gen.NewGenerator()
+
+        schemaRef, err := gen.GenerateSchemaRef(t)
+        if err != nil </span><span class="cov0" title="0">{
+                return nil, err
+        }</span>
+
+        <span class="cov6" title="35">for ref := range gen.SchemaRefs </span><span class="cov7" title="57">{
+                ref.Ref = ""
+        }</span>
+
+        <span class="cov6" title="35">return schemaRef, nil</span>
+}
+</pre>
+		
+		<pre class="file" id="file14" style="display: none">package patchy
+
+import (
+        "net/http"
+
+        "github.com/gopatchy/jsrest"
+)
+
+func (api *API) patch(cfg *config, id string, w http.ResponseWriter, r *http.Request) error <span class="cov10" title="53">{
+        ctx := r.Context()
+
+        api.SetEventData(ctx,
+                "operation", "update",
+                "typeName", cfg.apiName,
+                "id", id,
+        )
+
+        patch := map[string]any{}
+        opts := parseUpdateOpts(r)
+
+        err := jsrest.Read(r, &amp;patch)
+        if err != nil </span><span class="cov0" title="0">{
+                return jsrest.Errorf(jsrest.ErrInternalServerError, "read request failed (%w)", err)
+        }</span>
+
+        <span class="cov10" title="53">obj, err := api.updateInt(ctx, cfg, id, patch, opts)
+        if err != nil </span><span class="cov5" title="7">{
+                return jsrest.Errorf(jsrest.ErrInternalServerError, "update failed (%w)", err)
+        }</span>
+
+        <span class="cov9" title="46">err = jsrest.Write(w, obj)
+        if err != nil </span><span class="cov0" title="0">{
+                return jsrest.Errorf(jsrest.ErrInternalServerError, "write response failed (%w)", err)
+        }</span>
+
+        <span class="cov9" title="46">return nil</span>
+}
+</pre>
+		
+		<pre class="file" id="file15" style="display: none">package patchy
+
+import (
+        "net/http"
+
+        "github.com/gopatchy/jsrest"
+)
+
+func (api *API) post(cfg *config, w http.ResponseWriter, r *http.Request) error <span class="cov10" title="215">{
+        ctx := r.Context()
+
+        api.SetEventData(ctx,
+                "operation", "create",
+                "typeName", cfg.apiName,
+        )
+
+        obj := cfg.factory()
+
+        err := jsrest.Read(r, obj)
+        if err != nil </span><span class="cov0" title="0">{
+                return jsrest.Errorf(jsrest.ErrInternalServerError, "read request failed (%w)", err)
+        }</span>
+
+        <span class="cov10" title="215">created, err := api.createInt(ctx, cfg, obj)
+        if err != nil </span><span class="cov2" title="2">{
+                return jsrest.Errorf(jsrest.ErrInternalServerError, "create failed (%w)", err)
+        }</span>
+
+        <span class="cov9" title="213">err = jsrest.Write(w, created)
+        if err != nil </span><span class="cov0" title="0">{
+                return jsrest.Errorf(jsrest.ErrInternalServerError, "write response failed (%w)", err)
+        }</span>
+
+        <span class="cov9" title="213">return nil</span>
+}
+</pre>
+		
+		<pre class="file" id="file16" style="display: none">package patchy
+
+import (
+        "net/http"
+
+        "github.com/gopatchy/jsrest"
+)
+
+func (api *API) put(cfg *config, id string, w http.ResponseWriter, r *http.Request) error <span class="cov10" title="21">{
+        ctx := r.Context()
+
+        api.SetEventData(ctx,
+                "operation", "replace",
+                "typeName", cfg.apiName,
+                "id", id,
+        )
+
+        replace := cfg.factory()
+        opts := parseUpdateOpts(r)
+
+        err := jsrest.Read(r, replace)
+        if err != nil </span><span class="cov0" title="0">{
+                return jsrest.Errorf(jsrest.ErrInternalServerError, "read request failed (%w)", err)
+        }</span>
+
+        <span class="cov10" title="21">replace, err = api.replaceInt(ctx, cfg, id, replace, opts)
+        if err != nil </span><span class="cov6" title="7">{
+                return jsrest.Errorf(jsrest.ErrInternalServerError, "replace failed (%w)", err)
+        }</span>
+
+        <span class="cov8" title="14">err = jsrest.Write(w, replace)
+        if err != nil </span><span class="cov0" title="0">{
+                return jsrest.Errorf(jsrest.ErrInternalServerError, "write response failed (%w)", err)
+        }</span>
+
+        <span class="cov8" title="14">return nil</span>
+}
+</pre>
+		
+		<pre class="file" id="file17" style="display: none">package patchy
+
+import (
+        "bytes"
+        "encoding/json"
+        "fmt"
+        "net/http"
+
+        "github.com/gopatchy/jsrest"
+)
+
+func writeEvent(w http.ResponseWriter, event string, params map[string]string, obj any, flush bool) error <span class="cov9" title="150">{
+        buf := &amp;bytes.Buffer{}
+
+        fmt.Fprintf(buf, "event: %s\n", event)
+
+        for k, v := range params </span><span class="cov10" title="154">{
+                fmt.Fprintf(buf, "%s: %s\n", k, v)
+        }</span>
+
+        <span class="cov9" title="150">if obj != nil </span><span class="cov9" title="94">{
+                buf.WriteString("data: ")
+
+                enc := json.NewEncoder(buf)
+
+                err := enc.Encode(obj)
+                if err != nil </span><span class="cov0" title="0">{
+                        return jsrest.Errorf(jsrest.ErrInternalServerError, "encode JSON failed (%w)", err)
+                }</span>
+        }
+
+        <span class="cov9" title="150">buf.WriteString("\n")
+
+        _, err := buf.WriteTo(w)
+        if err != nil </span><span class="cov0" title="0">{
+                return jsrest.Errorf(jsrest.ErrInternalServerError, "write event failed (%w)", err)
+        }</span>
+
+        <span class="cov9" title="150">if flush </span><span class="cov9" title="106">{
+                w.(http.Flusher).Flush()
+        }</span>
+
+        <span class="cov9" title="150">return nil</span>
+}
+</pre>
+		
+		<pre class="file" id="file18" style="display: none">package patchy
+
+import (
+        "sync"
+)
+
+type GetStream[T any] struct {
+        ch  chan *T
+        gsi *getStreamInt
+
+        err error
+
+        mu sync.RWMutex
+}
+
+func (gs *GetStream[T]) Close() <span class="cov4" title="3">{
+        gs.gsi.Close()
+}</span>
+
+func (gs *GetStream[T]) Chan() &lt;-chan *T <span class="cov4" title="3">{
+        return gs.ch
+}</span>
+
+func (gs *GetStream[T]) Read() *T <span class="cov4" title="3">{
+        return &lt;-gs.Chan()
+}</span>
+
+func (gs *GetStream[T]) Error() error <span class="cov4" title="3">{
+        gs.mu.RLock()
+        defer gs.mu.RUnlock()
+
+        return gs.err
+}</span>
+
+func (gs *GetStream[T]) writeEvent(obj *T) <span class="cov6" title="4">{
+        gs.ch &lt;- obj
+}</span>
+
+func (gs *GetStream[T]) writeError(err error) <span class="cov4" title="3">{
+        gs.mu.Lock()
+        gs.err = err
+        gs.mu.Unlock()
+
+        close(gs.ch)
+}</span>
+
+type ListStream[T any] struct {
+        ch  chan []*T
+        lsi *listStreamInt
+
+        err error
+
+        mu sync.RWMutex
+}
+
+func (ls *ListStream[T]) Close() <span class="cov8" title="7">{
+        ls.lsi.Close()
+}</span>
+
+func (ls *ListStream[T]) Chan() &lt;-chan []*T <span class="cov8" title="9">{
+        return ls.ch
+}</span>
+
+func (ls *ListStream[T]) Read() []*T <span class="cov7" title="6">{
+        return &lt;-ls.Chan()
+}</span>
+
+func (ls *ListStream[T]) Error() error <span class="cov7" title="6">{
+        ls.mu.RLock()
+        defer ls.mu.RUnlock()
+
+        return ls.err
+}</span>
+
+func (ls *ListStream[T]) writeEvent(list []*T) <span class="cov10" title="12">{
+        ls.ch &lt;- list
+}</span>
+
+func (ls *ListStream[T]) writeError(err error) <span class="cov8" title="7">{
+        ls.mu.Lock()
+        ls.err = err
+        ls.mu.Unlock()
+
+        close(ls.ch)
+}</span>
+</pre>
+		
+		<pre class="file" id="file19" style="display: none">package patchy
+
+import (
+        "context"
+        "errors"
+        "fmt"
+        "net/http"
+        "time"
+
+        "github.com/gopatchy/jsrest"
+        "github.com/gopatchy/metadata"
+        "github.com/vfaronov/httpheader"
+)
+
+var ErrStreamingNotSupported = errors.New("streaming not supported")
+
+func (api *API) streamGet(cfg *config, id string, w http.ResponseWriter, r *http.Request) error <span class="cov7" title="19">{
+        ctx := r.Context()
+
+        api.SetEventData(ctx,
+                "operation", "get",
+                "typeName", cfg.apiName,
+                "id", id,
+                "stream", true,
+        )
+
+        opts := parseGetOpts(r)
+
+        if _, ok := w.(http.Flusher); !ok </span><span class="cov0" title="0">{
+                return jsrest.Errorf(jsrest.ErrBadRequest, "stream failed (%w)", ErrStreamingNotSupported)
+        }</span>
+
+        <span class="cov7" title="19">gsi, err := api.streamGetInt(ctx, cfg, id)
+        if err != nil </span><span class="cov0" title="0">{
+                return jsrest.Errorf(jsrest.ErrInternalServerError, "read failed: %s (%w)", id, err)
+        }</span>
+
+        <span class="cov7" title="19">defer gsi.Close()
+
+        w.Header().Set("Content-Type", "text/event-stream")
+
+        err = api.streamGetWrite(ctx, w, gsi.ch, opts)
+        if err != nil </span><span class="cov0" title="0">{
+                _ = writeEvent(w, "error", nil, jsrest.ToJSONError(err), true)
+                return nil
+        }</span>
+
+        <span class="cov7" title="19">return nil</span>
+}
+
+func (api *API) streamGetWrite(ctx context.Context, w http.ResponseWriter, ch &lt;-chan any, opts *GetOpts) error <span class="cov7" title="19">{
+        first := true
+
+        ticker := time.NewTicker(5 * time.Second)
+        defer ticker.Stop()
+
+        for </span><span class="cov10" title="45">{
+                select </span>{
+                case &lt;-ctx.Done():<span class="cov7" title="17">
+                        return nil</span>
+
+                case obj, ok := &lt;-ch:<span class="cov8" title="27">
+                        if !ok </span><span class="cov2" title="2">{
+                                err := writeEvent(w, "delete", nil, nil, true)
+                                if err != nil </span><span class="cov0" title="0">{
+                                        return jsrest.Errorf(jsrest.ErrInternalServerError, "write delete failed (%w)", err)
+                                }</span>
+
+                                <span class="cov2" title="2">return nil</span>
+                        }
+
+                        <span class="cov8" title="25">eventType := "update"
+
+                        md := metadata.GetMetadata(obj)
+                        gen := fmt.Sprintf("generation:%d", md.Generation)
+
+                        if first </span><span class="cov7" title="18">{
+                                first = false
+                                eventType = "initial"
+
+                                if httpheader.MatchWeak(opts.IfNoneMatch, httpheader.EntityTag{Opaque: md.ETag}) ||
+                                        httpheader.MatchWeak(opts.IfNoneMatch, httpheader.EntityTag{Opaque: gen}) </span><span class="cov4" title="4">{
+                                        err := writeEvent(w, "notModified", map[string]string{"id": md.ETag}, nil, true)
+                                        if err != nil </span><span class="cov0" title="0">{
+                                                return jsrest.Errorf(jsrest.ErrInternalServerError, "write update failed (%w)", err)
+                                        }</span>
+
+                                        <span class="cov4" title="4">first = false
+
+                                        continue</span>
+                                }
+                        }
+
+                        <span class="cov8" title="21">err := writeEvent(w, eventType, map[string]string{"id": md.ETag}, obj, true)
+                        if err != nil </span><span class="cov0" title="0">{
+                                return jsrest.Errorf(jsrest.ErrInternalServerError, "write update failed (%w)", err)
+                        }</span>
+
+                case &lt;-ticker.C:<span class="cov1" title="1">
+                        err := writeEvent(w, "heartbeat", nil, nil, true)
+                        if err != nil </span><span class="cov0" title="0">{
+                                return jsrest.Errorf(jsrest.ErrInternalServerError, "write heartbeat failed (%w)", err)
+                        }</span>
+                }
+        }
+}
+</pre>
+		
+		<pre class="file" id="file20" style="display: none">package patchy
+
+import (
+        "context"
+        "net/http"
+        "strconv"
+        "time"
+
+        "github.com/gopatchy/jsrest"
+        "github.com/gopatchy/metadata"
+        "github.com/vfaronov/httpheader"
+)
+
+func (api *API) streamList(cfg *config, w http.ResponseWriter, r *http.Request) error <span class="cov9" title="46">{
+        ctx := r.Context()
+
+        api.SetEventData(ctx,
+                "operation", "list",
+                "typeName", cfg.apiName,
+                "stream", true,
+        )
+
+        if _, ok := w.(http.Flusher); !ok </span><span class="cov0" title="0">{
+                return jsrest.Errorf(jsrest.ErrBadRequest, "stream failed (%w)", ErrStreamingNotSupported)
+        }</span>
+
+        <span class="cov9" title="46">opts, err := api.parseListOpts(r)
+        if err != nil </span><span class="cov0" title="0">{
+                return jsrest.Errorf(jsrest.ErrBadRequest, "parse list parameters failed (%w)", err)
+        }</span>
+
+        <span class="cov9" title="46">w.Header().Set("Content-Type", "text/event-stream")
+        w.Header().Set("Stream-Format", opts.Stream)
+
+        switch opts.Stream </span>{
+        case "full":<span class="cov7" title="23">
+                err = api.streamListFull(ctx, cfg, w, opts)
+                if err != nil </span><span class="cov0" title="0">{
+                        _ = writeEvent(w, "error", nil, jsrest.ToJSONError(err), true)
+                }</span>
+
+                <span class="cov7" title="23">return nil</span>
+
+        case "diff":<span class="cov7" title="23">
+                err = api.streamListDiff(ctx, cfg, w, opts)
+                if err != nil </span><span class="cov0" title="0">{
+                        _ = writeEvent(w, "error", nil, jsrest.ToJSONError(err), true)
+                }</span>
+
+                <span class="cov7" title="23">return nil</span>
+
+        default:<span class="cov0" title="0">
+                return jsrest.Errorf(jsrest.ErrBadRequest, "_stream=%s (%w)", opts.Stream, ErrInvalidStreamFormat)</span>
+        }
+}
+
+func (api *API) streamListFull(ctx context.Context, cfg *config, w http.ResponseWriter, opts *ListOpts) error <span class="cov7" title="23">{
+        // TODO: Add query condition pushdown
+        lsi, err := api.streamListInt(ctx, cfg, opts)
+        if err != nil </span><span class="cov0" title="0">{
+                return jsrest.Errorf(jsrest.ErrInternalServerError, "read list failed (%w)", err)
+        }</span>
+        <span class="cov7" title="23">defer lsi.Close()
+
+        ticker := time.NewTicker(5 * time.Second)
+        defer ticker.Stop()
+
+        ifNoneMatch := opts.IfNoneMatch
+        previousETag := ""
+
+        for </span><span class="cov9" title="61">{
+                select </span>{
+                case &lt;-ctx.Done():<span class="cov7" title="23">
+                        return nil</span>
+
+                case &lt;-ticker.C:<span class="cov1" title="1">
+                        err = writeEvent(w, "heartbeat", nil, nil, true)
+                        if err != nil </span><span class="cov0" title="0">{
+                                return jsrest.Errorf(jsrest.ErrInternalServerError, "write heartbeat failed (%w)", err)
+                        }</span>
+
+                case list := &lt;-lsi.Chan():<span class="cov8" title="37">
+                        etag, err := hashList(list)
+                        if err != nil </span><span class="cov0" title="0">{
+                                return jsrest.Errorf(jsrest.ErrInternalServerError, "hash list failed (%w)", err)
+                        }</span>
+
+                        <span class="cov8" title="37">if ifNoneMatch != nil &amp;&amp; httpheader.MatchWeak(opts.IfNoneMatch, httpheader.EntityTag{Opaque: etag}) </span><span class="cov3" title="4">{
+                                ifNoneMatch = nil
+
+                                err = writeEvent(w, "notModified", map[string]string{"id": etag}, nil, true)
+                                if err != nil </span><span class="cov0" title="0">{
+                                        return jsrest.Errorf(jsrest.ErrInternalServerError, "write list failed (%w)", err)
+                                }</span>
+
+                                <span class="cov3" title="4">continue</span>
+                        }
+
+                        <span class="cov8" title="33">ifNoneMatch = nil
+
+                        if previousETag == etag </span><span class="cov1" title="1">{
+                                continue</span>
+                        }
+
+                        <span class="cov8" title="32">previousETag = etag
+
+                        err = writeEvent(w, "list", map[string]string{"id": etag}, list, true)
+                        if err != nil </span><span class="cov0" title="0">{
+                                return jsrest.Errorf(jsrest.ErrInternalServerError, "write list failed (%w)", err)
+                        }</span>
+                }
+        }
+}
+
+type listEntry struct {
+        pos int
+        obj any
+}
+
+func (api *API) streamListDiff(ctx context.Context, cfg *config, w http.ResponseWriter, opts *ListOpts) error <span class="cov7" title="23">{
+        lsi, err := api.streamListInt(ctx, cfg, opts)
+        if err != nil </span><span class="cov0" title="0">{
+                return jsrest.Errorf(jsrest.ErrInternalServerError, "read list failed (%w)", err)
+        }</span>
+        <span class="cov7" title="23">defer lsi.Close()
+
+        last := map[string]*listEntry{}
+
+        ticker := time.NewTicker(5 * time.Second)
+        ifNoneMatch := opts.IfNoneMatch
+        previousETag := ""
+
+        for </span><span class="cov9" title="65">{
+                select </span>{
+                case &lt;-ticker.C:<span class="cov0" title="0">
+                        err = writeEvent(w, "heartbeat", nil, nil, true)
+                        if err != nil </span><span class="cov0" title="0">{
+                                return jsrest.Errorf(jsrest.ErrInternalServerError, "write heartbeat failed (%w)", err)
+                        }</span>
+
+                        <span class="cov0" title="0">continue</span>
+
+                case &lt;-ctx.Done():<span class="cov7" title="23">
+                        return nil</span>
+
+                case list := &lt;-lsi.Chan():<span class="cov8" title="42">
+                        // Don't do anything if the list hasn't changed (can't trigger first time)
+                        etag, err := hashList(list)
+                        if err != nil </span><span class="cov0" title="0">{
+                                return jsrest.Errorf(jsrest.ErrInternalServerError, "hash list failed (%w)", err)
+                        }</span>
+
+                        <span class="cov8" title="42">if previousETag == etag </span><span class="cov1" title="1">{
+                                continue</span>
+                        }
+
+                        <span class="cov8" title="41">previousETag = etag
+
+                        // Build a map of the current list
+                        cur := map[string]*listEntry{}
+
+                        for pos, obj := range list </span><span class="cov10" title="69">{
+                                objMD := metadata.GetMetadata(obj)
+
+                                cur[objMD.ID] = &amp;listEntry{
+                                        pos: pos,
+                                        obj: obj,
+                                }
+                        }</span>
+
+                        // Short-circuit with notModified, if appropriate
+                        <span class="cov8" title="41">tmpIfNoneMatch := ifNoneMatch
+                        ifNoneMatch = nil
+
+                        if tmpIfNoneMatch != nil &amp;&amp; httpheader.MatchWeak(tmpIfNoneMatch, httpheader.EntityTag{Opaque: etag}) </span><span class="cov3" title="4">{
+                                last = cur
+
+                                err = writeEvent(w, "notModified", map[string]string{"id": etag}, nil, true)
+                                if err != nil </span><span class="cov0" title="0">{
+                                        return jsrest.Errorf(jsrest.ErrInternalServerError, "write list failed (%w)", err)
+                                }</span>
+
+                                <span class="cov3" title="4">continue</span>
+                        }
+
+                        // If we reach here, the list has actually changed from the client's view
+
+                        // remove events have to go out before add/update events, for ordering
+                        <span class="cov8" title="37">for id, lastEntry := range last </span><span class="cov8" title="32">{
+                                if cur[id] != nil </span><span class="cov8" title="29">{
+                                        continue</span>
+                                }
+
+                                <span class="cov3" title="3">err = writeEvent(w, "remove", map[string]string{"old-position": strconv.Itoa(lastEntry.pos)}, nil, false)
+                                if err != nil </span><span class="cov0" title="0">{
+                                        return jsrest.Errorf(jsrest.ErrInternalServerError, "write remove failed (%w)", err)
+                                }</span>
+                        }
+
+                        // Use the list instead of the map because order matters
+                        <span class="cov8" title="37">for pos, obj := range list </span><span class="cov9" title="62">{
+                                objMD := metadata.GetMetadata(obj)
+
+                                lastEntry := last[objMD.ID]
+                                if lastEntry == nil </span><span class="cov8" title="33">{
+                                        err = writeEvent(w, "add", map[string]string{"new-position": strconv.Itoa(pos)}, obj, false)
+                                        if err != nil </span><span class="cov0" title="0">{
+                                                return jsrest.Errorf(jsrest.ErrInternalServerError, "write add failed (%w)", err)
+                                        }</span>
+                                } else<span class="cov8" title="29"> {
+                                        lastMD := metadata.GetMetadata(lastEntry.obj)
+                                        if objMD.ETag != lastMD.ETag </span><span class="cov5" title="8">{
+                                                params := map[string]string{
+                                                        "old-position": strconv.Itoa(lastEntry.pos),
+                                                        "new-position": strconv.Itoa(pos),
+                                                }
+
+                                                err = writeEvent(w, "update", params, obj, false)
+                                                if err != nil </span><span class="cov0" title="0">{
+                                                        return jsrest.Errorf(jsrest.ErrInternalServerError, "write update failed (%w)", err)
+                                                }</span>
+                                        }
+                                }
+                        }
+
+                        <span class="cov8" title="37">last = cur
+
+                        err = writeEvent(w, "sync", map[string]string{"id": etag}, nil, true)
+                        if err != nil </span><span class="cov0" title="0">{
+                                return jsrest.Errorf(jsrest.ErrInternalServerError, "write sync failed (%w)", err)
+                        }</span>
+                }
+        }
+}
+</pre>
+		
+		<pre class="file" id="file21" style="display: none">package patchy
+
+import (
+        "embed"
+        "io/fs"
+)
+
+//go:embed swaggerui/*
+var swaggerUIInt embed.FS
+
+var swaggerUI = mustSub(swaggerUIInt, "swaggerui")
+
+func mustSub(fsys fs.FS, dir string) fs.FS <span class="cov8" title="1">{
+        ret, err := fs.Sub(fsys, dir)
+        if err != nil </span><span class="cov0" title="0">{
+                panic(err)</span>
+        }
+
+        <span class="cov8" title="1">return ret</span>
+}
+</pre>
+		
+		<pre class="file" id="file22" style="display: none">package patchy
+
+import (
+        "bytes"
+        "embed"
+        "fmt"
+        "net/http"
+        "net/url"
+        "reflect"
+        "strings"
+        "text/template"
+        "time"
+
+        "cloud.google.com/go/civil"
+        "github.com/gopatchy/jsrest"
+        "github.com/gopatchy/path"
+        "github.com/julienschmidt/httprouter"
+)
+
+//go:embed templates/*
+var templateFS embed.FS
+
+var templates = template.Must(
+        template.New("templates").
+                Funcs(template.FuncMap{
+                        "add":      add,
+                        "padRight": padRight,
+                }).
+                ParseFS(templateFS, "templates/*"))
+
+type templateInput struct {
+        Info       *OpenAPIInfo
+        Form       url.Values
+        Types      []*templateType
+        APIs       []*apiType
+        UsesTime   bool
+        UsesCivil  bool
+        URLPrefix  string
+        AuthBasic  bool
+        AuthBearer bool
+}
+
+type apiType struct {
+        NameLower      string // "homeaddress"
+        NameUpperCamel string // "HomeAddress"
+        TypeUpperCamel string // "AddressType"
+
+        typeOf reflect.Type
+}
+
+type templateType struct {
+        TopLevel bool
+
+        TypeUpperCamel string // "AddressType"
+
+        Fields            []*templateField
+        FieldNameMaxLen   int
+        FieldGoTypeMaxLen int
+
+        typeOf reflect.Type
+}
+
+type templateField struct {
+        NameLower      string // "streetname"
+        NameUpperCamel string // "StreetName"
+        NameLowerCamel string // "streetName"
+        GoType         string // "bool"
+        TSType         string // "boolean"
+        Optional       bool
+}
+
+func (api *API) registerTemplates() <span class="cov8" title="213">{
+        api.router.GET("/_client.go", api.writeTemplate("client.go"))
+        api.router.GET("/_client.ts", api.writeTemplate("client.ts"))
+}</span>
+
+func (api *API) writeTemplate(name string) func(http.ResponseWriter, *http.Request, httprouter.Params) <span class="cov9" title="426">{
+        return func(w http.ResponseWriter, r *http.Request, _ httprouter.Params) </span><span class="cov2" title="4">{
+                ctx := r.Context()
+
+                api.SetEventData(ctx,
+                        "operation", "template",
+                        "template", name,
+                )
+
+                input := &amp;templateInput{
+                        Info:       api.openAPI.info,
+                        Form:       r.Form,
+                        URLPrefix:  api.prefix,
+                        AuthBasic:  api.authBasic,
+                        AuthBearer: api.authBearer,
+                }
+
+                typeQueue := []*templateType{}
+                typesDone := map[reflect.Type]bool{}
+
+                for _, apiName := range api.names() </span><span class="cov4" title="20">{
+                        cfg := api.registry[apiName]
+
+                        typeQueue = append(typeQueue, &amp;templateType{
+                                TopLevel: true,
+                                typeOf:   cfg.typeOf,
+                        })
+
+                        input.APIs = append(input.APIs, &amp;apiType{
+                                NameLower:      cfg.apiName,
+                                NameUpperCamel: cfg.camelName,
+                                TypeUpperCamel: upperFirst(cfg.typeOf.Name()),
+                                typeOf:         cfg.typeOf,
+                        })
+                }</span>
+
+                <span class="cov2" title="4">for len(typeQueue) &gt; 0 </span><span class="cov4" title="20">{
+                        tt := typeQueue[0]
+                        typeQueue = typeQueue[1:]
+
+                        if typesDone[tt.typeOf] </span><span class="cov2" title="4">{
+                                continue</span>
+                        }
+
+                        <span class="cov4" title="16">typesDone[tt.typeOf] = true
+
+                        tt.TypeUpperCamel = upperFirst(tt.typeOf.Name())
+
+                        path.WalkType(tt.typeOf, func(_ string, parts []string, field reflect.StructField) </span><span class="cov6" title="76">{
+                                typeOf := path.MaybeIndirectType(field.Type)
+
+                                elemType := typeOf
+                                if elemType.Kind() == reflect.Slice </span><span class="cov0" title="0">{
+                                        elemType = path.MaybeIndirectType(elemType.Elem())
+                                }</span>
+
+                                <span class="cov6" title="76">if len(parts) &gt; 1 || parts[0] == "" </span><span class="cov0" title="0">{
+                                        return
+                                }</span>
+
+                                <span class="cov6" title="76">if tt.TopLevel &amp;&amp; (parts[0] == "id" ||
+                                        parts[0] == "etag" ||
+                                        parts[0] == "generation") </span><span class="cov6" title="48">{
+                                        return
+                                }</span>
+
+                                <span class="cov5" title="28">tf := &amp;templateField{
+                                        NameLower:      parts[0],
+                                        NameUpperCamel: upperFirst(parts[0]),
+                                        NameLowerCamel: lowerFirst(parts[0]),
+                                        GoType:         goType(field.Type),
+                                        TSType:         tsType(field.Type),
+                                        Optional:       field.Type.Kind() == reflect.Pointer,
+                                }
+
+                                if strings.EqualFold(tf.NameUpperCamel, field.Name) </span><span class="cov5" title="28">{
+                                        tf.NameUpperCamel = field.Name
+                                        tf.NameLowerCamel = lowerFirst(field.Name)
+                                }</span>
+
+                                <span class="cov5" title="28">if elemType.Kind() == reflect.Struct &amp;&amp; elemType != reflect.TypeOf(time.Time{}) &amp;&amp; elemType != reflect.TypeOf(civil.Date{}) </span><span class="cov0" title="0">{
+                                        typeQueue = append(typeQueue, &amp;templateType{
+                                                typeOf: elemType,
+                                        })
+                                }</span>
+
+                                <span class="cov5" title="28">if len(tf.NameLower) &gt; tt.FieldNameMaxLen </span><span class="cov4" title="20">{
+                                        tt.FieldNameMaxLen = len(tf.NameLower)
+                                }</span>
+
+                                <span class="cov5" title="28">if len(tf.GoType) &gt; tt.FieldGoTypeMaxLen </span><span class="cov4" title="16">{
+                                        tt.FieldGoTypeMaxLen = len(tf.GoType)
+                                }</span>
+
+                                <span class="cov5" title="28">switch typeOf </span>{
+                                case path.TimeTimeType:<span class="cov0" title="0">
+                                        input.UsesTime = true</span>
+
+                                case path.CivilDateType:<span class="cov0" title="0">
+                                        input.UsesCivil = true</span>
+                                }
+
+                                <span class="cov5" title="28">tt.Fields = append(tt.Fields, tf)</span>
+                        })
+
+                        <span class="cov4" title="16">input.Types = append(input.Types, tt)</span>
+                }
+
+                // Buffer this so we can handle the error before sending any template output
+                <span class="cov2" title="4">buf := &amp;bytes.Buffer{}
+
+                err := templates.ExecuteTemplate(buf, name, input)
+                if err != nil </span><span class="cov0" title="0">{
+                        err = jsrest.Errorf(jsrest.ErrInternalServerError, "execute template failed (%w)", err)
+                        jsrest.WriteError(w, err)
+
+                        return
+                }</span>
+
+                <span class="cov2" title="4">w.Header().Set("Content-Type", "text/plain; charset=utf-8")
+
+                _, _ = buf.WriteTo(w)</span>
+        }
+}
+
+func add(a, b int) int <span class="cov5" title="21">{
+        return a + b
+}</span>
+
+func padRight(in string, l int) string <span class="cov5" title="35">{
+        return fmt.Sprintf(fmt.Sprintf("%%-%ds", l), in)
+}</span>
+
+func lowerFirst(in string) string <span class="cov6" title="56">{
+        return strings.ToLower(in[:1]) + in[1:]
+}</span>
+
+func upperFirst(in string) string <span class="cov10" title="895">{
+        return strings.ToUpper(in[:1]) + in[1:]
+}</span>
+
+func goType(t reflect.Type) string <span class="cov5" title="28">{
+        elemType := path.MaybeIndirectType(t)
+
+        if elemType.Kind() != reflect.Struct || elemType == path.TimeTimeType || elemType == path.CivilDateType </span><span class="cov5" title="28">{
+                return elemType.String()
+        }</span>
+
+        <span class="cov0" title="0">return upperFirst(elemType.Name())</span>
+}
+
+func tsType(t reflect.Type) string <span class="cov5" title="28">{
+        elemType := path.MaybeIndirectType(t)
+
+        if elemType == path.TimeTimeType || elemType == path.CivilDateType </span><span class="cov0" title="0">{
+                return "string"
+        }</span>
+
+        <span class="cov5" title="28">switch elemType.Kind() </span>{ //nolint:exhaustive
+        case reflect.Slice:<span class="cov0" title="0">
+                return fmt.Sprintf("%s[]", tsType(elemType.Elem()))</span>
+
+        case reflect.Int:<span class="cov0" title="0">
+                fallthrough</span>
+        case reflect.Int16:<span class="cov0" title="0">
+                fallthrough</span>
+        case reflect.Int64:<span class="cov2" title="4">
+                fallthrough</span>
+        case reflect.Uint:<span class="cov2" title="4">
+                fallthrough</span>
+        case reflect.Uint16:<span class="cov2" title="4">
+                fallthrough</span>
+        case reflect.Uint64:<span class="cov2" title="4">
+                fallthrough</span>
+        case reflect.Float32:<span class="cov2" title="4">
+                fallthrough</span>
+        case reflect.Float64:<span class="cov2" title="4">
+                return "number"</span>
+
+        case reflect.Bool:<span class="cov0" title="0">
+                return "boolean"</span>
+
+        case reflect.Struct:<span class="cov0" title="0">
+                return goType(elemType)</span>
+
+        case reflect.Interface:<span class="cov0" title="0">
+                return "any"</span>
+
+        default:<span class="cov5" title="24">
+                return "string"</span>
+        }
+}
+</pre>
+		
+		<pre class="file" id="file23" style="display: none">package patchy
+
+import (
+        "fmt"
+        "net/http"
+
+        "github.com/gopatchy/jsrest"
+        "github.com/gopatchy/metadata"
+        "github.com/vfaronov/httpheader"
+)
+
+type UpdateOpts struct {
+        IfMatch []httpheader.EntityTag
+
+        // This is "any" because making UpdateOpts generic complicates too many things
+        Prev any
+}
+
+func parseUpdateOpts(r *http.Request) *UpdateOpts <span class="cov9" title="91">{
+        return &amp;UpdateOpts{
+                IfMatch: httpheader.IfMatch(r.Header),
+        }
+}</span>
+
+func (opts *UpdateOpts) ifMatch(obj any) error <span class="cov10" title="96">{
+        if len(opts.IfMatch) == 0 </span><span class="cov9" title="80">{
+                return nil
+        }</span>
+
+        <span class="cov6" title="16">md := metadata.GetMetadata(obj)
+        gen := fmt.Sprintf("generation:%d", md.Generation)
+
+        if httpheader.Match(opts.IfMatch, httpheader.EntityTag{Opaque: md.ETag}) ||
+                httpheader.Match(opts.IfMatch, httpheader.EntityTag{Opaque: gen}) </span><span class="cov3" title="4">{
+                return nil
+        }</span>
+
+        <span class="cov5" title="12">return jsrest.Errorf(jsrest.ErrPreconditionFailed, "If-Match mismatch")</span>
+}
+</pre>
+		
+		<pre class="file" id="file24" style="display: none">package patchy
+
+import "github.com/gopatchy/path"
+
+func IsCreate[T any](obj *T, prev *T) bool <span class="cov0" title="0">{
+        return obj != nil &amp;&amp; prev == nil
+}</span>
+
+func IsUpdate[T any](obj *T, prev *T) bool <span class="cov0" title="0">{
+        return obj != nil &amp;&amp; prev != nil
+}</span>
+
+func IsDelete[T any](obj *T, prev *T) bool <span class="cov0" title="0">{
+        return obj == nil &amp;&amp; prev != nil
+}</span>
+
+func FieldChanged[T any](obj *T, prev *T, p string) bool <span class="cov0" title="0">{
+        v1, err := path.Get(obj, p)
+        if err != nil </span><span class="cov0" title="0">{
+                panic(err)</span>
+        }
+
+        <span class="cov0" title="0">v2, err := path.Get(prev, p)
+        if err != nil </span><span class="cov0" title="0">{
+                panic(err)</span>
+        }
+
+        <span class="cov0" title="0">return v1 != v2</span>
+}
+
+func P[T any](v T) *T <span class="cov10" title="48">{
+        return &amp;v
+}</span>
+</pre>
+		
+		</div>
+	</body>
+	<script>
+	(function() {
+		var files = document.getElementById('files');
+		var visible;
+		files.addEventListener('change', onChange, false);
+		function select(part) {
+			if (visible)
+				visible.style.display = 'none';
+			visible = document.getElementById(part);
+			if (!visible)
+				return;
+			files.value = part;
+			visible.style.display = 'block';
+			location.hash = part;
+		}
+		function onChange() {
+			select(files.value);
+			window.scrollTo(0, 0);
+		}
+		if (location.hash != "") {
+			select(location.hash.substr(1));
+		}
+		if (!visible) {
+			select("file0");
+		}
+	})();
+	</script>
+</html>
