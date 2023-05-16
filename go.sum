@@ -39,6 +39,8 @@ github.com/gopatchy/path v0.0.0-20230511134051-0d0d87c8dec3 h1:6eq9GbptLlMFsWRR3
 github.com/gopatchy/path v0.0.0-20230511134051-0d0d87c8dec3/go.mod h1:Bw9p1LFBmJ2O4BV/3LckLHRLhIEZMy6ubeYUdc+ZQSw=
 github.com/gopatchy/path v0.0.0-20230516045001-da7a74ddbea5 h1:a1tyfnusu3bPo2kkUZP8S5G8qh9li/ggYfr0n3b0bmg=
 github.com/gopatchy/path v0.0.0-20230516045001-da7a74ddbea5/go.mod h1:aQOp6UjXDpjjla2UWIHzMzs2vjPTDyydfZs2CYrl0bU=
+github.com/gopatchy/path v0.0.0-20230516045848-83e622035654 h1:NZQfoJziHyNbHWA0kNjqC9mZGhhPCjM8SUgIy9qoqhw=
+github.com/gopatchy/path v0.0.0-20230516045848-83e622035654/go.mod h1:w86YR/NENsNIvHLEQxQ91Ri/2fh8vNM3byX74j2B2FA=
 github.com/gopatchy/potency v0.0.0-20230511134059-818e74434c25 h1:RwLcnpzJchnIiLGXVpEH1Nfx17Y1iXGnVXj2eWXR6y4=
 github.com/gopatchy/potency v0.0.0-20230511134059-818e74434c25/go.mod h1:Bpm/ac6WRvqait6aDgoEeG345Nrvj87q4rvzxgJgRPk=
 github.com/gopatchy/potency v0.0.0-20230516045003-7835107709d6 h1:D384U3N4n2rwUf1u+oDteDX1K8UFcb6kZW1875OlCQE=
@@ -108,6 +110,8 @@ golang.org/x/crypto v0.9.0 h1:LF6fAI+IutBocDJ2OT0Q1g8plpYljMZ4+lty+dsqw3g=
 golang.org/x/crypto v0.9.0/go.mod h1:yrmDGqONDYtNj3tH8X9dzUun2m2lzPa9ngI6/RUPGR0=
 golang.org/x/exp v0.0.0-20230510235704-dd950f8aeaea h1:vLCWI/yYrdEHyN2JzIzPO3aaQJHQdp89IZBA/+azVC4=
 golang.org/x/exp v0.0.0-20230510235704-dd950f8aeaea/go.mod h1:V1LtkGg67GoY2N1AnLN78QLrzxkLyJw7RJb1gzOOz9w=
+golang.org/x/exp v0.0.0-20230515195305-f3d0a9c9a5cc h1:mCRnTeVUjcrhlRmO0VK8a6k6Rrf6TF9htwo2pJVSjIU=
+golang.org/x/exp v0.0.0-20230515195305-f3d0a9c9a5cc/go.mod h1:V1LtkGg67GoY2N1AnLN78QLrzxkLyJw7RJb1gzOOz9w=
 golang.org/x/net v0.0.0-20211029224645-99673261e6eb/go.mod h1:9nx3DQGgdP8bBQD5qxJ1jj9UTztislL4KSBs9R2vV5Y=
 golang.org/x/net v0.10.0 h1:X2//UzNDwYmtCLn7To6G58Wr6f5ahEAQgKNzv9Y951M=
 golang.org/x/net v0.10.0/go.mod h1:0qNGK6F8kojg2nk9dLZ2mShWaEBan6FAoqfSigmmuDg=
