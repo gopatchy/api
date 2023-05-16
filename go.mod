@@ -7,14 +7,14 @@ require (
 	github.com/dchest/uniuri v1.2.0
 	github.com/getkin/kin-openapi v0.116.0
 	github.com/go-resty/resty/v2 v2.7.0
-	github.com/gopatchy/header v0.0.0-20230511134024-ced45cf43f45
-	github.com/gopatchy/jsrest v0.0.0-20230511133808-abcf8276d1ad
-	github.com/gopatchy/metadata v0.0.0-20230424223338-33e58fee42bf
-	github.com/gopatchy/path v0.0.0-20230511134051-0d0d87c8dec3
-	github.com/gopatchy/potency v0.0.0-20230511134059-818e74434c25
-	github.com/gopatchy/proxy v0.0.0-20230425224044-bfe64d67fcae
-	github.com/gopatchy/selfcert v0.0.0-20230511135707-565c10700223
-	github.com/gopatchy/storebus v0.0.0-20230511135721-9a7fa1cb9c07
+	github.com/gopatchy/header v0.0.0-20230516044959-d337e46f991a
+	github.com/gopatchy/jsrest v0.0.0-20230516044950-1c6d15dad16a
+	github.com/gopatchy/metadata v0.0.0-20230516044939-eed23a0903d5
+	github.com/gopatchy/path v0.0.0-20230516045001-da7a74ddbea5
+	github.com/gopatchy/potency v0.0.0-20230516045003-7835107709d6
+	github.com/gopatchy/proxy v0.0.0-20230516045004-1cf43ff95773
+	github.com/gopatchy/selfcert v0.0.0-20230516045005-fdb89abe7b70
+	github.com/gopatchy/storebus v0.0.0-20230516045026-819e5abea800
 	github.com/julienschmidt/httprouter v1.3.0
 	github.com/stretchr/testify v1.8.2
 	github.com/vfaronov/httpheader v0.1.0
@@ -27,8 +27,8 @@ require (
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/go-openapi/jsonpointer v0.19.6 // indirect
 	github.com/go-openapi/swag v0.22.3 // indirect
-	github.com/gopatchy/bus v0.0.0-20230424233749-c395ddbca3df // indirect
-	github.com/gopatchy/store v0.0.0-20230424234123-d35f011d4f0f // indirect
+	github.com/gopatchy/bus v0.0.0-20230516044949-c7eca23ba608 // indirect
+	github.com/gopatchy/store v0.0.0-20230516045007-b2385cdea3a9 // indirect
 	github.com/invopop/yaml v0.2.0 // indirect
 	github.com/josharian/intern v1.0.0 // indirect
 	github.com/mailru/easyjson v0.7.7 // indirect
