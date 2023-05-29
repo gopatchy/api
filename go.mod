@@ -10,9 +10,9 @@ require (
 	github.com/gopatchy/header v0.0.0-20230519040528-ecc5536aefa1
 	github.com/gopatchy/jsrest v0.0.0-20230519040513-bed91cfc0b5d
 	github.com/gopatchy/metadata v0.0.0-20230519040457-7a86a0fb5662
-	github.com/gopatchy/path v0.0.0-20230519040532-283e902c9a64
+	github.com/gopatchy/path v0.0.0-20230529050120-ac13fafb15db
 	github.com/gopatchy/potency v0.0.0-20230519040536-9c3bcadc6604
-	github.com/gopatchy/proxy v0.0.0-20230516052217-6bd60dc034fd
+	github.com/gopatchy/proxy v0.0.0-20230529015759-4d806f5d5908
 	github.com/gopatchy/selfcert v0.0.0-20230519040540-d3300f43a87d
 	github.com/gopatchy/storebus v0.0.0-20230519040557-201d58bf2b32
 	github.com/julienschmidt/httprouter v1.3.0
@@ -36,7 +36,7 @@ require (
 	github.com/mohae/deepcopy v0.0.0-20170929034955-c48cc78d4826 // indirect
 	github.com/perimeterx/marshmallow v1.1.4 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
-	golang.org/x/exp v0.0.0-20230515195305-f3d0a9c9a5cc // indirect
+	golang.org/x/exp v0.0.0-20230522175609-2e198f4a06a1 // indirect
 	golang.org/x/text v0.9.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
