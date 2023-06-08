@@ -187,9 +187,6 @@ func newTestAPIInsecure(t *testing.T) *testAPI {
 func newTestAPIInt(t *testing.T, api *patchy.API, scheme string) *testAPI {
 	ctx := context.Background()
 
-	proxy, err := proxy.NewProxy(t, api.Addr())
-	require.NoError(t, err)
-
 	api.SetStripPrefix("/api")
 
 	patchy.Register[testType](api)
@@ -197,7 +194,7 @@ func newTestAPIInt(t *testing.T, api *patchy.API, scheme string) *testAPI {
 
 	ret := &testAPI{
 		api:      api,
-		proxy:    proxy,
+		proxy:    proxy.NewProxy(t, api.Addr()),
 		testDone: make(chan string, 100),
 	}
 
@@ -206,7 +203,7 @@ func newTestAPIInt(t *testing.T, api *patchy.API, scheme string) *testAPI {
 
 	patchy.Register[authBearerType](api)
 
-	_, err = patchy.Create[authBearerType](ctx, api, &authBearerType{
+	_, err := patchy.Create[authBearerType](ctx, api, &authBearerType{
 		Name:  "foo",
 		Token: "abcd",
 	})
@@ -247,7 +244,7 @@ func newTestAPIInt(t *testing.T, api *patchy.API, scheme string) *testAPI {
 			t.Logf("[%s] LOG: %s", name, r.Form.Get("details"))
 
 		case "connsClose":
-			proxy.CloseAllConns()
+			ret.proxy.CloseAllConns()
 		}
 	})
 
@@ -255,7 +252,7 @@ func newTestAPIInt(t *testing.T, api *patchy.API, scheme string) *testAPI {
 		_ = api.Serve()
 	}()
 
-	ret.baseBaseURL = fmt.Sprintf("%s://[::1]:%d/", scheme, proxy.Addr().Port)
+	ret.baseBaseURL = fmt.Sprintf("%s://[::1]:%d/", scheme, ret.proxy.Addr().Port)
 	ret.baseURL = fmt.Sprintf("%sapi/", ret.baseBaseURL)
 
 	ret.rst = resty.New().
