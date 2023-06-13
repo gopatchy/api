@@ -7,7 +7,7 @@ require (
 	github.com/dchest/uniuri v1.2.0
 	github.com/getkin/kin-openapi v0.118.0
 	github.com/go-resty/resty/v2 v2.7.0
-	github.com/gopatchy/event v0.0.0-20230613030704-b44b1f4c1fe9
+	github.com/gopatchy/event v0.0.0-20230613031904-90a346386281
 	github.com/gopatchy/header v0.0.0-20230611025948-971385e27789
 	github.com/gopatchy/jsrest v0.0.0-20230611025933-909a266547e0
 	github.com/gopatchy/metadata v0.0.0-20230611025918-a5568e41335d
@@ -38,6 +38,6 @@ require (
 	github.com/perimeterx/marshmallow v1.1.4 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
 	golang.org/x/exp v0.0.0-20230522175609-2e198f4a06a1 // indirect
-	golang.org/x/text v0.9.0 // indirect
+	golang.org/x/text v0.10.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
