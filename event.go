@@ -6,6 +6,14 @@ import (
 	"github.com/gopatchy/event"
 )
 
+func (api *API) EventClient() *event.Client {
+	return api.eventClient
+}
+
+func (api *API) Log(ctx context.Context, vals ...any) {
+	api.eventClient.Log(ctx, vals...)
+}
+
 func (api *API) SetEventData(ctx context.Context, vals ...any) {
 	ev := ctx.Value(ContextEvent)
 
