@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/getkin/kin-openapi/openapi3"
+	"github.com/gopatchy/event"
 	"github.com/gopatchy/header"
 	"github.com/gopatchy/jsrest"
 	"github.com/gopatchy/metadata"
@@ -85,7 +86,7 @@ func AddAuthBasicName[T any](api *API, name, pathUser, pathPass string) {
 		return authBasic[T](w, r, a, name, pathUser, pathPass)
 	})
 
-	api.AddEventHook(EventHookAuthBasic)
+	api.eventClient.AddHook(EventHookAuthBasic)
 	api.AddOpenAPIHook(OpenAPIHookAuthBasic)
 
 	api.authBasic = true
@@ -95,7 +96,7 @@ func AddAuthBasic[T any](api *API, pathUser, pathPass string) {
 	AddAuthBasicName[T](api, apiName[T](), pathUser, pathPass)
 }
 
-func EventHookAuthBasic(ctx context.Context, ev *Event) {
+func EventHookAuthBasic(ctx context.Context, ev *event.Event) {
 	ctxUser := ctx.Value(ContextAuthBasic)
 
 	if ctxUser == nil {

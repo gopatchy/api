@@ -13,6 +13,7 @@ import (
 	"time"
 
 	"github.com/dchest/uniuri"
+	"github.com/gopatchy/event"
 	"github.com/gopatchy/jsrest"
 	"github.com/gopatchy/metadata"
 	"github.com/gopatchy/path"
@@ -39,7 +40,7 @@ type API struct {
 	authBasic  bool
 	authBearer bool
 
-	eventState eventState
+	eventClient *event.Client
 }
 
 type (
@@ -90,12 +91,12 @@ func NewAPI(dbname string) (*API, error) {
 		srv: &http.Server{
 			ReadHeaderTimeout: 30 * time.Second,
 		},
+		eventClient: event.New().
+			AddHook(event.HookBuildInfo).
+			AddHook(event.HookMetrics).
+			AddHook(event.HookRUsage).
+			AddHook(EventHookSpanID),
 	}
-
-	api.AddEventHook(EventHookBuildInfo)
-	api.AddEventHook(EventHookSpanID)
-	api.AddEventHook(EventHookMetrics)
-	api.AddEventHook(EventHookRUsage)
 
 	api.srv.Handler = api
 
@@ -265,7 +266,7 @@ func (api *API) Shutdown(ctx context.Context) error {
 		return err
 	}
 
-	api.eventState.close()
+	api.eventClient.Close()
 	api.sb.Close()
 
 	return nil
@@ -276,7 +277,7 @@ func (api *API) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	ctx := r.Context()
 
-	ev := api.eventState.newEvent("httpSuccess",
+	ev := event.NewEvent("httpSuccess",
 		"httpProto", r.Proto,
 		"requestHost", r.Host,
 		"requestMethod", r.Method,
@@ -304,7 +305,7 @@ func (api *API) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	api.eventState.writeEvent(r.Context(), ev) //nolint:contextcheck
+	api.eventClient.WriteEvent(r.Context(), ev) //nolint:contextcheck
 }
 
 func (api *API) serveHTTP(w http.ResponseWriter, r *http.Request) (*http.Request, error) {

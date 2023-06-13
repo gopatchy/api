@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/getkin/kin-openapi/openapi3"
+	"github.com/gopatchy/event"
 	"github.com/gopatchy/header"
 	"github.com/gopatchy/jsrest"
 	"github.com/gopatchy/metadata"
@@ -58,7 +59,7 @@ func AddAuthBearerName[T any](api *API, name, pathToken string) {
 		return authBearer[T](w, r, a, name, pathToken)
 	})
 
-	api.AddEventHook(EventHookAuthBearer)
+	api.eventClient.AddHook(EventHookAuthBearer)
 	api.AddOpenAPIHook(OpenAPIHookAuthBearer)
 
 	api.authBearer = true
@@ -68,7 +69,7 @@ func AddAuthBearer[T any](api *API, pathToken string) {
 	AddAuthBearerName[T](api, apiName[T](), pathToken)
 }
 
-func EventHookAuthBearer(ctx context.Context, ev *Event) {
+func EventHookAuthBearer(ctx context.Context, ev *event.Event) {
 	ctxToken := ctx.Value(ContextAuthBearer)
 
 	if ctxToken == nil {
