@@ -7,21 +7,21 @@ require (
 	github.com/dchest/uniuri v1.2.0
 	github.com/getkin/kin-openapi v0.118.0
 	github.com/go-resty/resty/v2 v2.7.0
-	github.com/gopatchy/event v0.0.0-20230613035433-dd25e242b61f
-	github.com/gopatchy/header v0.0.0-20230611025948-971385e27789
-	github.com/gopatchy/jsrest v0.0.0-20230611025933-909a266547e0
+	github.com/gopatchy/event v0.0.0-20230617154505-4367a982d76f
+	github.com/gopatchy/header v0.0.0-20230617154522-b63854f75939
+	github.com/gopatchy/jsrest v0.0.0-20230617154508-e18710a310af
 	github.com/gopatchy/metadata v0.0.0-20230611025918-a5568e41335d
-	github.com/gopatchy/path v0.0.0-20230611025958-df462d6f68f2
-	github.com/gopatchy/potency v0.0.0-20230611030004-6cf28c433d2e
+	github.com/gopatchy/path v0.0.0-20230617154548-d6e8060cca34
+	github.com/gopatchy/potency v0.0.0-20230617154544-43d230e5cf5f
 	github.com/gopatchy/proxy v0.0.0-20230608062432-7adc14d65656
-	github.com/gopatchy/selfcert v0.0.0-20230611030014-44f78874c4d8
-	github.com/gopatchy/storebus v0.0.0-20230611030240-3d91f4701413
+	github.com/gopatchy/selfcert v0.0.0-20230617154536-65aad096a788
+	github.com/gopatchy/storebus v0.0.0-20230617154532-b65649a3b18c
 	github.com/julienschmidt/httprouter v1.3.0
 	github.com/stretchr/testify v1.8.4
 	github.com/vfaronov/httpheader v0.1.0
 	go.uber.org/goleak v1.2.1
-	golang.org/x/crypto v0.9.0
-	golang.org/x/net v0.10.0
+	golang.org/x/crypto v0.10.0
+	golang.org/x/net v0.11.0
 )
 
 require (
