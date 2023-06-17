@@ -22,8 +22,8 @@ github.com/go-test/deep v1.0.8/go.mod h1:5C2ZWiW0ErCdrYzpqxLbTX7MG14M9iiw8DgHncV
 github.com/google/go-cmp v0.5.9 h1:O2Tfq5qg4qc4AmwVlvv0oLiVAGB7enBSJ2x2DqQFi38=
 github.com/gopatchy/bus v0.0.0-20230611030146-6751438c7f57 h1:X9YhC6Sgp3rz6Czr1LqxuHXjraH5ENahN+eBsWOmifw=
 github.com/gopatchy/bus v0.0.0-20230611030146-6751438c7f57/go.mod h1:hOIkHhSp+KvbfsAjd2l40fO3BW5/bTqxyF8fvzsRyfo=
-github.com/gopatchy/event v0.0.0-20230617212132-152b30a10ad7 h1:xSRLvyWogantNY6mybpX+mViJgJZaBmsI4fuyT94N+E=
-github.com/gopatchy/event v0.0.0-20230617212132-152b30a10ad7/go.mod h1:SplGDUsTiPon8FasSqw3eogKiNgHuoV0kHu+jG2E2xo=
+github.com/gopatchy/event v0.0.0-20230617221934-85df8edcde92 h1:cgJxEay0eVNOvC0VzLCDYIV5sXGlhtoWkshahDe876A=
+github.com/gopatchy/event v0.0.0-20230617221934-85df8edcde92/go.mod h1:SplGDUsTiPon8FasSqw3eogKiNgHuoV0kHu+jG2E2xo=
 github.com/gopatchy/header v0.0.0-20230617154522-b63854f75939 h1:xkMVf9QgYKa3Kyqe5nsNDa2L1Mb+JU2acb8z78TeFss=
 github.com/gopatchy/header v0.0.0-20230617154522-b63854f75939/go.mod h1:bC52q75ECg09cVLBA/8PvuKAq6n/Ocb0AMcRCOl3EEQ=
 github.com/gopatchy/jsrest v0.0.0-20230617154508-e18710a310af h1:M5Egq74wpbgGhutFw7IH+iw5oAAtbxxEv2npHLOYKyw=
