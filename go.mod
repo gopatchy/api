@@ -7,7 +7,7 @@ require (
 	github.com/dchest/uniuri v1.2.0
 	github.com/getkin/kin-openapi v0.118.0
 	github.com/go-resty/resty/v2 v2.7.0
-	github.com/gopatchy/event v0.0.0-20230617154505-4367a982d76f
+	github.com/gopatchy/event v0.0.0-20230617203555-f1f007e351b9
 	github.com/gopatchy/header v0.0.0-20230617154522-b63854f75939
 	github.com/gopatchy/jsrest v0.0.0-20230617154508-e18710a310af
 	github.com/gopatchy/metadata v0.0.0-20230611025918-a5568e41335d
